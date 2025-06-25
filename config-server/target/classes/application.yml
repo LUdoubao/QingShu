@@ -1,0 +1,27 @@
+server:
+  port: 8888
+spring:
+  application:
+    name: config-server
+  profiles:
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:./config-repo
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+eureka:
+  client:
+    register-with-eureka: true    # 启用注册
+    fetch-registry: true          # 获取注册表
+    service-url:
+      defaultZone: http://localhost:8761/eureka  # Eureka 地址
+  instance:
+    hostname: localhost
+    prefer-ip-address: true       # 使用IP注册（容器化部署时需启用）

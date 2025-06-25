@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: eureka-server
+  cloud:
+    config:
+      uri: http://localhost:8888
+      name: eureka-server
+      profile: dev
+      label: master
+  main:
+    allow-bean-definition-overriding: true

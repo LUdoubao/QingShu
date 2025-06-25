@@ -1,0 +1,36 @@
+server:
+  port: 9006
+
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 3411426617@qq.com
+    password: bojwesxvnloecjdi
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+  config:
+    import: "optional:configserver:"  # 关键修复！必须添加！
+  application:
+    name: notification-service
+  cloud:
+    config:
+      discovery:
+        enabled: true
+        service-id: config-server
+
+eureka:
+  client:
+    register-with-eureka: true    # 启用注册
+    fetch-registry: true          # 获取注册表
+    service-url:
+      defaultZone: http://localhost:8761/eureka  # Eureka 地址
