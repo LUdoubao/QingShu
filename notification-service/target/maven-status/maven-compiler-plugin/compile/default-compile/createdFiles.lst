@@ -1,4 +1,0 @@
-org\doubao\notification\service\config\RabbitConfig.class
-org\doubao\notification\service\NotificationServiceApplication.class
-org\doubao\notification\service\listener\NotificationListener.class
-org\doubao\notification\service\model\Order.class
