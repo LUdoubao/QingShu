@@ -130,6 +130,36 @@ spring:
           uri: lb://product-service
           predicates:
             - Path=/products/**
+          filters:
+            # 请求速率限制过滤器（基于Redis的令牌桶算法）
+            - name: RequestRateLimiter
+              args:
+                # 每秒补充的令牌数量 = 允许的QPS
+                redis-rate-limiter.replenishRate: 2   # 每秒最多处理2个请求
+
+                # 令牌桶最大容量（支持突发流量）
+                redis-rate-limiter.burstCapacity: 5   # 允许短时间内处理最多5个请求（令牌桶容量）
+
+                # HTTP状态码配置（默认429 Too Many Requests）
+                statusCode: TOO_MANY_REQUESTS         # 当请求超限时返回429状态码（可选配置）
+
+                # 限流键解析器：使用spring容器中的ipKeyResolver Bean
+                key-resolver: "#{@ipAndPathKeyResolver}"      # 根据客户端IP和路径进行限流
+
+                # 当key解析为空时是否拒绝请求
+                denyEmptyKey: true                     # 防止无法获取客户端IP的用户无限访问
+
+                # 限流触发时的降级端点
+                fallbackUri: forward:/fallback/products/rateLimit  # ✅ 请求超限时调用内部降级接口
+
+            # 熔断器过滤器（基于Resilience4j）
+            - name: CircuitBreaker
+              args:
+                # 熔断器实例名称（对应Resilience4j配置中的实例名）
+                name: productCircuitBreaker           # 使用在Resilience4j配置中的productCircuitBreaker实例
+
+                # 熔断触发时的降级端点
+                fallbackUri: forward:/fallback/products/circuit   # 服务熔断时调用内部降级接口
         - id: order-service
           uri: lb://order-service
           predicates:
@@ -143,7 +173,11 @@ spring:
           args:
             redis-rate-limiter.replenishRate: 1000
             redis-rate-limiter.burstCapacity: 1000
-            key-resolver: '#{@ipKeyResolver}'
+            key-resolver: '#{@ipAndPathKeyResolver}'
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    database: 0
 
 eureka:
   client:
@@ -153,25 +187,90 @@ eureka:
       defaultZone: http://localhost:8761/eureka  # Eureka 地址
 
 
+# Resilience4j 弹性组件配置
 resilience4j:
+  # 熔断器配置
   circuitbreaker:
+    # 基础配置模板（可被多个实例引用）
     configs:
+      # 默认配置模板（名为default）
       default:
+        # 注册健康指标（通过/actuator/health端点暴露熔断器状态）
         registerHealthIndicator: true
+
+        # 滑动窗口大小：统计最近10次调用结果
         slidingWindowSize: 10
+
+        # 失败率阈值：50%（当失败率>=50%时触发熔断）
         failureRateThreshold: 50
+
+        # 开启状态持续时间：熔断开启后5秒进入半开状态
         waitDurationInOpenState: 5s
+
+        # 半开状态允许的调用次数：尝试放行3个请求测试服务恢复情况
         permittedNumberOfCallsInHalfOpenState: 3
+
+        # 最小统计样本量：至少5次调用才开始计算失败率
         minimumNumberOfCalls: 5
+
+        # 慢调用判定阈值：超过500ms的调用视为慢调用
         slowCallDurationThreshold: 500ms
+
+        # 慢调用率阈值：100%（当慢调用率>=100%时触发熔断）
         slowCallRateThreshold: 100
+
+    # 具体熔断器实例配置
+    instances:
+      # 为"product-service"服务命名的熔断器
+      productCircuitBreaker:
+        # 继承默认配置模板
+        baseConfig: default
+
+  # 限时器配置
+  timelimiter:
+    # 限时器实例配置
+    instances:
+      # 与熔断器同名的限时器（自动关联）
+      productCircuitBreaker:
+        # ⏳ 调用超时时间：3秒内必须响应
+        timeoutDuration: 3s
+
+        # 超时时取消异步调用：强制中断长时间阻塞的调用
+        cancelRunningFuture: true
 
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
 
+# Spring Boot Actuator 监控配置
 management:
+  # 端点相关配置
   endpoints:
+    # Web 暴露配置
     web:
+      # 端点暴露规则（决定哪些端点可通过HTTP访问）
       exposure:
-        include: '*'
+        # 使用通配符暴露所有Actuator端点
+        # ⚠️ 生产环境应更精细控制（只暴露必需端点）
+        include: "*"
+  # 单个端点配置
+  endpoint:
+    # Prometheus端点配置（提供/metrics的Prometheus格式数据）
+    prometheus:
+      # 启用Prometheus端点（默认路径：/actuator/prometheus）
+      enabled: true
+  # 应用指标采集配置
+  metrics:
+    # 指标采集开关
+    enable:
+      # 启用所有类型的指标采集：
+      # - JVM（内存、线程、GC等）
+      # - 系统（CPU、磁盘、文件描述符等）
+      # - Tomcat/Jetty/Undertow（请求量、错误率等）
+      # - 数据源（连接池、查询性能）
+      all: true
+  # 指标导出配置
+  metrics.export.prometheus:
+    # 启用Prometheus导出功能
+    # 当开启时，/actuator/prometheus端点可提供监控数据
+    enabled: true
