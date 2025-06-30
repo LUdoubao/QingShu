@@ -33,6 +33,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 		// 获取当前请求的完整路径
 		String path = exchange.getRequest().getURI().getPath();
+		LOG.info("请求路径：{}", path);
 		// 检查请求路径是否在排除列表(不需要JWT验证的路径)
 		// 使用流操作检测路径前缀匹配，若匹配则跳过验证直接放行
 		if (EXCLUDE_URLS.stream().anyMatch(path::startsWith)) {
@@ -73,6 +74,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 							.header("userName", userName)  // 添加已验证的用户名
 							.build();
 
+					LOG.info("token校验成功：接口路径：{}，用户名：{}", path, userName);
 					// 使用修改后的请求继续过滤器链处理
 					return chain.filter(exchange.mutate().request(mutatedRequest).build());
 				})

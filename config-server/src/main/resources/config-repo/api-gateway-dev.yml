@@ -21,32 +21,23 @@ spring:
             - Path=/products/**
           filters:
             # 请求速率限制过滤器（基于Redis的令牌桶算法）
-            - name: RequestRateLimiter
+            - name: CustomRateLimiter
               args:
                 # 每秒补充的令牌数量 = 允许的QPS
                 redis-rate-limiter.replenishRate: 2   # 每秒最多处理2个请求
-
                 # 令牌桶最大容量（支持突发流量）
                 redis-rate-limiter.burstCapacity: 5   # 允许短时间内处理最多5个请求（令牌桶容量）
-
                 # HTTP状态码配置（默认429 Too Many Requests）
                 statusCode: TOO_MANY_REQUESTS         # 当请求超限时返回429状态码（可选配置）
-
                 # 限流键解析器：使用spring容器中的ipKeyResolver Bean
                 key-resolver: "#{@ipAndPathKeyResolver}"      # 根据客户端IP和路径进行限流
-
                 # 当key解析为空时是否拒绝请求
                 denyEmptyKey: true                     # 防止无法获取客户端IP的用户无限访问
-
-                # 限流触发时的降级端点
-                fallbackUri: forward:/fallback/products/rateLimit  # ✅ 请求超限时调用内部降级接口
-
             # 熔断器过滤器（基于Resilience4j）
             - name: CircuitBreaker
               args:
                 # 熔断器实例名称（对应Resilience4j配置中的实例名）
                 name: productCircuitBreaker           # 使用在Resilience4j配置中的productCircuitBreaker实例
-
                 # 熔断触发时的降级端点
                 fallbackUri: forward:/fallback/products/circuit   # 服务熔断时调用内部降级接口
         - id: order-service
@@ -57,12 +48,6 @@ spring:
           uri: lb://payment-service
           predicates:
             - Path=/payment/**
-      default-filters:
-        - name: RequestRateLimiter
-          args:
-            redis-rate-limiter.replenishRate: 1000
-            redis-rate-limiter.burstCapacity: 1000
-            key-resolver: '#{@ipAndPathKeyResolver}'
   redis:
     host: 127.0.0.1
     port: 6379
@@ -130,6 +115,8 @@ resilience4j:
 logging:
   level:
     org.springframework.cloud.gateway: DEBUG
+    reactor.netty: DEBUG
+    io.github.resilience4j: DEBUG
 
 # Spring Boot Actuator 监控配置
 management:

@@ -17,13 +17,9 @@
 		<module>auth-service</module>
 		<module>user-service</module>
 		<module>product-service</module>
-<!--        <module>config-repo</module>-->
-        		<module>order-service</module>
+		<module>order-service</module>
 		<module>payment-service</module>
 <!--		<module>notification-service</module>-->
-<!--		<module>search-service</module>-->
-<!--		<module>zipkin-server</module>-->
-<!--		<module>monitor</module>-->
 	</modules>
 
 	<properties>
