@@ -19,6 +19,7 @@
 		<module>product-service</module>
 		<module>order-service</module>
 		<module>payment-service</module>
+		<module>quote-service</module>
 <!--		<module>notification-service</module>-->
 	</modules>
 

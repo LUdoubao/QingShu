@@ -23,6 +23,10 @@ spring:
           uri: lb://product-service
           predicates:
             - Path=/products/**
+        - id: quote-service
+          uri: lb://quote-service
+          predicates:
+            - Path=/quote/**
           filters:
             # 请求速率限制过滤器（基于Redis的令牌桶算法）
             - name: CustomRateLimiter
