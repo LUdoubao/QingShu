@@ -10,6 +10,12 @@
     <artifactId>api-gateway</artifactId>
     <name>api-gateway</name>
     <dependencies>
+        <!-- Transport 模块 -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-transport-simple-http</artifactId>
+        </dependency>
+
         <!-- Sentinel 核心 -->
         <dependency>
             <groupId>com.alibaba.csp</groupId>
