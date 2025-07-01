@@ -3,6 +3,10 @@ server:
 
 spring:
   cloud:
+#    sentinel:
+#      transport:
+#        dashboard: localhost:8080
+#        client-ip: 127.0.0.1
     gateway:
       routes:
         - id: auth-service
