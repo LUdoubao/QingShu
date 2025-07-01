@@ -10,6 +10,32 @@
     <artifactId>api-gateway</artifactId>
     <name>api-gateway</name>
     <dependencies>
+        <!-- Sentinel 核心 -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-core</artifactId>
+            <version>1.8.6</version>
+        </dependency>
+
+        <!-- Sentinel 支持网关的 API 分组限流等功能 -->
+        <dependency>
+            <groupId>com.alibaba.csp</groupId>
+            <artifactId>sentinel-api-gateway-adapter-common</artifactId>
+            <version>1.8.6</version>
+        </dependency>
+
+        <!-- Sentinel Spring Cloud Alibaba 支持 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+
+        <!-- Sentinel 对 Spring Cloud Gateway 的适配支持 -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
+        </dependency>
+
         <!-- ⭐ 关键：Gateway中支持 Resilience4j 熔断 的依赖 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
