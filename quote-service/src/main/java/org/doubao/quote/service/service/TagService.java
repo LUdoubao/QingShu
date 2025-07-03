@@ -6,13 +6,11 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.entity.Quote;
+import org.doubao.quote.service.entity.Tag;
 import org.doubao.quote.service.vo.QuoteVo;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-public interface QuoteService extends IService<Quote> {
-	Result<Page<QuoteVo>> page(PageDto pageDto);
-
-	Quote addQuote(QuoteDTO dto);
+public interface TagService extends IService<Tag> {
+	Result<List<Tag>> listByTagName(String tagName);
 }

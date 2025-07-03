@@ -1,27 +1,38 @@
-package org.doubao.quote.service.entity;
+package org.doubao.quote.service.vo;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
 import org.doubao.mall.common.entity.BaseEntity;
+import org.doubao.quote.service.entity.Tag;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-@TableName("quote")
-public class Quote extends BaseEntity {
-	@TableId(type = IdType.AUTO)
+public class QuoteVo extends BaseEntity {
 	private Long id;
-	@TableField(value = "content")
 	private String content;
-	@TableField(value = "author")
 	private String author;
-	@TableField(value = "source")
 	private String source;
-	@TableField("category_id")
+	private String categoryName;
 	private Long categoryId;
+	private List<Tag> tags;
+
+	public List<Tag> getTags() {
+		return tags;
+	}
+
+	public void setTags(List<Tag> tags) {
+		this.tags = tags;
+	}
+
+	public String getCategoryName() {
+		return categoryName;
+	}
+
+	public void setCategoryName(String categoryName) {
+		this.categoryName = categoryName;
+	}
 
 	public Long getCategoryId() {
 		return categoryId;
