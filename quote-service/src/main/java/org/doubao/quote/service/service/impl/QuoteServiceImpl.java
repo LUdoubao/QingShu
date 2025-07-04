@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
+import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.util.UserContext;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
@@ -41,80 +43,13 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<Page<QuoteVo>> page(PageDto pageDto) {
-		int page = pageDto.getPage();
-		int size = pageDto.getSize();
-		Long category = pageDto.getCategoryId();
-		List<Long> tagIds = pageDto.getTagIds();
 
-		if (page < 1 || size <= 0) {
+		LambdaQueryWrapper<Quote> queryWrapper = buildQueryWrapper(pageDto);
+		if (queryWrapper == null) {
 			return Result.error("参数不合法");
 		}
 
-		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
-				.eq(Quote::getDeleted, 0)
-				.eq(Quote::getStatus,1)
-				.orderByDesc(Quote::getCreatedTime);
-
-		if (category != null) {
-			queryWrapper.eq(Quote::getCategoryId, category);
-		}
-
-		Page<Quote> pageData = this.page(new Page<>(page, size), queryWrapper);
-
-		List<Quote> records = pageData.getRecords();
-
-		Page<QuoteVo> pageVo = new Page<>(pageData.getCurrent(), pageData.getSize());
-
-		if (!records.isEmpty()) {
-			List<QuoteVo> quoteVoList = records.stream().map(quote -> {
-				QuoteVo quoteVo = new QuoteVo();
-				BeanUtils.copyProperties(quote, quoteVo);
-				return quoteVo;
-			}).collect(Collectors.toList());
-
-			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
-			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
-
-			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
-			Map<Long, String> categoryMap = new HashMap<>();
-			if (!categoryIds.isEmpty()) {
-				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
-				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
-			}
-
-			// 构建 quoteId -> List<Tag>
-			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
-			List<Long> removeQuoteIds = new ArrayList<>();
-			for (Map<String, Object> map : tagMappings) {
-				Long quoteId = ((Number) map.get("quote_id")).longValue();
-				Long tagId = ((Number) map.get("tag_id")).longValue();
-				String tagName = (String) map.get("tag_name");
-
-				if (tagIds != null && !tagIds.contains(tagId)) {
-					removeQuoteIds.add(quoteId);
-					continue;
-				}
-
-				Tag tag = new Tag();
-				tag.setId(tagId);
-				tag.setName(tagName);
-
-				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
-			}
-
-			// 移除quoteVoList，removeQuoteIds中的
-			quoteVoList.removeIf(quoteVo -> removeQuoteIds.contains(quoteVo.getId()));
-			// 设置 tags 字段
-			for (QuoteVo quoteVo : quoteVoList) {
-				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
-				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
-			}
-
-			pageVo.setTotal(quoteVoList.size());
-			pageVo.setRecords(quoteVoList);
-		}
-
-		return Result.success(pageVo);
+		return query(pageDto, queryWrapper);
 	}
 
 	@Override
@@ -199,4 +134,100 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 		return Result.success(quoteVo);
 	}
+
+	@Override
+	public Result<Page<QuoteVo>> pageManager(PageDto pageDto) {
+		LambdaQueryWrapper<Quote> queryWrapper = buildQueryWrapper(pageDto);
+		if (queryWrapper == null) {
+			return Result.error("参数不合法");
+		}
+		String userId = UserContext.getUser().getUserId();
+		if (!"1".equals(userId)) {
+			queryWrapper.eq(Quote::getCreatedId,UserContext.getUser().getUserId());
+		}
+		return query(pageDto, queryWrapper);
+	}
+
+	@SuppressWarnings("unchecked")
+	private LambdaQueryWrapper<Quote> buildQueryWrapper(PageDto pageDto) {
+		int page = pageDto.getPage();
+		int size = pageDto.getSize();
+		Long category = pageDto.getCategoryId();
+		List<Long> tagIds = pageDto.getTagIds();
+
+		if (page < 1 || size <= 0) {
+			return null;
+		}
+
+		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
+				.eq(Quote::getDeleted, 0)
+				.eq(Quote::getStatus,1)
+				.orderByDesc(Quote::getCreatedTime);
+
+		if (category != null) {
+			queryWrapper.eq(Quote::getCategoryId, category);
+		}
+		return queryWrapper;
+	}
+
+	private Result<Page<QuoteVo>> query(PageDto pageDto, LambdaQueryWrapper<Quote> queryWrapper) {
+		int page = pageDto.getPage();
+		int size = pageDto.getSize();
+		List<Long> tagIds = pageDto.getTagIds();
+		Page<Quote> pageData = this.page(new Page<>(page, size), queryWrapper);
+
+		List<Quote> records = pageData.getRecords();
+
+		Page<QuoteVo> pageVo = new Page<>(pageData.getCurrent(), pageData.getSize(), pageData.getTotal());
+
+		if (!records.isEmpty()) {
+			List<QuoteVo> quoteVoList = records.stream().map(quote -> {
+				QuoteVo quoteVo = new QuoteVo();
+				BeanUtils.copyProperties(quote, quoteVo);
+				return quoteVo;
+			}).collect(Collectors.toList());
+
+			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
+			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
+			Map<Long, String> categoryMap = new HashMap<>();
+			if (!categoryIds.isEmpty()) {
+				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
+				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
+			}
+
+			// 构建 quoteId -> List<Tag>
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			List<Long> removeQuoteIds = new ArrayList<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				if (tagIds != null && !tagIds.contains(tagId)) {
+					removeQuoteIds.add(quoteId);
+					continue;
+				}
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+
+			// 移除quoteVoList，removeQuoteIds中的
+			quoteVoList.removeIf(quoteVo -> removeQuoteIds.contains(quoteVo.getId()));
+			// 设置 tags 字段
+			for (QuoteVo quoteVo : quoteVoList) {
+				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+			}
+
+			pageVo.setRecords(quoteVoList);
+		}
+		return Result.success(pageVo);
+	}
+
 }

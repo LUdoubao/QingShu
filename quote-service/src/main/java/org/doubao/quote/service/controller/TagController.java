@@ -20,5 +20,10 @@ public class TagController {
 		return tagService.listByTagName(tagName);
 	}
 
+	@PostMapping("/create")
+	public Result<Tag> add(@RequestBody Tag tag) {
+		return tagService.save(tag) ? Result.success(tag) : Result.error("添加失败");
+	}
+
 }
 

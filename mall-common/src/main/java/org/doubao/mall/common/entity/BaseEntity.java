@@ -1,18 +1,19 @@
 package org.doubao.mall.common.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 
 import java.time.LocalDateTime;
 
 public class BaseEntity {
-	@TableField("created_id")
+	@TableField(value = "created_id", fill = FieldFill.INSERT)
 	private Long createdId;
-	@TableField("updated_id")
+	@TableField(value = "updated_id", fill = FieldFill.INSERT_UPDATE)
 	private Long updatedId;
-	@TableField("created_time")
+	@TableField(value = "created_time", fill = FieldFill.INSERT)
 	private LocalDateTime createdTime;
-	@TableField("updated_time")
+	@TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
 	private LocalDateTime updatedTime;
 	@TableLogic
 	@TableField("deleted")
