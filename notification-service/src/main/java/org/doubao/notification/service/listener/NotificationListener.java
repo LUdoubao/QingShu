@@ -26,6 +26,11 @@ public class NotificationListener {
 		sendEmail("3082738259@qq.com", "支付成功", "您的订单已支付成功，订单号：" + orderId);
 	}
 
+	@RabbitListener(queues = "notification.quote.verify")
+	public void verifyQuote(String quoteJson) throws MessagingException {
+		sendEmail("3082738259@qq.com", "引文审核通知", "您有待审核的引文，引文信息：" + quoteJson);
+	}
+
 	private void sendEmail(String to, String subject, String content) throws MessagingException {
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);

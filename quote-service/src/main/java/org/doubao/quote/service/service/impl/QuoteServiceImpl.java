@@ -1,17 +1,21 @@
 package org.doubao.quote.service.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
+import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.entity.Category;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.entity.QuoteTag;
 import org.doubao.quote.service.entity.Tag;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
+import org.doubao.quote.service.messaging.QuoteEventPublisher;
 import org.doubao.quote.service.service.CategoryService;
 import org.doubao.quote.service.service.QuoteService;
 import org.doubao.quote.service.vo.QuoteVo;
@@ -19,15 +23,14 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements QuoteService {
 
+	@Resource
+	private QuoteEventPublisher quoteEventPublisher;
 	@Resource
 	private QuoteTagMapper quoteTagMapper;
 
@@ -48,6 +51,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getDeleted, 0)
+				.eq(Quote::getStatus,1)
 				.orderByDesc(Quote::getCreatedTime);
 
 		if (category != null) {
@@ -113,17 +117,18 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public Quote addQuote(QuoteDTO dto) {
+	public Result<Quote> addQuote(QuoteDTO dto) {
 		Quote q = new Quote();
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
 		q.setCategoryId(dto.getCategoryId());
+		q.setStatus(1);
 		this.save(q);
 		Long qId = q.getId();
 		List<Long> tagIds = dto.getTagIds();
+		List<QuoteTag> quoteTags = new ArrayList<>();
 		if (tagIds != null && !tagIds.isEmpty()) {
-			List<QuoteTag> quoteTags = new ArrayList<>();
 			for (Long tagId : tagIds) {
 				QuoteTag qt = new QuoteTag();
 				qt.setQuoteId(qId);
@@ -132,6 +137,64 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteTagMapper.insertBatch(quoteTags);
 		}
-		return q;
+		quoteEventPublisher.publishQuoteAdd(q, quoteTags);
+
+		return Result.success(q);
+	}
+
+	@Override
+	public Result<String> deleteQuote(List<Long> quoteIds) {
+		if (quoteIds == null || quoteIds.isEmpty()) {
+			return Result.error(ResultCode.FAIL.getCode(), ResultCode.FAIL.getMessage());
+		}
+		this.removeByIds(quoteIds);
+		quoteTagMapper.deleteBatchIds(quoteIds);
+		return Result.success(ResultCode.SUCCESS.getMessage());
+	}
+
+	@Override
+	public Result<String> updateQuote(QuoteUpdateDto dto) {
+		//更新引文状态为待审核
+		Long quoteId = dto.getQuoteId();
+		LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<Quote>();
+		updateWrapper.eq(Quote::getId, quoteId);
+		updateWrapper.set(Quote::getStatus, 0);
+		this.update(updateWrapper);
+		//推送审核信息到邮箱
+		quoteEventPublisher.publishQuoteVerify(dto);
+		return Result.success(ResultCode.SUCCESS.getMessage());
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Result<QuoteVo> getDetailById(Long id) {
+		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
+				.eq(Quote::getDeleted, 0)
+				.eq(Quote::getId, id)
+				.eq(Quote::getStatus,1)
+				.orderByDesc(Quote::getCreatedTime);
+		Quote quote = this.getOne(queryWrapper);
+		QuoteVo quoteVo = new QuoteVo();
+		if (quote != null) {
+			BeanUtils.copyProperties(quote, quoteVo);
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
+			Long categoryId = quoteVo.getCategoryId();
+			Category category = categoryService.getById(categoryId);
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+			quoteVo.setCategoryName(category.getName());
+			quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+		}
+		return Result.success(quoteVo);
 	}
 }

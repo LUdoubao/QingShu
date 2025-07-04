@@ -10,12 +10,33 @@ import org.doubao.quote.service.entity.Tag;
 import java.util.List;
 
 public class QuoteVo extends BaseEntity {
+	/**
+	 * 引文id
+	 */
 	private Long id;
+	/**
+	 * 引文内容
+	 */
 	private String content;
+	/**
+	 * 引文作者
+	 */
 	private String author;
+	/**
+	 * 引文来源
+	 */
 	private String source;
+	/**
+	 * 分类名称
+	 */
 	private String categoryName;
+	/**
+	 * 分类id
+	 */
 	private Long categoryId;
+	/**
+	 * 标签列表
+	 */
 	private List<Tag> tags;
 
 	public List<Tag> getTags() {
@@ -72,5 +93,18 @@ public class QuoteVo extends BaseEntity {
 
 	public void setSource(String source) {
 		this.source = source;
+	}
+
+	@Override
+	public String toString() {
+		return "QuoteVo{" +
+				"id=" + id +
+				", content='" + content + '\'' +
+				", author='" + author + '\'' +
+				", source='" + source + '\'' +
+				", categoryName='" + categoryName + '\'' +
+				", categoryId=" + categoryId +
+				", tags=" + tags +
+				'}';
 	}
 }

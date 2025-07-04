@@ -22,6 +22,16 @@ public class Quote extends BaseEntity {
 	private String source;
 	@TableField("category_id")
 	private Long categoryId;
+	@TableField("status")
+	private int status;
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
 
 	public Long getCategoryId() {
 		return categoryId;
