@@ -28,7 +28,12 @@ public class NotificationListener {
 
 	@RabbitListener(queues = "notification.quote.verify")
 	public void verifyQuote(String quoteJson) throws MessagingException {
-		sendEmail("3082738259@qq.com", "引文审核通知", "您有待审核的引文，引文信息：" + quoteJson);
+		sendEmail("3082738259@qq.com", "审核引文通知", "您有待审核的引文，引文信息：" + quoteJson);
+	}
+
+	@RabbitListener(queues = "notification.quote.add")
+	public void addQuote(String quoteJson) throws MessagingException {
+		sendEmail("3082738259@qq.com", "新增引文通知", "有新引文添加，引文信息：" + quoteJson);
 	}
 
 	private void sendEmail(String to, String subject, String content) throws MessagingException {

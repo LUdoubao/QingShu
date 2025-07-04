@@ -33,11 +33,24 @@ public class RabbitConfig {
 	public Queue quoteVerifyQueue() {
 		return new Queue("notification.quote.verify", true);
 	}
+
+	@Bean
+	public Queue quoteAddQueue() {
+		return new Queue("notification.quote.add", true);
+	}
+
 	@Bean
 	public Binding quoteVerifyBinding() {
 		return BindingBuilder.bind(quoteVerifyQueue())
 				.to(quoteExchange())
 				.with("quote.verify").noargs();
+	}
+
+	@Bean
+	public Binding quoteAddBinding() {
+		return BindingBuilder.bind(quoteAddQueue())
+				.to(quoteExchange())
+				.with("quote.add").noargs();
 	}
 
 	@Bean

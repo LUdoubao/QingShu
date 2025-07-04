@@ -18,6 +18,7 @@ import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
 import org.doubao.quote.service.service.CategoryService;
 import org.doubao.quote.service.service.QuoteService;
+import org.doubao.quote.service.util.QuoteUtil;
 import org.doubao.quote.service.vo.QuoteVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -154,6 +155,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Override
 	public Result<String> updateQuote(QuoteUpdateDto dto) {
+		// 判断是否为管理员TODO
 		//更新引文状态为待审核
 		Long quoteId = dto.getQuoteId();
 		LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<Quote>();
