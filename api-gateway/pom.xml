@@ -42,6 +42,12 @@
 <!--            <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>-->
 <!--        </dependency>-->
 
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt</artifactId>
+            <version>0.9.1</version>
+        </dependency>
         <!-- ⭐ 关键：Gateway中支持 Resilience4j 熔断 的依赖 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

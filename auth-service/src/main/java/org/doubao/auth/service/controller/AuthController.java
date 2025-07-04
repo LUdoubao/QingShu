@@ -17,6 +17,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
@@ -37,16 +38,16 @@ public class AuthController {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("用户名或密码错误");
 		}
 		LOGGER.info("用户 {} 登录成功", user.getUsername());
-		String token = jwtUtil.generateToken(user.getUsername());
+		String token = jwtUtil.generateToken(user);
 		return ResponseEntity.ok(Result.success(Collections.singletonMap("token", token)));
 	}
 
 	@GetMapping("/verify")
-	public ResponseEntity<String> verify(@RequestParam String token) {
+	public ResponseEntity<Map<String, Object>> verify(@RequestParam String token) {
 		try {
 			LOGGER.info("进入 /auth/verify，收到 token: {}", token);
-			String username = jwtUtil.getUsernameFromToken(token);
-			return ResponseEntity.ok(username);
+			Claims claims = jwtUtil.getUsernameFromToken(token);
+			return ResponseEntity.ok(claims);
 		} catch (JwtException e) {
 			LOGGER.error("token验证失败",e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

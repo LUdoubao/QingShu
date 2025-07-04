@@ -1,5 +1,7 @@
 package org.doubao.api.gateway.filter;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.impl.DefaultClaims;
 import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
@@ -67,14 +70,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 						Mono.error(new RuntimeException("Token validation failed: " +
 								clientResponse.statusCode()))
 				)
-				.bodyToMono(String.class)  // 将响应体转换为String类型
-				.flatMap(userName -> {     // 处理验证成功的情况
+				.bodyToMono(DefaultClaims.class)  // 将响应体转换为String类型
+				.flatMap(claims -> {     // 处理验证成功的情况
 					// 修改原始请求：添加用户名头
 					ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-							.header("userName", userName)  // 添加已验证的用户名
+							.header("X-User-Id", claims.get("userId").toString())
+							.header("X-User-Name", claims.get("username").toString())
 							.build();
 
-					LOG.info("token校验成功：接口路径：{}，用户名：{}", path, userName);
+					LOG.info("token校验成功：接口路径：{}，用户名：{}", path, claims.get("username").toString());
 					// 使用修改后的请求继续过滤器链处理
 					return chain.filter(exchange.mutate().request(mutatedRequest).build());
 				})

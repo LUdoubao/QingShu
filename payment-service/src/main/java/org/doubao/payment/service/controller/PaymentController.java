@@ -2,7 +2,6 @@ package org.doubao.payment.service.controller;
 
 import org.doubao.mall.common.entity.Result;
 import org.doubao.payment.service.dto.PaymentRecordDto;
-import org.doubao.payment.service.entity.PaymentRecord;
 import org.doubao.payment.service.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
