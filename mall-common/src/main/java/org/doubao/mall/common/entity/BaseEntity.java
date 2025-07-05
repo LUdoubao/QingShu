@@ -15,9 +15,7 @@ public class BaseEntity {
 	private LocalDateTime createdTime;
 	@TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
 	private LocalDateTime updatedTime;
-	@TableLogic
-	@TableField("deleted")
-	private Integer deleted;
+
 
 	public Long getCreatedId() {
 		return createdId;
@@ -51,11 +49,4 @@ public class BaseEntity {
 		this.updatedTime = updatedTime;
 	}
 
-	public Integer getDeleted() {
-		return deleted;
-	}
-
-	public void setDeleted(Integer deleted) {
-		this.deleted = deleted;
-	}
 }

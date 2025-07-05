@@ -6,11 +6,29 @@ import java.util.List;
 
 @Data
 public class QuoteDTO {
+	private Long id;
 	private String content;
 	private String author;
 	private String source;
 	private Long categoryId;
 	private List<Long> tagIds;
+	private int status;
+
+	public int getStatus() {
+		return status;
+	}
+
+	public void setStatus(int status) {
+		this.status = status;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 
 	public Long getCategoryId() {
 		return categoryId;

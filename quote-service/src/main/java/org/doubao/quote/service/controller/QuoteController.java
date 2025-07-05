@@ -49,5 +49,19 @@ public class QuoteController {
 	public Result<QuoteVo> detail(@PathVariable Long id) {
 		return quoteService.getDetailById(id);
 	}
+
+	@PostMapping("/verify")
+	public Result<String> verify(@RequestBody QuoteDTO dto) {
+		return quoteService.verify(dto);
+	}
+	@GetMapping("/verifyDetail/{id}")
+	public Result<QuoteVo> verifyDetail(@PathVariable Long id) {
+		return quoteService.getVerifyDetailById(id);
+	}
+	@PostMapping("/verify/list")
+	public Result<Page<QuoteVo>> verifyPage(@RequestBody PageDto pageDto) {
+		return quoteService.verifyPage(pageDto);
+	}
+
 }
 

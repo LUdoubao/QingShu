@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfo;
@@ -11,21 +12,18 @@ import org.doubao.mall.common.util.UserContext;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
-import org.doubao.quote.service.entity.Category;
-import org.doubao.quote.service.entity.Quote;
-import org.doubao.quote.service.entity.QuoteTag;
-import org.doubao.quote.service.entity.Tag;
+import org.doubao.quote.service.entity.*;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
-import org.doubao.quote.service.service.CategoryService;
-import org.doubao.quote.service.service.QuoteService;
-import org.doubao.quote.service.util.QuoteUtil;
+import org.doubao.quote.service.service.*;
 import org.doubao.quote.service.vo.QuoteVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,14 +34,19 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	private QuoteEventPublisher quoteEventPublisher;
 	@Resource
 	private QuoteTagMapper quoteTagMapper;
+	@Resource
+	private QuoteTagService quoteTagService;
+	@Resource
+	private TagService tagService;
 
+	@Resource
+	private QuoteVerifyService quoteVerifyService;
 	@Resource
 	private CategoryService categoryService;
 
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<Page<QuoteVo>> page(PageDto pageDto) {
-
 		LambdaQueryWrapper<Quote> queryWrapper = buildQueryWrapper(pageDto);
 		if (queryWrapper == null) {
 			return Result.error("参数不合法");
@@ -90,13 +93,46 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Override
 	public Result<String> updateQuote(QuoteUpdateDto dto) {
-		// 判断是否为管理员TODO
-		//更新引文状态为待审核
-		Long quoteId = dto.getQuoteId();
-		LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<Quote>();
-		updateWrapper.eq(Quote::getId, quoteId);
-		updateWrapper.set(Quote::getStatus, 0);
-		this.update(updateWrapper);
+		UserInfo userInfo = UserContext.getUser();
+		QuoteVo afterQuoteVo = dto.getAfterQuoteVo();
+		Quote quote = new Quote();
+		BeanUtils.copyProperties(afterQuoteVo, quote);
+		List<Tag> tags = afterQuoteVo.getTags();
+		if (userInfo.getUserId().equals("1") && userInfo.getUsername().equals("admin")) {
+			// 管理员直接保存
+			quote.setStatus(1);
+			this.updateById(quote);
+			List<QuoteTag> quoteTags = new ArrayList<>();
+			if (tags != null && !tags.isEmpty()) {
+				for (Tag tag : tags) {
+					QuoteTag qt = new QuoteTag();
+					qt.setQuoteId(afterQuoteVo.getId());
+					qt.setTagId(tag.getId());
+					quoteTags.add(qt);
+				}
+				saveOrUpdateQuoteTags(quoteTags);
+			}
+		} else {
+			//非管理员更新引文状态为待审核
+			Long quoteId = dto.getQuoteId();
+			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<Quote>();
+			updateWrapper.eq(Quote::getId, quoteId);
+			updateWrapper.set(Quote::getStatus, 0);
+			this.update(updateWrapper);
+			// 同步到审核表
+			QuoteVerify quoteVerify = new QuoteVerify();
+			BeanUtils.copyProperties(quote,quoteVerify);
+			quoteVerify.setUpdatedTime(LocalDateTime.now());
+			if (tags != null && !tags.isEmpty()) {
+				String tag = tags.stream().map(Tag::getId)
+						.map(String::valueOf)
+						.collect(Collectors.joining(","));
+				quoteVerify.setTag(tag);
+			}
+			quoteVerifyService.save(quoteVerify);
+			// 推送消息到用户消息中心TODO
+		}
+
 		//推送审核信息到邮箱
 		quoteEventPublisher.publishQuoteVerify(dto);
 		return Result.success(ResultCode.SUCCESS.getMessage());
@@ -148,6 +184,89 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return query(pageDto, queryWrapper);
 	}
 
+	@Override
+	@Transactional
+	public Result<String> verify(QuoteDTO dto) {
+		int status = dto.getStatus();
+		if (status != 0 && status != 1) {
+			return Result.error("参数不合法");
+		}
+
+		Long quoteId = dto.getId();
+
+		switch (status) {
+			case 0:
+				// 审核不通过
+				// 引文表状态恢复1
+				LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
+				updateWrapper.eq(Quote::getId, quoteId)
+						.set(Quote::getStatus, 1);
+				this.update(updateWrapper);
+				break;
+			default:
+				Quote quote = this.getById(quoteId);
+				quote.setStatus(1);
+				List<Long> tagIds = dto.getTagIds();
+				List<QuoteTag> quoteTags = new ArrayList<>();
+				if (tagIds != null && !tagIds.isEmpty()) {
+					for (Long tagId : tagIds) {
+						QuoteTag qt = new QuoteTag();
+						qt.setQuoteId(quoteId);
+						qt.setTagId(tagId);
+						quoteTags.add(qt);
+					}
+					saveOrUpdateQuoteTags(quoteTags);
+				}
+				this.updateById(quote);
+				break;
+		}
+		// 删除审核表数据
+		LambdaQueryWrapper<QuoteVerify> wrapper = new LambdaQueryWrapper<>();
+		wrapper.eq(QuoteVerify::getId, quoteId);
+		quoteVerifyService.remove(wrapper);
+		// 推送消息到用户消息中心TODO
+		return Result.success(ResultCode.SUCCESS.getMessage());
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Result<QuoteVo> getVerifyDetailById(Long id) {
+		LambdaQueryWrapper<QuoteVerify> queryWrapper = new LambdaQueryWrapper<QuoteVerify>()
+				.eq(QuoteVerify::getId, id);
+		QuoteVerify quoteVerify = quoteVerifyService.getOne(queryWrapper);
+		QuoteVo quoteVo = new QuoteVo();
+		if (quoteVerify != null) {
+			BeanUtils.copyProperties(quoteVerify, quoteVo);
+			String verifyTag = quoteVerify.getTag();
+			List<Tag> tags = new ArrayList<>();
+			if (StringUtils.isNotEmpty(verifyTag)) {
+				String[] split = verifyTag.split(",");
+				List<Long> tagIdList = Arrays.stream(split)
+						.map(Long::valueOf)
+						.collect(Collectors.toList());
+				tags = tagService.listByIds(tagIdList);
+			}
+			Long categoryId = quoteVo.getCategoryId();
+			Category category = categoryService.getById(categoryId);
+			quoteVo.setCategoryName(category.getName());
+
+			if (!tags.isEmpty()) {
+				quoteVo.setTags(tags);
+			}
+		}
+		return Result.success(quoteVo);
+	}
+
+	@Override
+	public Result<Page<QuoteVo>> verifyPage(PageDto pageDto) {
+		LambdaQueryWrapper<QuoteVerify> queryWrapper = buildQueryVerifyWrapper(pageDto);
+		if (queryWrapper == null) {
+			return Result.error("参数不合法");
+		}
+
+		return queryVerify(pageDto, queryWrapper);
+	}
+
 	@SuppressWarnings("unchecked")
 	private LambdaQueryWrapper<Quote> buildQueryWrapper(PageDto pageDto) {
 		int page = pageDto.getPage();
@@ -166,6 +285,26 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 		if (category != null) {
 			queryWrapper.eq(Quote::getCategoryId, category);
+		}
+		return queryWrapper;
+	}
+
+	@SuppressWarnings("unchecked")
+	private LambdaQueryWrapper<QuoteVerify> buildQueryVerifyWrapper(PageDto pageDto) {
+		int page = pageDto.getPage();
+		int size = pageDto.getSize();
+		Long category = pageDto.getCategoryId();
+		List<Long> tagIds = pageDto.getTagIds();
+
+		if (page < 1 || size <= 0) {
+			return null;
+		}
+
+		LambdaQueryWrapper<QuoteVerify> queryWrapper = new LambdaQueryWrapper<QuoteVerify>()
+				.orderByDesc(QuoteVerify::getUpdatedTime);
+
+		if (category != null) {
+			queryWrapper.eq(QuoteVerify::getCategoryId, category);
 		}
 		return queryWrapper;
 	}
@@ -230,4 +369,76 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return Result.success(pageVo);
 	}
 
+	private Result<Page<QuoteVo>> queryVerify(PageDto pageDto, LambdaQueryWrapper<QuoteVerify> queryWrapper) {
+		int page = pageDto.getPage();
+		int size = pageDto.getSize();
+		List<Long> tagIds = pageDto.getTagIds();
+		Page<QuoteVerify> pageData = quoteVerifyService.page(new Page<>(page, size), queryWrapper);
+
+		List<QuoteVerify> records = pageData.getRecords();
+
+		Page<QuoteVo> pageVo = new Page<>(pageData.getCurrent(), pageData.getSize(), pageData.getTotal());
+
+		if (!records.isEmpty()) {
+			List<QuoteVo> quoteVoList = records.stream().map(quote -> {
+				QuoteVo quoteVo = new QuoteVo();
+				BeanUtils.copyProperties(quote, quoteVo);
+				return quoteVo;
+			}).collect(Collectors.toList());
+
+			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+
+			List<String> tags = records.stream().map(QuoteVerify::getTag).collect(Collectors.toList());
+			Set<Long> hashSet = new HashSet<>();
+			for (String tag : tags) {
+				String[] tagArray = tag.split(",");
+				for (String tagId : tagArray) {
+					hashSet.add(Long.valueOf(tagId));
+				}
+			}
+			List<Tag> tagList = tagService.listByIds(hashSet);
+			Map<Long, String> tagMap = tagList.stream().collect(Collectors.toMap(Tag::getId, Tag::getName));
+
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			records.forEach(record -> {
+				Long recordId = record.getId();
+				String tag = record.getTag();
+				String[] tagArray = tag.split(",");
+				for (String tagId : tagArray) {
+					Long tagIdLong = Long.valueOf(tagId);
+					String tagName = tagMap.get(tagIdLong);
+					Tag tagObj = new Tag();
+					tagObj.setId(tagIdLong);
+					tagObj.setName(tagName);
+					quoteTagMap.computeIfAbsent(recordId, k -> new ArrayList<>()).add(tagObj);
+				}
+			});
+
+			Map<Long, String> categoryMap = new HashMap<>();
+			if (!categoryIds.isEmpty()) {
+				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
+				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
+			}
+
+			// 设置 tags 字段和分类字段
+			for (QuoteVo quoteVo : quoteVoList) {
+				quoteVo.setCategoryName(categoryMap.get(quoteVo.getCategoryId()));
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+			}
+			pageVo.setRecords(quoteVoList);
+		}
+		return Result.success(pageVo);
+	}
+	public void saveOrUpdateQuoteTags(List<QuoteTag> quoteTags) {
+		// 先删除原有关系
+		LambdaQueryWrapper<QuoteTag> wrapper = new LambdaQueryWrapper<QuoteTag>()
+				.eq(QuoteTag::getQuoteId, quoteTags.get(0).getQuoteId());
+		quoteTagMapper.delete(wrapper);
+
+		// 批量插入新关系
+		if (!quoteTags.isEmpty()) {
+			quoteTagMapper.insertBatch(quoteTags); // 使用自定义的批量插入方法
+		}
+	}
 }

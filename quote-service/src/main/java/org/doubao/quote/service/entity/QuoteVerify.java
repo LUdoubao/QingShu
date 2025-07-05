@@ -4,11 +4,11 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import org.doubao.mall.common.entity.BaseDel;
+import org.doubao.mall.common.entity.BaseEntity;
 
-@TableName("quote")
-public class Quote extends BaseDel {
-	@TableId(type = IdType.AUTO)
+@TableName("quote_verify")
+public class QuoteVerify extends BaseEntity {
+	@TableId(type = IdType.INPUT)
 	private Long id;
 	@TableField(value = "content")
 	private String content;
@@ -18,15 +18,15 @@ public class Quote extends BaseDel {
 	private String source;
 	@TableField("category_id")
 	private Long categoryId;
-	@TableField("status")
-	private int status;
+	@TableField("tag")
+	private String tag;
 
-	public int getStatus() {
-		return status;
+	public String getTag() {
+		return tag;
 	}
 
-	public void setStatus(int status) {
-		this.status = status;
+	public void setTag(String tag) {
+		this.tag = tag;
 	}
 
 	public Long getCategoryId() {

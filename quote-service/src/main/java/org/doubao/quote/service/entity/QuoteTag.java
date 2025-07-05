@@ -9,9 +9,9 @@ import lombok.Data;
 @Data
 @TableName("quote_tag")
 public class QuoteTag {
-	@TableField(value = "quoteId")
+	@TableField(value = "quote_id")
 	private Long quoteId;
-	@TableField(value = "tagId")
+	@TableField(value = "tag_id")
 	private Long tagId;
 
 	public Long getQuoteId() {
