@@ -7,6 +7,15 @@ public class PageDto {
 	private Integer size;
 	private Long categoryId;
 	private List<Long> tagIds;
+	private Long userId;
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
 
 	public List<Long> getTagIds() {
 		return tagIds;

@@ -1,6 +1,7 @@
 package org.doubao.quote.service.controller;
 
 import org.doubao.mall.common.entity.Result;
+import org.doubao.quote.service.dto.TagCountVo;
 import org.doubao.quote.service.entity.Tag;
 import org.doubao.quote.service.service.TagService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ public class TagController {
 	private TagService tagService;
 
 	@GetMapping("/list")
-	public Result<List<Tag>> list(@RequestParam(required = false) String tagName) {
+	public Result<List<TagCountVo>> list(@RequestParam(required = false) String tagName) {
 		return tagService.listByTagName(tagName);
 	}
 
