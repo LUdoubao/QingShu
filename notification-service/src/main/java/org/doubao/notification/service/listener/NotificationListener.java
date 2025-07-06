@@ -1,6 +1,13 @@
 package org.doubao.notification.service.listener;
 
-import org.doubao.notification.service.model.Order;
+import org.doubao.notification.service.entity.Notification;
+import org.doubao.notification.service.event.AuditEvent;
+import org.doubao.notification.service.event.NotificationEvent;
+import org.doubao.notification.service.event.SystemEvent;
+import org.doubao.notification.service.service.NotificationService;
+import org.doubao.notification.service.utils.NotificationFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -13,8 +20,15 @@ import javax.mail.internet.MimeMessage;
 @Component
 public class NotificationListener {
 
+	private static final Logger LOG = LoggerFactory.getLogger(NotificationListener.class);
+
 	@Autowired
 	private JavaMailSender mailSender;
+	@Autowired
+	private NotificationService notificationService;
+
+	@Autowired
+	private NotificationFormatter formatter;
 
 	@RabbitListener(queues = "notification.order.created")
 	public void handleOrderCreated(String orderJson) throws MessagingException {
@@ -45,4 +59,28 @@ public class NotificationListener {
 		helper.setText(content, false);
 		mailSender.send(message);
 	}
+
+
+	@RabbitListener(queues = "notification.queue")
+	public void handleNotificationEvent(NotificationEvent event) {
+		LOG.info("Received notification event: {}", event);
+
+		Notification notification = new Notification();
+		switch (event.getType()) {
+			case "AUDIT":
+				notification = formatter.formatAuditNotification((AuditEvent) event);
+			case "SYSTEM":
+				if (event instanceof SystemEvent) {
+					notification = formatter.formatSystemNotification((SystemEvent) event);
+				}
+				break;
+			// 其他类型处理...
+			default:
+				LOG.warn("Unsupported notification type: {}", event.getType());
+				return;
+		}
+
+		notificationService.sendNotification(notification);
+	}
+
 }

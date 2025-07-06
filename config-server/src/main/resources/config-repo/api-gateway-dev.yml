@@ -9,6 +9,10 @@ spring:
 #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/notifications/**
         - id: auth-service
           uri: lb://auth-service
           predicates:

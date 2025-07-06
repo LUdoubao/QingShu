@@ -130,7 +130,15 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				quoteVerify.setTag(tag);
 			}
 			quoteVerifyService.save(quoteVerify);
-			// 推送消息到用户消息中心TODO
+			// 推送提交更新消息到用户消息中心
+			quoteEventPublisher.pushQuoteUpdateNotification(Long.valueOf(userInfo.getUserId()),
+					"QUOTE_UPDATED", "quote",
+					quoteId, "SUCCESS", "提交修改成功");
+
+			// 推送待审核消息到管理员消息中心
+			quoteEventPublisher.pushQuoteUpdateNotification(1L,
+					"QUOTE_VERIFY", "quote",
+					quoteId, "SUCCESS", "待审核消息");
 		}
 
 		//推送审核信息到邮箱
@@ -193,7 +201,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 
 		Long quoteId = dto.getId();
-
+		UserInfo user = UserContext.getUser();
 		switch (status) {
 			case 0:
 				// 审核不通过
@@ -202,6 +210,15 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				updateWrapper.eq(Quote::getId, quoteId)
 						.set(Quote::getStatus, 1);
 				this.update(updateWrapper);
+
+				quoteEventPublisher.pushQuoteVerifyNotification(
+						quoteId,
+						dto.getContent(),
+						"REJECTED",
+						"审核驳回",
+						user.getUsername(),
+						dto.getCreatedId()
+				);
 				break;
 			default:
 				Quote quote = this.getById(quoteId);
@@ -218,6 +235,14 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 					saveOrUpdateQuoteTags(quoteTags);
 				}
 				this.updateById(quote);
+				quoteEventPublisher.pushQuoteVerifyNotification(
+						quoteId,
+						dto.getContent(),
+						"APPROVED",
+						"审核通过",
+						user.getUsername(),
+						dto.getCreatedId()
+				);
 				break;
 		}
 		// 删除审核表数据

@@ -22,6 +22,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
 		// 自动填充用户 ID（当前登录用户）从 ThreadLocal 中取
 		Long userId = getCurrentUserId(); // ↓ 下面提供方法实现
+		log.info("当前用户ID：{}", userId);
 		this.strictInsertFill(metaObject, "createdId", Long.class, userId);
 		this.strictInsertFill(metaObject, "updatedId", Long.class, userId);
 	}

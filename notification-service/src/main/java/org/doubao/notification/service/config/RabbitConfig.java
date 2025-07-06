@@ -9,6 +9,9 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitConfig {
 	public static final String BUSINESS_EXCHANGE = "business.exchange";
 	public static final String QUOTE_EXCHANGE = "quote.exchange";
+	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
+	public static final String NOTIFICATION_QUEUE = "notification.queue";
+	public static final String USER_NOTIFICATION_QUEUE_PREFIX = "notification.user.";
 
 	@Bean
 	public Exchange businessExchange() {
@@ -65,5 +68,24 @@ public class RabbitConfig {
 		return BindingBuilder.bind(orderPaymentSuccessQueue())
 				.to(businessExchange())
 				.with("payment.success").noargs();
+	}
+
+
+
+	@Bean
+	public TopicExchange notificationExchange() {
+		return new TopicExchange(NOTIFICATION_EXCHANGE);
+	}
+
+	@Bean
+	public Queue notificationQueue() {
+		return new Queue(NOTIFICATION_QUEUE, true);
+	}
+
+	@Bean
+	public Binding notificationBinding() {
+		return BindingBuilder.bind(notificationQueue())
+				.to(notificationExchange())
+				.with("notification.#");
 	}
 }

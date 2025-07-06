@@ -13,6 +13,15 @@ public class QuoteDTO {
 	private Long categoryId;
 	private List<Long> tagIds;
 	private int status;
+	private Long createdId;
+
+	public Long getCreatedId() {
+		return createdId;
+	}
+
+	public void setCreatedId(Long createdId) {
+		this.createdId = createdId;
+	}
 
 	public int getStatus() {
 		return status;
