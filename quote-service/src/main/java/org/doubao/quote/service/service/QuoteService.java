@@ -11,6 +11,7 @@ import org.doubao.quote.service.vo.QuoteVo;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 
 public interface QuoteService extends IService<Quote> {
 	Result<Page<QuoteVo>> page(PageDto pageDto);
@@ -30,4 +31,6 @@ public interface QuoteService extends IService<Quote> {
 	Result<QuoteVo> getVerifyDetailById(Long id);
 
 	Result<Page<QuoteVo>> verifyPage(PageDto pageDto);
+
+	Result<List<Map<String, Object>>> batch(List<Long> ids);
 }

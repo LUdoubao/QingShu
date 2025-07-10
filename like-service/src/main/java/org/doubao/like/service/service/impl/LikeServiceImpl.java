@@ -12,6 +12,7 @@ import org.doubao.like.service.entity.LikeRecord;
 import org.doubao.like.service.enums.EntityTypeEnum;
 import org.doubao.like.service.enums.LikeAction;
 import org.doubao.like.service.exception.RateLimitException;
+import org.doubao.like.service.feign.QuoteServiceClient;
 import org.doubao.like.service.mapper.LikeCountMapper;
 import org.doubao.like.service.mapper.LikeRecordMapper;
 import org.doubao.like.service.messaging.LikeEventPublisher;
@@ -19,6 +20,8 @@ import org.doubao.like.service.service.LikeService;
 import org.doubao.like.service.utils.RateLimiterUtil;
 import org.doubao.like.service.utils.RedisKeyUtil;
 import org.doubao.mall.common.constant.Constants;
+import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
@@ -46,6 +49,8 @@ import java.util.stream.Collectors;
 @Service
 public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> implements LikeService  {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LikeServiceImpl.class);
+	@Resource
+	private QuoteServiceClient quoteServiceClient;
 	@Resource
 	private RedisTemplate<String, Object> redisTemplate;
 	@Autowired
@@ -485,29 +490,33 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			contentScoreMap.put(contentId, score);
 		});
 
-		// 3. 批量查询文案基础信息（避免N+1查询）
-		// feign调用quote-service服务
-		List<Map<String, Object>> contents= new ArrayList<>();
-		// List<Content> contents = contentMapper.selectBatchIds(contentIds);
-		// if (CollectionUtils.isEmpty(contents)) {
-		// 	return Collections.emptyList();
-		// }
+		// 3. Feign批量查询文案基础信息
+		Result<List<Map<String, Object>>> quoteResult = quoteServiceClient.getQuotesByIds(contentIds);
+		if (quoteResult == null || !Objects.equals(quoteResult.getCode(), ResultCode.SUCCESS.getCode()) || CollectionUtils.isEmpty(quoteResult.getData())) {
+			LOGGER.error("获取文案信息失败: {}", quoteResult);
+			return Collections.emptyList();
+		}
 
-		// 4. 获取排名变化数据（需对比上次排名）
+		List<Map<String, Object>> quotes = quoteResult.getData();
+
+		// 4. 获取排名变化数据
 		Map<Long, Integer> rankChangeMap = getRankChanges(contentIds);
 
 		// 5. 组装响应数据
-		List<HotContentResponse.HotContentItem> items = new ArrayList<>();
-		contents.forEach(content -> {
-			items.add(HotContentResponse.buildItem(
-					Long.valueOf(String.valueOf(content.get("id"))),
-					contentScoreMap.get(content.get("id")),
-					rankChangeMap.get(content.get("id"))
-			));
-		});
+		List<Map<String, Object>> hotContents = quotes.stream()
+				.map(quote -> {
+					Long quoteId = Long.parseLong(quote.get("id").toString());
+					Map<String, Object> item = new HashMap<>(quote);
+					item.put("likeCount", contentScoreMap.getOrDefault(quoteId, 0));
+					item.put("rankChange", rankChangeMap.getOrDefault(quoteId, null));
+					return item;
+				})
+				.collect(Collectors.toList());
 
 		// 6. 返回标准化响应
-		return Collections.singletonList(HotContentResponse.of(items));
+		HotContentResponse response = new HotContentResponse();
+		response.setHotContents(hotContents);
+		return Collections.singletonList(response);
 	}
 
 	/**

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/quote")
@@ -61,6 +62,12 @@ public class QuoteController {
 	@PostMapping("/verify/list")
 	public Result<Page<QuoteVo>> verifyPage(@RequestBody PageDto pageDto) {
 		return quoteService.verifyPage(pageDto);
+	}
+
+
+	@PostMapping("/batch")
+	public Result<List<Map<String, Object>>> batch(@RequestBody List<Long> ids) {
+		return quoteService.batch(ids);
 	}
 
 }

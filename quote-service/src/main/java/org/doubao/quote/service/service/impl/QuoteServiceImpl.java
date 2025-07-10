@@ -230,11 +230,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				Long tagId = ((Number) map.get("tag_id")).longValue();
 				String tagName = (String) map.get("tag_name");
 
-				// if (tagIds != null && !tagIds.contains(tagId)) {
-				// 	removeQuoteIds.add(quoteId);
-				// 	continue;
-				// }
-
 				Tag tag = new Tag();
 				tag.setId(tagId);
 				tag.setName(tagName);
@@ -347,6 +342,64 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	public Result<Page<QuoteVo>> verifyPage(PageDto pageDto) {
 		return queryVerify(pageDto);
+	}
+
+	@Override
+	public Result<List<Map<String, Object>>> batch(List<Long> ids) {
+		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
+				.in(Quote::getId, ids);
+		List<Quote> quotes = this.list(queryWrapper);
+
+		List<Map<String, Object>> mapList = new ArrayList<>();
+		if (!quotes.isEmpty()) {
+			List<QuoteVo> quoteVoList = quotes.stream().map(quote -> {
+				QuoteVo quoteVo = new QuoteVo();
+				BeanUtils.copyProperties(quote, quoteVo);
+				return quoteVo;
+			}).collect(Collectors.toList());
+
+			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
+			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
+			Map<Long, String> categoryMap = new HashMap<>();
+			if (!categoryIds.isEmpty()) {
+				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
+				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
+			}
+
+			// 构建 quoteId -> List<Tag>
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+
+			// 设置 tags 字段
+			for (QuoteVo quoteVo : quoteVoList) {
+				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+			}
+			//quoteVoList转mapList
+			mapList = quoteVoList.stream().map(quoteVo -> {
+				Map<String, Object> map = new HashMap<>();
+				map.put("id", quoteVo.getId());
+				map.put("content", quoteVo.getContent());
+				map.put("author", quoteVo.getAuthor());
+				map.put("source", quoteVo.getSource());
+				map.put("categoryName", quoteVo.getCategoryName());
+				map.put("tags", quoteVo.getTags());
+				return map;
+			}).collect(Collectors.toList());
+		}
+		return Result.success(mapList);
 	}
 
 	@SuppressWarnings("unchecked")
