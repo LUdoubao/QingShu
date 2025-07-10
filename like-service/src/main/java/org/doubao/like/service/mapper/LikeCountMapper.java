@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.doubao.like.service.entity.LikeCount;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Mapper
 public interface LikeCountMapper  extends BaseMapper<LikeCount> {
@@ -15,5 +16,8 @@ public interface LikeCountMapper  extends BaseMapper<LikeCount> {
 					@Param("oldCount") int oldCount,
 					@Param("now") LocalDateTime now);
 
-	void updateSync(LikeCount likeCount);
+	void updateSync(@Param("likeCount") LikeCount likeCount);
+
+	// 批量更新点赞计数
+	int batchUpdateCounts(@Param("list") List<LikeCount> likeCounts);
 }

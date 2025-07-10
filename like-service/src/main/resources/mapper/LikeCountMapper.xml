@@ -40,5 +40,24 @@
         AND entity_id = #{likeCount.entityId}
     </update>
 
+    <update id="batchUpdateCounts">
+        UPDATE like_counts
+        SET count = CASE
+        <foreach collection="list" item="item">
+            WHEN entity_type = #{item.entityType} AND entity_id = #{item.entityId} THEN #{item.count}
+        </foreach>
+        ELSE count
+        END,
+        updated_at = CASE
+        <foreach collection="list" item="item">
+            WHEN entity_type = #{item.entityType} AND entity_id = #{item.entityId} THEN #{item.updatedAt}
+        </foreach>
+        ELSE updated_at
+        END
+        WHERE (entity_type, entity_id) IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            (#{item.entityType}, #{item.entityId})
+        </foreach>
+    </update>
 
 </mapper>
