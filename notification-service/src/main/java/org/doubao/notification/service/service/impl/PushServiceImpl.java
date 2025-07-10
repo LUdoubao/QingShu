@@ -17,10 +17,10 @@ public class PushServiceImpl implements PushService {
 
 	@Override
 	public void pushToUser(Long userId, Notification notification) {
-		String queueName = RabbitConfig.USER_NOTIFICATION_QUEUE_PREFIX + userId;
+		String routingKey = RabbitConfig.USER_NOTIFICATION_ROUTING_KEY_PREFIX + userId;
 		rabbitTemplate.convertAndSend(
 				RabbitConfig.NOTIFICATION_EXCHANGE,
-				queueName,
+				routingKey,
 				NotificationDTO.fromEntity(notification)
 		);
 	}

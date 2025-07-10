@@ -3,6 +3,7 @@ package org.doubao.notification.service.utils;
 import com.alibaba.fastjson.JSON;
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.event.AuditEvent;
+import org.doubao.notification.service.event.LikeEvent;
 import org.doubao.notification.service.event.SystemEvent;
 import org.springframework.stereotype.Component;
 
@@ -54,4 +55,22 @@ public class NotificationFormatter {
 		return notification;
 	}
 
+	public Notification formatLikeNotification(LikeEvent event) {
+		Notification notification = new Notification();
+		notification.setUserId(event.getUserId());
+		notification.setType("LIKE");
+		notification.setTitle("点赞通知");
+		Map<String, Object> content = new HashMap<>();
+		content.put("target", "like");
+		content.put("action", event.isLike());
+		content.put("entityType", event.getEntityType());
+		content.put("content", event.getContent());
+		content.put("id", event.getEntityId());
+		content.put("userName", event.getOperatorUserName());
+
+		notification.setContent(JSON.toJSONString(content));
+		notification.setSourceId(event.getEntityId());
+		notification.setSourceType(String.valueOf(event.getEntityType()));
+		return notification;
+	}
 }

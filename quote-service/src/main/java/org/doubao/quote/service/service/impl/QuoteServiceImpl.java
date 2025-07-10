@@ -95,7 +95,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		Quote quote = new Quote();
 		BeanUtils.copyProperties(afterQuoteVo, quote);
 		List<Tag> tags = afterQuoteVo.getTags();
-		if (userInfo.getUserId().equals("1") && userInfo.getUsername().equals("admin")) {
+		if (userInfo.getId().equals("1") && userInfo.getUsername().equals("admin")) {
 			// 管理员直接保存
 			quote.setStatus(1);
 			this.updateById(quote);
@@ -128,7 +128,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteVerifyService.save(quoteVerify);
 			// 推送提交更新消息到用户消息中心
-			quoteEventPublisher.pushQuoteUpdateNotification(Long.valueOf(userInfo.getUserId()),
+			quoteEventPublisher.pushQuoteUpdateNotification(Long.valueOf(userInfo.getId()),
 					"QUOTE_UPDATED", "quote",
 					quoteId, "SUCCESS", "提交修改成功");
 
@@ -178,7 +178,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Override
 	public Result<Page<QuoteVo>> pageManager(PageDto pageDto) {
-		String userId = UserContext.getUser().getUserId();
+		String userId = UserContext.getUser().getId();
 		if (!"1".equals(userId)) {
 			pageDto.setUserId(Long.valueOf(userId));
 		}

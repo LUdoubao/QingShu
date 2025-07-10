@@ -37,6 +37,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 	private Long getCurrentUserId() {
 		// 从你自定义的 UserContext 中获取当前用户 ID
 		UserInfo user = UserContext.getUser();
-		return user != null ? Long.valueOf(user.getUserId()) : null;
+		return user != null ? Long.valueOf(user.getId()) : null;
 	}
 }

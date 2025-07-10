@@ -25,7 +25,7 @@ public class UserContextFilter extends OncePerRequestFilter {
 
 		if (userId != null && username != null) {
 			UserInfo user = new UserInfo();
-			user.setUserId(userId);
+			user.setId(userId);
 			user.setUsername(username);
 			UserContext.setUser(user);
 		}

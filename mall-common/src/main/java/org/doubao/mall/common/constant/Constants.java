@@ -9,4 +9,7 @@ public class Constants {
 	public static final String USER_ID_HEADER = "X-User-Id";
 	// 用户名
 	public static final String USER_NAME_HEADER = "X-User-Name";
+
+	public static final String REDIS_USER =  "user:";
+	public static final String DEFAULT_USER_NAME =  "未知用户";
 }

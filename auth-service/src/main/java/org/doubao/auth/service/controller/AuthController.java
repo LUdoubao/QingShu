@@ -3,22 +3,23 @@ package org.doubao.auth.service.controller;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.doubao.auth.service.dto.LoginRequest;
-import org.doubao.auth.service.dto.UserInfo;
 import org.doubao.auth.service.entity.User;
 import org.doubao.auth.service.service.UserService;
 import org.doubao.auth.service.utils.JwtUtil;
+import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
+import javax.annotation.Resource;
 import java.util.Map;
 
 @RestController
@@ -30,7 +31,8 @@ public class AuthController {
 	private JwtUtil jwtUtil;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-
+	@Resource
+	private RedisTemplate<String, Object> redisTemplate;
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
 	@PostMapping("/login")
@@ -43,7 +45,10 @@ public class AuthController {
 		String token = jwtUtil.generateToken(user);
 		UserInfo userInfo = new UserInfo();
 		BeanUtils.copyProperties(user, userInfo);
+		userInfo.setId(String.valueOf(user.getId()));
 		userInfo.setToken(token);
+		String key = Constants.REDIS_USER+ user.getId();
+		redisTemplate.opsForValue().set(key, userInfo);
 		return Result.success(userInfo);
 	}
 	@GetMapping("/verify")

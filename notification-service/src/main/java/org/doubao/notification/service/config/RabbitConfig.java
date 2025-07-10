@@ -11,7 +11,9 @@ public class RabbitConfig {
 	public static final String QUOTE_EXCHANGE = "quote.exchange";
 	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
 	public static final String NOTIFICATION_QUEUE = "notification.queue";
-	public static final String USER_NOTIFICATION_QUEUE_PREFIX = "notification.user.";
+	public static final String NOTIFICATION_LIKE_QUEUE = "notification.queue.like";
+	public static final String USER_NOTIFICATION_ROUTING_KEY_PREFIX = "notification.user.";
+
 
 	@Bean
 	public Exchange businessExchange() {
@@ -83,8 +85,20 @@ public class RabbitConfig {
 	}
 
 	@Bean
+	public Queue notificationLikeQueue() {
+		return new Queue(NOTIFICATION_LIKE_QUEUE, true);
+	}
+
+	@Bean
 	public Binding notificationBinding() {
 		return BindingBuilder.bind(notificationQueue())
+				.to(notificationExchange())
+				.with("notification.#");
+	}
+
+	@Bean
+	public Binding notificationLikeBinding() {
+		return BindingBuilder.bind(notificationLikeQueue())
 				.to(notificationExchange())
 				.with("notification.#");
 	}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.like.service.mapper.LikeCountMapper">
+
+    <!-- 基本结果映射 -->
+    <resultMap id="BaseResultMap" type="org.doubao.like.service.entity.LikeCount">
+        <id column="entity_type" property="entityType" jdbcType="INTEGER"/>
+        <id column="entity_id" property="entityId" jdbcType="BIGINT"/>
+        <result column="count" property="count" jdbcType="INTEGER"/>
+        <result column="updated_at" property="updatedAt" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 乐观锁更新点赞数 -->
+    <update id="updateCount">
+        UPDATE like_counts
+        SET
+        count = CASE
+        <!-- 防负数保护 -->
+        WHEN (count + #{delta}) >= 0 THEN (count + #{delta})
+        ELSE 0
+        END,
+        updated_at = #{now}
+        WHERE
+        entity_type = #{type}
+        AND entity_id = #{id}
+        <!-- 乐观锁条件 -->
+        AND count = #{oldCount}
+    </update>
+
+    <!--  void updateSync(LikeCount likeCount);-->
+    <update id="updateSync">
+        UPDATE like_counts
+        SET
+        count = #{likeCount.count},
+        updated_at = #{likeCount.updatedAt}
+        WHERE
+        entity_type = #{likeCount.entityType}
+        AND entity_id = #{likeCount.entityId}
+    </update>
+
+
+</mapper>

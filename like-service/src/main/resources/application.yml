@@ -1,0 +1,14 @@
+server:
+  port: 9101
+spring:
+  application:
+    name: like-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/like_db?useSSL=false&serverTimezone=UTC
+    username: root
+    password: LG101799
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:"  # 关键修复！必须添加！

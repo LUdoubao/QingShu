@@ -1,15 +1,19 @@
 package org.doubao.mall.common.entity;
 
-public class UserInfo {
-	private String userId;
-	private String username;
+import java.io.Serializable;
 
-	public String getUserId() {
-		return userId;
+public class UserInfo implements Serializable {
+	private static final long serialVersionUID = 1L;
+	private String id;
+	private String username;
+	private String token;
+
+	public String getId() {
+		return id;
 	}
 
-	public void setUserId(String userId) {
-		this.userId = userId;
+	public void setId(String id) {
+		this.id = id;
 	}
 
 	public String getUsername() {
@@ -18,5 +22,13 @@ public class UserInfo {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getToken() {
+		return token;
+	}
+
+	public void setToken(String token) {
+		this.token = token;
 	}
 }

@@ -33,7 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		String username = request.getHeader("X-User-Name");
 		if (userId != null && username != null) {
 			UserInfo user = new UserInfo();
-			user.setUserId(userId);
+			user.setId(userId);
 			user.setUsername(username);
 			UserContext.setUser(user);
 		}

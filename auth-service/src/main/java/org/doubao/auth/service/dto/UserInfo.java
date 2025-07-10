@@ -1,6 +1,9 @@
 package org.doubao.auth.service.dto;
 
-public class UserInfo {
+import java.io.Serializable;
+
+public class UserInfo implements Serializable {
+	private static final long serialVersionUID = 1L;
 	private Long id;
 	private String username;
 	private String token;

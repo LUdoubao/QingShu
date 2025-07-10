@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public abstract class NotificationEvent implements Serializable {
-	private String type;           // 事件类型 (AUDIT, SYSTEM, etc.)
+	private String type;           // 事件类型 (AUDIT, SYSTEM, LIKE.)
 	private Long userId;           // 接收通知的用户ID
 	private LocalDateTime eventTime; // 事件创建时间
 

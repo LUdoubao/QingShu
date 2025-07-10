@@ -9,6 +9,10 @@ spring:
 #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: like-service
+          uri: lb://like-service
+          predicates:
+            - Path=/like/**
         - id: notification-service
           uri: lb://notification-service
           predicates:

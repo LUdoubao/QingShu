@@ -1,2 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-org.doubao.mall.common.config.UserContextAutoConfiguration
+org.doubao.mall.common.config.UserContextAutoConfiguration,\
+org.doubao.mall.common.config.ThreadPoolAutoConfiguration,\
+org.doubao.mall.common.config.RedisConfig

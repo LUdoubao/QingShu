@@ -2,6 +2,7 @@ package org.doubao.notification.service.listener;
 
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.event.AuditEvent;
+import org.doubao.notification.service.event.LikeEvent;
 import org.doubao.notification.service.event.NotificationEvent;
 import org.doubao.notification.service.event.SystemEvent;
 import org.doubao.notification.service.service.NotificationService;
@@ -74,7 +75,11 @@ public class NotificationListener {
 					notification = formatter.formatSystemNotification((SystemEvent) event);
 				}
 				break;
-			// 其他类型处理...
+			case "LIKE":
+				if (event instanceof LikeEvent) {
+					notification = formatter.formatLikeNotification((LikeEvent) event);
+				}
+				break;
 			default:
 				LOG.warn("Unsupported notification type: {}", event.getType());
 				return;
