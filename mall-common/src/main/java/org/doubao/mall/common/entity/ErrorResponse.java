@@ -23,35 +23,30 @@ import java.util.Map;
  * - 扩展元数据（可选）
  */
 public class ErrorResponse {
-	private final HttpStatus status;
-	private final String errorCode;
-	private final String message;
-	private final Instant timestamp;
-	private final Map<String, Object> metadata;
+	private HttpStatus status;
+	private String errorCode;
+	private String message;
+	private String path;
+	private Instant timestamp;
+	private Map<String, Object> metadata;
 
-	public ErrorResponse(HttpStatus status, String errorCode, String message, Instant timestamp, Map<String, Object> metadata) {
-		this.status = status;
-		this.errorCode = errorCode;
-		this.message = message;
-		this.timestamp = timestamp;
-		this.metadata = metadata;
-	}
-
-	// 私有构造方法
 	private ErrorResponse(Builder builder) {
 		this.status = builder.status;
 		this.errorCode = builder.errorCode;
 		this.message = builder.message;
-		this.timestamp = builder.timestamp;
+		this.path = builder.path;
+		this.timestamp = Instant.now();
 		this.metadata = builder.metadata;
 	}
+	public static Builder builder() {
+		return new Builder();
+	}
 
-	// ---------- Builder 实现 ----------
 	public static class Builder {
 		private HttpStatus status;
 		private String errorCode;
 		private String message;
-		private Instant timestamp = Instant.now();
+		private String path;
 		private Map<String, Object> metadata;
 
 		public Builder status(HttpStatus status) {
@@ -69,8 +64,8 @@ public class ErrorResponse {
 			return this;
 		}
 
-		public Builder timestamp(Instant timestamp) {
-			this.timestamp = timestamp;
+		public Builder path(String path) {
+			this.path = path;
 			return this;
 		}
 
@@ -84,36 +79,51 @@ public class ErrorResponse {
 		}
 	}
 
-	// ---------- 静态工厂方法 ----------
-	public static Builder builder() {
-		return new Builder();
+	public HttpStatus getStatus() {
+		return status;
 	}
 
-	/**
-	 * 从异常创建错误响应
-	 */
-	public static ErrorResponse fromException(BusinessException ex) {
-		return builder()
-				.status(ex.getHttpStatus())
-				.errorCode(ex.getErrorCode().name())
-				.message(ex.getMessage())
-				.metadata(ex.getMetadata())
-				.build();
+	public void setStatus(HttpStatus status) {
+		this.status = status;
 	}
 
-	/**
-	 * 快速创建参数错误响应
-	 */
-	public static ErrorResponse invalidParam(String field, String reason) {
-		return builder()
-				.status(HttpStatus.BAD_REQUEST)
-				.errorCode("INVALID_PARAM")
-				.message("参数校验失败: " + reason)
-				.metadata(new java.util.HashMap<String, Object>() {{
-					put("field", field);
-					put("reason", reason);
-				}})
-				.build();
+	public String getErrorCode() {
+		return errorCode;
 	}
 
+	public void setErrorCode(String errorCode) {
+		this.errorCode = errorCode;
+	}
+
+	public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
+
+	public Instant getTimestamp() {
+		return timestamp;
+	}
+
+	public void setTimestamp(Instant timestamp) {
+		this.timestamp = timestamp;
+	}
+
+	public Map<String, Object> getMetadata() {
+		return metadata;
+	}
+
+	public void setMetadata(Map<String, Object> metadata) {
+		this.metadata = metadata;
+	}
 }

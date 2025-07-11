@@ -9,10 +9,6 @@ spring:
           client-id: client
           client-secret: secret
 
-mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-
 eureka:
   client:
     register-with-eureka: true    # 启用注册

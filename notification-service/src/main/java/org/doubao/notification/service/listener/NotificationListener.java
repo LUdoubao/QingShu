@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.util.Map;
 
 @Component
 public class NotificationListener {
@@ -31,16 +32,6 @@ public class NotificationListener {
 	@Autowired
 	private NotificationFormatter formatter;
 
-	@RabbitListener(queues = "notification.order.created")
-	public void handleOrderCreated(String orderJson) throws MessagingException {
-		sendEmail("3082738259@qq.com", "订单创建成功", "您的订单已成功创建，订单信息：" + orderJson);
-	}
-
-	@RabbitListener(queues = "notification.payment.success")
-	public void paymentSuccess(Long orderId) throws MessagingException {
-		sendEmail("3082738259@qq.com", "支付成功", "您的订单已支付成功，订单号：" + orderId);
-	}
-
 	@RabbitListener(queues = "notification.quote.verify")
 	public void verifyQuote(String quoteJson) throws MessagingException {
 		sendEmail("3082738259@qq.com", "审核引文通知", "您有待审核的引文，引文信息：" + quoteJson);
@@ -49,6 +40,14 @@ public class NotificationListener {
 	@RabbitListener(queues = "notification.quote.add")
 	public void addQuote(String quoteJson) throws MessagingException {
 		sendEmail("3082738259@qq.com", "新增引文通知", "有新引文添加，引文信息：" + quoteJson);
+	}
+
+	@RabbitListener(queues = "notification.user.verification")
+	public void userNotification(Map<String, String>  message) throws MessagingException {
+		String to = message.get("to");
+		String content = message.get("content");
+		String subject = message.get("subject");
+		sendEmail(to, subject, content);
 	}
 
 	private void sendEmail(String to, String subject, String content) throws MessagingException {

@@ -14,7 +14,14 @@ public enum ErrorCode {
 	LIKE_FOUND_ERROR("LIKE_003", "点赞记录查询失败"),
 	LIKE_COUNT_UPDATE_ERROR("LIKE_003", "点赞计数更新冲突"),
 
-	CONTENT_LIMIT_REACHED("CONTENT_003", "内容创建达上限");
+	CONTENT_LIMIT_REACHED("CONTENT_003", "内容创建达上限"),
+	EMAIL_EXISTS("USER_001", "邮箱已被注册"),
+	INVALID_VERIFY_CODE("USER_002", "验证码无效或已过期"),
+	USER_DISABLED("USER_004", "用户已被禁用"),
+	OLD_PASSWORD_ERROR("USER_005", "原密码错误"),
+	USERNAME_PASSWORD_ERROR("USER_003", "用户名或密码错误"),
+	INVALID_STATUS("USER_006", "无效的状态值"),
+	INVALID_ROLE("USER_007", "无效的角色类型");
 
 
 	private String code;

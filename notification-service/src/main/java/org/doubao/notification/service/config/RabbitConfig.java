@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitConfig {
+	public static final String USER_VERIFICATION_EXCHANGE = "user.verification";
 	public static final String BUSINESS_EXCHANGE = "business.exchange";
 	public static final String QUOTE_EXCHANGE = "quote.exchange";
 	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
@@ -16,22 +17,13 @@ public class RabbitConfig {
 
 
 	@Bean
-	public Exchange businessExchange() {
-		return ExchangeBuilder.topicExchange(BUSINESS_EXCHANGE).durable(true).build();
-	}
-	@Bean
 	public Exchange quoteExchange() {
 		return ExchangeBuilder.topicExchange(QUOTE_EXCHANGE).durable(true).build();
 	}
 
 	@Bean
-	public Queue orderCreatedQueue() {
-		return new Queue("notification.order.created", true);
-	}
-
-	@Bean
-	public Queue orderPaymentSuccessQueue() {
-		return new Queue("notification.payment.success", true);
+	public Exchange userExchange() {
+		return ExchangeBuilder.topicExchange(USER_VERIFICATION_EXCHANGE).durable(true).build();
 	}
 
 	@Bean
@@ -42,6 +34,12 @@ public class RabbitConfig {
 	@Bean
 	public Queue quoteAddQueue() {
 		return new Queue("notification.quote.add", true);
+	}
+
+
+	@Bean
+	public Queue userVerificationQueue() {
+		return new Queue("notification.user.verification", true);
 	}
 
 	@Bean
@@ -59,20 +57,11 @@ public class RabbitConfig {
 	}
 
 	@Bean
-	public Binding orderCreatedBinding() {
-		return BindingBuilder.bind(orderCreatedQueue())
-				.to(businessExchange())
-				.with("order.created").noargs();
+	public Binding userVerificationBinding() {
+		return BindingBuilder.bind(userVerificationQueue())
+				.to(userExchange())
+				.with("notification.#").noargs();
 	}
-
-	@Bean
-	public Binding paymentSuccessBinding() {
-		return BindingBuilder.bind(orderPaymentSuccessQueue())
-				.to(businessExchange())
-				.with("payment.success").noargs();
-	}
-
-
 
 	@Bean
 	public TopicExchange notificationExchange() {

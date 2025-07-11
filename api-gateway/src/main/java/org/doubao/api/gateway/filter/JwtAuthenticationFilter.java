@@ -28,9 +28,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 	@Autowired
 	private WebClient.Builder webClientBuilder;
 	private static final Logger LOG = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-	private static final List<String> EXCLUDE_URLS = Collections.singletonList(
-			"/auth/"
+	private static final List<String> EXCLUDE_URLS = Arrays.asList(
+		"/auth/",
+		"/user/login",
+		"/user/register",
+		"/user/verify"
 	);
+
 
 	@Override
 	public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

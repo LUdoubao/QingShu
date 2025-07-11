@@ -1,13 +1,12 @@
 package org.doubao.auth.service;
 
-import org.mybatis.spring.annotation.MapperScan;
+import org.doubao.mall.common.config.UserContextAutoConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = UserContextAutoConfiguration.class)
 @EnableDiscoveryClient
-@MapperScan("org.doubao.auth.service.mapper")
 public class AuthServiceApplication {
 
 	public static void main(String[] args) {

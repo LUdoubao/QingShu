@@ -3,7 +3,7 @@ package org.doubao.auth.service.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.doubao.auth.service.entity.User;
+import org.doubao.mall.common.entity.UserInfo;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -14,7 +14,7 @@ import java.util.Map;
 public class JwtUtil {
 	private static final String SECRET = "doubao";
 
-	public String generateToken(User user) {
+	public String generateToken(UserInfo user) {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("username", user.getUsername());
 		claims.put("userId", user.getId());

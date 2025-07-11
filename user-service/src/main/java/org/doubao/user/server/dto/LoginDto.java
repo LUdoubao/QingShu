@@ -1,9 +1,10 @@
-package org.doubao.auth.service.dto;
+package org.doubao.user.server.dto;
 
-import lombok.Data;
+import com.baomidou.mybatisplus.annotation.TableField;
 
-@Data
-public class LoginRequest {
+import javax.validation.constraints.NotEmpty;
+
+public class LoginDto {
 	private String username;
 	private String password;
 
@@ -23,4 +24,3 @@ public class LoginRequest {
 		this.password = password;
 	}
 }
-

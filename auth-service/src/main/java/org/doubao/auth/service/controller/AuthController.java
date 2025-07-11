@@ -2,16 +2,12 @@ package org.doubao.auth.service.controller;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
-import org.doubao.auth.service.dto.LoginRequest;
-import org.doubao.auth.service.entity.User;
-import org.doubao.auth.service.service.UserService;
 import org.doubao.auth.service.utils.JwtUtil;
 import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
@@ -26,8 +22,6 @@ import java.util.Map;
 @RequestMapping("/auth")
 public class AuthController {
 	@Autowired
-	private UserService userService;
-	@Autowired
 	private JwtUtil jwtUtil;
 	@Autowired
 	private PasswordEncoder passwordEncoder;
@@ -36,18 +30,11 @@ public class AuthController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
 	@PostMapping("/login")
-	public Result<UserInfo> login(@RequestBody LoginRequest request) {
-		User user = userService.getByUsername(request.getUsername());
-		if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-			return Result.error("用户名或密码错误");
-		}
-		LOGGER.info("用户 {} 登录成功", user.getUsername());
-		String token = jwtUtil.generateToken(user);
-		UserInfo userInfo = new UserInfo();
-		BeanUtils.copyProperties(user, userInfo);
-		userInfo.setId(String.valueOf(user.getId()));
+	public Result<UserInfo> login(@RequestBody UserInfo userInfo) {
+		LOGGER.info("用户 {} 登录成功", userInfo.getUsername());
+		String token = jwtUtil.generateToken(userInfo);
 		userInfo.setToken(token);
-		String key = Constants.REDIS_USER+ user.getId();
+		String key = Constants.REDIS_USER+ userInfo.getId();
 		redisTemplate.opsForValue().set(key, userInfo);
 		return Result.success(userInfo);
 	}

@@ -32,7 +32,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 				.authorizeRequests()
 				// ✅ 放行所有以 /auth/ 开头的认证相关接口
 				// 通常包括登录、注册、获取令牌等无需认证的端点
-				.antMatchers("/auth/**").permitAll()
+				.antMatchers("/auth/**", "/user/login", "/user/register", "/user/verify").permitAll()
 				// 🛡️ 其他所有请求都需要认证才能访问
 				// 将强制所有其他请求都需要有效的认证凭据
 				.anyRequest().authenticated()

@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class BaseEntity {
+public class BaseEntity implements Serializable {
+	private static final long serialVersionUID = 1L;
 	@TableField(value = "created_id", fill = FieldFill.INSERT)
 	private Long createdId;
 	@TableField(value = "updated_id", fill = FieldFill.INSERT_UPDATE)
