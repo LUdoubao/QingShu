@@ -1,0 +1,22 @@
+server:
+  port: 9200
+spring:
+  application:
+    name: oss-service
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:"  # 关键修复！必须添加！
+oss:
+  storage:
+    type: aliyun # aliyun or local
+  # 阿里云配置
+  aliyun:
+    endpoint: oss-cn-beijing.aliyuncs.com
+    access-key-id: LTAI5tRJLT1Lr5fHLycXq9YW
+    access-key-secret: o5BT9TkluD3esZIYaChrk11F1t8Lhk
+    bucket-name: doubao-1017
+  # 本地存储配置
+  local:
+    storage-path: ${OSS_LOCAL_STORAGE_PATH:./uploads}
+    base-url: ${OSS_LOCAL_BASE_URL:http://localhost:9005/files}

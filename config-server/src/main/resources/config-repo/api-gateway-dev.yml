@@ -9,6 +9,10 @@ spring:
 #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: oss-service
+          uri: lb://oss-service
+          predicates:
+            - Path=/oss/**
         - id: like-service
           uri: lb://like-service
           predicates:
