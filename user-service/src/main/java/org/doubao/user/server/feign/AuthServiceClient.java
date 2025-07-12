@@ -15,4 +15,7 @@ public interface AuthServiceClient {
 
 	@PostMapping("/login")
 	Result<UserInfo> login(@RequestBody UserInfo userInfo);
+
+	@PostMapping("/token/expiration")
+	Result<Long> getTokenExpiration(@RequestBody String token);
 }

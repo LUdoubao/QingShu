@@ -10,9 +10,24 @@ public class UserDto {
 	private String password;
 	@Email
 	private String email;
+	private String code;
 
-	public UserDto(@Email String email, String s, String s1) {
+	public String getCode() {
+		return code;
+	}
 
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	public UserDto() {
+	}
+
+	public UserDto(String username, String password, String email, String code) {
+		this.username = username;
+		this.password = password;
+		this.email = email;
+		this.code = code;
 	}
 
 	public String getUsername() {

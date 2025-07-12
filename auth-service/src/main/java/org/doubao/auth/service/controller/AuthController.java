@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.Date;
 import java.util.Map;
 
 @RestController
@@ -42,11 +43,21 @@ public class AuthController {
 	public ResponseEntity<Map<String, Object>> verify(@RequestParam String token) {
 		try {
 			LOGGER.info("进入 /auth/verify，收到 token: {}", token);
-			Claims claims = jwtUtil.getUsernameFromToken(token);
+			Claims claims = jwtUtil.getClaimsFromToken(token);
 			return ResponseEntity.ok(claims);
 		} catch (JwtException e) {
 			LOGGER.error("token验证失败",e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+	}
+
+	@PostMapping("/token/expiration")
+	public Result<Long> getTokenExpiration(@RequestBody String token) {
+		try {
+			Date expiration = jwtUtil.getExpirationDateFromToken(token);
+			return Result.success(expiration.getTime());
+		} catch (Exception e) {
+			return Result.error("Token验证失败");
 		}
 	}
 }

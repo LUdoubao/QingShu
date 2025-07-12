@@ -1,5 +1,6 @@
 package org.doubao.user.server.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.doubao.user.server.entity.User;
 import org.springframework.beans.BeanUtils;
 
@@ -12,6 +13,7 @@ public class UserVo {
 	private String email;
 	private String signature;
 	private String avatarUrl;
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime createdTime;
 	private String token;
 	private String role;

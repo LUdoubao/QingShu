@@ -7,4 +7,8 @@
     <select id="findByEmail" resultType="org.doubao.user.server.entity.User">
         SELECT * FROM user WHERE email = #{email}
     </select>
+
+    <update id="updateUserAvatar">
+        UPDATE user SET avatar_url = #{fileUrl} WHERE id = #{userId}
+    </update>
 </mapper>

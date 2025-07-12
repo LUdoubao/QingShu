@@ -8,4 +8,6 @@ import org.doubao.user.server.entity.User;
 @Mapper
 public interface UserMapper extends BaseMapper<User> {
 	User findByEmail(@Param("email") String email);
+
+	void updateUserAvatar(@Param("userId") Long userId, @Param("fileUrl") String fileUrl);
 }

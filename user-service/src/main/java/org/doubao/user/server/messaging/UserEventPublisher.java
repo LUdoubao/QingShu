@@ -20,11 +20,11 @@ public class UserEventPublisher {
 	private RabbitTemplate rabbitTemplate;
 	public static final String USER_VERIFICATION_EXCHANGE = "user.verification";
 
-	public void sendVerificationEmail(String email, String code) {
+	public void sendVerificationEmail(String email, String code, String subject) {
 		taskExecutor.asyncExecute(() -> {
 			Map<String, String> message = new HashMap<>();
 			message.put("to", email);
-			message.put("subject", "您的注册验证码");
+			message.put("subject", subject);
 			message.put("content", "验证码：" + code + "，5分钟内有效");
 
 			rabbitTemplate.convertAndSend(USER_VERIFICATION_EXCHANGE, "user.verification", message);

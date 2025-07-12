@@ -1,25 +1,25 @@
 package org.doubao.user.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.doubao.user.server.dto.PasswordChangeDto;
-import org.doubao.user.server.dto.UserDto;
-import org.doubao.user.server.dto.UserUpdateDto;
+import org.doubao.user.server.dto.*;
 import org.doubao.user.server.entity.User;
 import org.doubao.user.server.vo.PageUserVo;
 import org.doubao.user.server.vo.UserVo;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface UserService extends IService<User> {
 	UserVo getById(Long id);
 	void register(UserDto userDto);
 
-	void completeRegistration(UserDto userDto, String code);
+	void completeRegistration(UserDto userDto);
 
 	UserVo login(String username, String password);
 
 
-	void updateProfile(Long userId, UserUpdateDto dto);
+	void updateProfile(UserUpdateDto dto);
 
 	void changePassword(Long userId, PasswordChangeDto dto);
 
@@ -30,4 +30,14 @@ public interface UserService extends IService<User> {
 	void adminDeleteUser(Long userId);
 
 	void adminUpdateRole(Long userId, String role);
+
+	void loginOut(HttpServletRequest request);
+
+	Boolean checkEmail(String email);
+
+	Boolean sendEmailVerifyCode(String email);
+
+	void updateEmail(UpdateEmailDto dto);
+
+	String uploadAvatar(MultipartFile file, Long userId);
 }

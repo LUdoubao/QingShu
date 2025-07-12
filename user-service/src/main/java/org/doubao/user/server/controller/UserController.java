@@ -7,10 +7,11 @@ import org.doubao.user.server.dto.*;
 import org.doubao.user.server.service.UserService;
 import org.doubao.user.server.vo.PageUserVo;
 import org.doubao.user.server.vo.UserVo;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 @RestController
@@ -26,11 +27,8 @@ public class UserController {
 	}
 
 	@PostMapping("/verify")
-	public Result<?> completeRegistration(@Valid @RequestBody VerifyCodeDto verifyDto) {
-		userService.completeRegistration(
-				new UserDto(verifyDto.getEmail(), "", ""),
-				verifyDto.getCode()
-		);
+	public Result<?> completeRegistration(@Valid @RequestBody UserDto userDto) {
+		userService.completeRegistration(userDto);
 		return Result.success(true);
 	}
 
@@ -44,12 +42,11 @@ public class UserController {
 		return Result.success(userService.getById(userId));
 	}
 
-	@PutMapping("/me")
+	@PutMapping("/updateInfo")
 	public Result<?> updateProfile(
-			@RequestHeader("X-User-Id") Long userId,
 			@Valid @RequestBody UserUpdateDto dto
 	) {
-		userService.updateProfile(userId, dto);
+		userService.updateProfile(dto);
 		return Result.success(true);
 	}
 
@@ -113,5 +110,32 @@ public class UserController {
 		}
 		userService.adminUpdateRole(userId, role);
 		return Result.success(true);
+	}
+
+	@PostMapping("/logout")
+	public Result<?> logout(HttpServletRequest request) {
+		userService.loginOut(request);
+		return Result.success(true);
+	}
+
+	@PostMapping("/check/email")
+	public Result<?> checkEmail(@RequestParam String email) {
+		return Result.success(userService.checkEmail(email));
+	}
+
+	@PostMapping("/send-email-verify-code")
+	public Result<?> sendEmailVerifyCode(@RequestParam String email) {
+		return Result.success(userService.sendEmailVerifyCode(email));
+	}
+
+	@PostMapping("/update-email")
+	public Result<?> updateEmail(@RequestBody UpdateEmailDto dto) {
+		userService.updateEmail(dto);
+		return Result.success(true);
+	}
+
+	@PostMapping("/upload/avatar")
+	public Result<?> uploadAvatar(@RequestParam("file") MultipartFile file, @RequestParam Long userId) {
+		return Result.success(userService.uploadAvatar(file, userId));
 	}
 }

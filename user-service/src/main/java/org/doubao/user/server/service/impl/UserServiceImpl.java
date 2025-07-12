@@ -1,29 +1,32 @@
 package org.doubao.user.server.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.mall.common.dto.UploadResult;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
-import org.doubao.user.server.dto.PasswordChangeDto;
-import org.doubao.user.server.dto.UserDto;
-import org.doubao.user.server.dto.UserUpdateDto;
+import org.doubao.user.server.dto.*;
 import org.doubao.user.server.entity.User;
 import org.doubao.user.server.feign.AuthServiceClient;
+import org.doubao.user.server.feign.OssServiceClient;
 import org.doubao.user.server.mapper.UserMapper;
 import org.doubao.user.server.messaging.UserEventPublisher;
 import org.doubao.user.server.service.UserService;
 import org.doubao.user.server.vo.PageUserVo;
 import org.doubao.user.server.vo.UserVo;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -41,16 +44,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	private UserEventPublisher userEventPublisher;
 	@Resource
 	private AuthServiceClient authServiceClient;
+
+	@Resource
+	private OssServiceClient ossServiceClient;
+
+	@Override
+	public String uploadAvatar(MultipartFile avatarFile, Long userId) {
+		UploadResult result = ossServiceClient.uploadFile(
+				avatarFile,
+				"avatars/" + userId,
+				"image"
+		).getData();
+		// 更新用户头像URL
+		userMapper.updateUserAvatar(userId, result.getFileUrl());
+		clearUserCache(userId);
+		return result.getFileUrl();
+	}
+
 	@Override
 	public UserVo getById(Long id) {
 		String cacheKey = "USER:" + id;
 		Object user = redisTemplate.opsForValue().get(cacheKey);
 		if (user == null) {
 			user = userMapper.selectById(id);
-			redisTemplate.opsForValue().set(cacheKey, user,
+			UserVo userVo = UserVo.from((User) user);
+			redisTemplate.opsForValue().set(cacheKey, userVo,
 					Duration.ofMinutes(30 + new Random().nextInt(10)));
 		}
-		return UserVo.from((User) user);
+		return JSON.toJavaObject(JSON.parseObject(JSON.toJSONString(user)),UserVo.class);
 	}
 
 	@Override
@@ -60,19 +81,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			throw new BusinessException("邮箱已被注册", ErrorCode.EMAIL_EXISTS);
 		}
 
-		// 生成验证码（6位数字）
-		String code = String.format("%06d", new Random().nextInt(999999));
-
-		// 发送验证邮件
-		userEventPublisher.sendVerificationEmail(userDto.getEmail(), code);
-
-		// 存储验证码到Redis（5分钟有效）
-		String redisKey = "VERIFY_CODE:" + userDto.getEmail();
-		redisTemplate.opsForValue().set(redisKey, code, 5, TimeUnit.MINUTES);
+		sendEmailCodeAndSave(userDto.getEmail(), "您的注册验证码");
 	}
 
 	@Override
-	public void completeRegistration(UserDto userDto, String code) {
+	public void completeRegistration(UserDto userDto) {
+		String code = userDto.getCode();
 		String redisKey = "VERIFY_CODE:" + userDto.getEmail();
 		String storedCode = (String) redisTemplate.opsForValue().get(redisKey);
 
@@ -115,12 +129,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
-	public void updateProfile(Long userId, UserUpdateDto dto) {
+	public void updateProfile(UserUpdateDto dto) {
 		User user = new User();
-		user.setId(userId);
+		user.setId(dto.getUserId());
 		BeanUtils.copyProperties(dto, user);
 		userMapper.updateById(user);
-		clearUserCache(userId);
+		clearUserCache(dto.getUserId());
 	}
 
 	@Override
@@ -193,10 +207,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		clearUserCache(userId);
 	}
 
+	@Override
+	public void loginOut(HttpServletRequest request) {
+		// 获取token
+		String token = request.getHeader("Authorization");
+		if (token != null && token.startsWith("Bearer ")) {
+			token = token.substring(7);
+			Long expirationTime = authServiceClient.getTokenExpiration(token).getData();
+			Long currentTime = System.currentTimeMillis();
+			long ttl = expirationTime - currentTime;
 
+			if (ttl > 0) {
+				redisTemplate.opsForValue().set("BLACKLIST:" + token, "invalid", ttl, TimeUnit.MILLISECONDS);
+			}
+		}
+	}
+
+	@Override
+	public Boolean checkEmail(String email) {
+		return userMapper.findByEmail(email) == null;
+	}
+
+	@Override
+	public Boolean sendEmailVerifyCode(String email) {
+		sendEmailCodeAndSave(email, "您的修改邮箱验证码");
+		return true;
+	}
+
+	@Override
+	public void updateEmail(UpdateEmailDto dto) {
+		String redisKey = "VERIFY_CODE:" + dto.getEmail();
+		String storedCode = (String) redisTemplate.opsForValue().get(redisKey);
+
+		if (storedCode == null || !storedCode.equals(dto.getCode())) {
+			throw new BusinessException("验证码无效或已过期", ErrorCode.INVALID_VERIFY_CODE);
+		}
+		User user = new User();
+		user.setId(dto.getUserId());
+		user.setEmail(dto.getEmail());
+		userMapper.updateById(user);
+	}
 
 	private void clearUserCache(Long userId) {
 		String cacheKey = "USER:" + userId;
 		redisTemplate.delete(cacheKey);
+	}
+
+	private void sendEmailCodeAndSave(String email, String subject) {
+		// 生成验证码（6位数字）
+		String code = String.format("%06d", new Random().nextInt(999999));
+		// 发送验证邮件
+		userEventPublisher.sendVerificationEmail(email, code, subject);
+		// 存储验证码到Redis（5分钟有效）
+		String redisKey = "VERIFY_CODE:" + email;
+		redisTemplate.opsForValue().set(redisKey, code, 5, TimeUnit.MINUTES);
 	}
 }

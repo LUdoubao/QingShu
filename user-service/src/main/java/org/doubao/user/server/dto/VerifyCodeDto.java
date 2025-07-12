@@ -13,6 +13,7 @@ public class VerifyCodeDto {
 	@Length(min = 6, max = 6)
 	private String code;
 
+
 	public @Email String getEmail() {
 		return email;
 	}

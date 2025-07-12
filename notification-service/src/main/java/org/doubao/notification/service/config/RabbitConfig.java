@@ -60,7 +60,7 @@ public class RabbitConfig {
 	public Binding userVerificationBinding() {
 		return BindingBuilder.bind(userVerificationQueue())
 				.to(userExchange())
-				.with("notification.#").noargs();
+				.with("user.verification").noargs();
 	}
 
 	@Bean

@@ -3,9 +3,18 @@ package org.doubao.user.server.dto;
 import org.doubao.user.server.entity.User;
 
 public class UserUpdateDto {
+	private Long userId;
 	private String nickname;
 	private String signature;
 	private String avatarUrl;
+
+	public Long getUserId() {
+		return userId;
+	}
+
+	public void setUserId(Long userId) {
+		this.userId = userId;
+	}
 
 	public String getNickname() {
 		return nickname;
