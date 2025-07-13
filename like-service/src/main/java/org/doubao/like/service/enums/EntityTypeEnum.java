@@ -34,4 +34,13 @@ public enum EntityTypeEnum {
 		}
 		return null;
 	}
+
+	public static EntityTypeEnum getByName(String name) {
+		for (EntityTypeEnum value : EntityTypeEnum.values()) {
+			if (value.getName().equals(name)) {
+				return value;
+			}
+		}
+		return null;
+	}
 }

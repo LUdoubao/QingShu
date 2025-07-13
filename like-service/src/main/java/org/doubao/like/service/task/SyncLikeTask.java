@@ -41,6 +41,10 @@ public class SyncLikeTask {
 			LOGGER.info("没有点赞数据需要同步");
 			return;
 		}
+
+		for (String key : keys) {
+			LOGGER.info("key: {}", key);
+		}
 		batchSyncLikeCounts(keys);
 
 		LOGGER.info("同步点赞数据完成,time:{}", LocalDateTime.now());
@@ -54,7 +58,7 @@ public class SyncLikeTask {
 			try {
 				// 解析实体信息
 				String[] parts = key.split(":");
-				EntityTypeEnum entityType = EntityTypeEnum.valueOf(parts[1]);
+				EntityTypeEnum entityType = EntityTypeEnum.getByName(parts[1]);
 				Long entityId = Long.parseLong(parts[2]);
 
 				// 获取计数
@@ -65,6 +69,7 @@ public class SyncLikeTask {
 
 				// 构建更新对象
 				LikeCount likeCount = new LikeCount();
+				assert entityType != null;
 				likeCount.setEntityType(entityType.getType());
 				likeCount.setEntityId(entityId);
 				likeCount.setCount(count);

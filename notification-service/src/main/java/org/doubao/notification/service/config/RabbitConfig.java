@@ -65,7 +65,7 @@ public class RabbitConfig {
 
 	@Bean
 	public TopicExchange notificationExchange() {
-		return new TopicExchange(NOTIFICATION_EXCHANGE);
+		return new TopicExchange(NOTIFICATION_EXCHANGE,true, false);
 	}
 
 	@Bean
