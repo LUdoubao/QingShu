@@ -59,7 +59,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.doubao.notification.service.NotificationServiceApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

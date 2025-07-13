@@ -73,7 +73,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.doubao.quote.service.QuoteServiceApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

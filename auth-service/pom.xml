@@ -69,7 +69,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.doubao.auth.service.AuthServiceApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

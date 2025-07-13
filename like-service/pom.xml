@@ -74,7 +74,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.doubao.like.service.LikeServiceApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

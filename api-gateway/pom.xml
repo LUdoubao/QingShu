@@ -92,7 +92,6 @@
                 <version>${spring-boot.version}</version>
                 <configuration>
                     <mainClass>org.doubao.api.gateway.ApiGatewayApplication</mainClass>
-                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>

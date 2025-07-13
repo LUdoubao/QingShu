@@ -26,8 +26,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>org.doubao.userservice.UserServiceApplication</mainClass>
-                    <skip>true</skip>
+                    <mainClass>org.doubao.user.server.UserServiceApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>
