@@ -1,4 +1,4 @@
-package org.doubao.notification.service.event;
+package org.doubao.mall.common.event;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;

@@ -1,10 +1,10 @@
 package org.doubao.notification.service.listener;
 
 import org.doubao.notification.service.entity.Notification;
-import org.doubao.notification.service.event.AuditEvent;
-import org.doubao.notification.service.event.LikeEvent;
-import org.doubao.notification.service.event.NotificationEvent;
-import org.doubao.notification.service.event.SystemEvent;
+import org.doubao.mall.common.event.AuditEvent;
+import org.doubao.mall.common.event.LikeEvent;
+import org.doubao.mall.common.event.NotificationEvent;
+import org.doubao.mall.common.event.SystemEvent;
 import org.doubao.notification.service.service.NotificationService;
 import org.doubao.notification.service.utils.NotificationFormatter;
 import org.slf4j.Logger;

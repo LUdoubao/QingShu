@@ -12,4 +12,12 @@ public class Constants {
 
 	public static final String REDIS_USER =  "user:";
 	public static final String DEFAULT_USER_NAME =  "未知用户";
+
+	public static final String USER_VERIFICATION_EXCHANGE = "user.verification";
+	public static final String BUSINESS_EXCHANGE = "business.exchange";
+	public static final String QUOTE_EXCHANGE = "quote.exchange";
+	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
+	public static final String NOTIFICATION_QUEUE = "notification.queue";
+	public static final String NOTIFICATION_LIKE_QUEUE = "notification.queue.like";
+	public static final String USER_NOTIFICATION_ROUTING_KEY_PREFIX = "notification.user.";
 }

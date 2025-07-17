@@ -2,8 +2,8 @@ package org.doubao.notification.service.factory;
 
 
 
-import org.doubao.notification.service.event.AuditEvent;
-import org.doubao.notification.service.event.SystemEvent;
+import org.doubao.mall.common.event.AuditEvent;
+import org.doubao.mall.common.event.SystemEvent;
 
 import java.time.LocalDateTime;
 

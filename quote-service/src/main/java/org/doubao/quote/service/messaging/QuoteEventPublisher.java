@@ -1,9 +1,9 @@
 package org.doubao.quote.service.messaging;
 
+import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
-import org.doubao.notification.service.config.RabbitConfig;
-import org.doubao.notification.service.event.AuditEvent;
-import org.doubao.notification.service.event.SystemEvent;
+import org.doubao.mall.common.event.AuditEvent;
+import org.doubao.mall.common.event.SystemEvent;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.entity.QuoteTag;
@@ -69,9 +69,9 @@ public class QuoteEventPublisher {
 					result,
 					details
 			);
-			String queueName = RabbitConfig.USER_NOTIFICATION_ROUTING_KEY_PREFIX + userId;
+			String queueName = Constants.USER_NOTIFICATION_ROUTING_KEY_PREFIX + userId;
 			rabbitTemplate.convertAndSend(
-					RabbitConfig.NOTIFICATION_EXCHANGE,
+					Constants.NOTIFICATION_EXCHANGE,
 					queueName,
 					event
 			);
@@ -98,10 +98,10 @@ public class QuoteEventPublisher {
 					reason,
 					submitterName
 			);
-			String queueName = RabbitConfig.USER_NOTIFICATION_ROUTING_KEY_PREFIX + receiverId;
+			String queueName = Constants.USER_NOTIFICATION_ROUTING_KEY_PREFIX + receiverId;
 
 			rabbitTemplate.convertAndSend(
-					RabbitConfig.NOTIFICATION_EXCHANGE,
+					Constants.NOTIFICATION_EXCHANGE,
 					queueName,
 					event
 			);

@@ -27,6 +27,8 @@ spring:
       discovery:
         enabled: true
         service-id: config-server
+      profile: dev                    # 拉取的配置环境（对应 product-service-dev.yml）
+      name: notification-service           # 拉取的配置文件名（不含 profile 和扩展名）
 
 eureka:
   client:

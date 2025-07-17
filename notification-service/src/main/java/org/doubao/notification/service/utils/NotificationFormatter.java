@@ -2,9 +2,9 @@ package org.doubao.notification.service.utils;
 
 import com.alibaba.fastjson.JSON;
 import org.doubao.notification.service.entity.Notification;
-import org.doubao.notification.service.event.AuditEvent;
-import org.doubao.notification.service.event.LikeEvent;
-import org.doubao.notification.service.event.SystemEvent;
+import org.doubao.mall.common.event.AuditEvent;
+import org.doubao.mall.common.event.LikeEvent;
+import org.doubao.mall.common.event.SystemEvent;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;

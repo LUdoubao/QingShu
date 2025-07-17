@@ -1,8 +1,8 @@
 package org.doubao.like.service.messaging;
 
+import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
-import org.doubao.notification.service.config.RabbitConfig;
-import org.doubao.notification.service.event.LikeEvent;
+import org.doubao.mall.common.event.LikeEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -32,9 +32,9 @@ public class LikeEventPublisher {
 					operatorUserId,
 					operatorUserName
 			);
-			String routingKey = RabbitConfig.USER_NOTIFICATION_ROUTING_KEY_PREFIX + userId;
+			String routingKey = Constants.USER_NOTIFICATION_ROUTING_KEY_PREFIX + userId;
 			rabbitTemplate.convertAndSend(
-					RabbitConfig.NOTIFICATION_EXCHANGE,
+					Constants.NOTIFICATION_EXCHANGE,
 					routingKey,
 					event
 			);

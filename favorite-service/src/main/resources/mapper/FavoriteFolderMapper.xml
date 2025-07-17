@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.favorite.service.mapper.FavoriteFolderMapper">
+
+    <select id="selectUserFolders" resultType="org.doubao.favorite.service.entity.FavoriteFolder">
+        SELECT *
+        FROM favorite_folder
+        WHERE user_id = #{userId}
+        AND deleted = 0
+        ORDER BY is_default DESC, order_num DESC, updated_time DESC
+    </select>
+</mapper>

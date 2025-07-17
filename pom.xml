@@ -23,6 +23,7 @@
 		<module>oss-service</module>
 		<module>notification-service</module>
 		<module>like-service</module>
+		<module>favorite-service</module>
 	</modules>
 
 	<properties>

@@ -48,6 +48,9 @@ public class Result<T> {
 	public static <T> Result<T> success(T data) {
 		return new Result<>(200, "Success", data);
 	}
+	public static <T> Result<T> success() {
+		return new Result<>(200, "Success", null);
+	}
 
 	public static <T> Result<T> error(String message) {
 		return new Result<>(500, message, null);
