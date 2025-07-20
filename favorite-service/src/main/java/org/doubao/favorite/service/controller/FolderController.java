@@ -36,7 +36,7 @@ public class FolderController {
 	}
 
 	// 重命名收藏夹
-	@PutMapping("/rename/{folderId}")
+	@GetMapping("/rename/{folderId}")
 	public Result<Void> renameFolder(
 			@PathVariable Long folderId,
 			@RequestParam String newName

@@ -149,8 +149,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getDeleted, 0)
 				.eq(Quote::getId, id)
-				.eq(Quote::getStatus,1)
-				.orderByDesc(Quote::getCreatedTime);
+				.eq(Quote::getStatus,1);
 		Quote quote = this.getOne(queryWrapper);
 		QuoteVo quoteVo = new QuoteVo();
 		if (quote != null) {
