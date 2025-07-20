@@ -9,6 +9,10 @@ spring:
 #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/ai/**
         - id: favorite-service
           uri: lb://favorite-service
           predicates:

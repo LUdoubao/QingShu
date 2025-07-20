@@ -1,0 +1,185 @@
+package org.doubao.ai.service.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import okhttp3.*;
+import org.doubao.ai.service.dto.ChatRequest;
+import org.doubao.ai.service.dto.ChatResponse;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Resource;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.concurrent.*;
+
+@Service
+public class AIService {
+	private final ExecutorService executor = Executors.newFixedThreadPool(3);
+	private final ObjectMapper objectMapper;
+	private OkHttpClient httpClient;
+	@Resource
+	private RedisTemplate<String, Object> redisTemplate;
+
+	@Value("${api.baidu.url}")
+	private String baiduApiUrl;
+	@Value("${api.baidu.key}")
+	private String baiduApiKey;
+	@Value("${api.baidu.model}")
+	private String baiduModel;
+	@Value("${api.deepseek.url}")
+	private String deepseekApiUrl;
+	@Value("${api.deepseek.key}")
+	private String deepseekApiKey;
+	@Value("${api.deepseek.model}")
+	private String deepseekModel;
+	private final int connectTimeout = 300000;
+	private final int readTimeout = 600000;
+
+	private final static String AI_KEY = "AI_KEY:";
+	public AIService(ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+	}
+
+	@PostConstruct
+	public void init() {
+		// 配置连接池（最大空闲连接数和保持时间）
+		ConnectionPool connectionPool = new ConnectionPool(20, 5, TimeUnit.MINUTES);
+
+		// 配置HTTP客户端
+		this.httpClient = new OkHttpClient.Builder()
+				.connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+				.readTimeout(readTimeout, TimeUnit.MILLISECONDS)
+				.callTimeout(readTimeout + connectTimeout + 5000, TimeUnit.MILLISECONDS)
+				.connectionPool(connectionPool)
+				.retryOnConnectionFailure(true) // 启用连接失败重试
+				.build();
+	}
+
+	public ChatResponse sendChatRequest(String content, String author, String source, String model, String id, String twice, String isPoetry) throws IOException {
+		if(twice == null || !twice.equals("true")) {
+			// 从redis获取
+			if (Boolean.TRUE.equals(redisTemplate.hasKey(AI_KEY + id))) {
+				return (ChatResponse) redisTemplate.opsForValue().get(AI_KEY + id);
+			}
+		}
+		String url = "";
+		String key = "";
+		if (isPoetry.equals("true")) {
+			url = deepseekApiUrl;
+			key = deepseekApiKey;
+			model = model == null || model.isEmpty() ? deepseekModel : model;
+		} else {
+			url = baiduApiUrl;
+			key = baiduApiKey;
+			model = model == null || model.isEmpty() ? baiduModel : model;
+		}
+
+		// 第一次获取或二次刷新
+		ChatRequest request = buildRequest(content, author, source, isPoetry);
+		request.setModel(model);
+
+		String finalUrl = url;
+		String finalKey = key;
+		return executeWithTimeout(() -> {
+			RequestBody requestBody = RequestBody.create(
+					objectMapper.writeValueAsString(request),
+					MediaType.parse("application/json; charset=utf-8")
+			);
+
+			Request httpRequest = new Request.Builder()
+					.url(finalUrl)
+					.post(requestBody)
+					.addHeader("Authorization", "Bearer " + finalKey)
+					.addHeader("Content-Type", "application/json")
+					.addHeader("appid", "") // 根据实际需求添加
+					.build();
+
+			try (Response response = httpClient.newCall(httpRequest).execute()) {
+				if (response.isSuccessful() && response.body() != null) {
+					String responseJson = response.body().string();
+					ChatResponse chatResponse = objectMapper.readValue(responseJson, ChatResponse.class);
+					redisTemplate.opsForValue().set(AI_KEY + id, chatResponse);
+					return chatResponse;
+				} else {
+					throw new IOException("API request failed. Status: " + response.code() + ", Body: " +
+							(response.body() != null ? response.body().string() : ""));
+				}
+			}
+		});
+	}
+
+	private ChatRequest buildRequest(String content, String author, String source, String isPoetry) {
+		String formattedPrompt = createStandardPrompt(content, author, source, isPoetry);
+		ChatRequest request = new ChatRequest();
+		request.setStream(false);
+		request.setMessages(Arrays.asList(
+				new ChatRequest.Message("system", "你是一位专业的文学分析助手，擅长解读各类引文作品。"),
+				new ChatRequest.Message("user", formattedPrompt)
+		));
+		return request;
+	}
+
+	private String createStandardPrompt(String content, String author, String source, String isPoetry) {
+		if (isPoetry.equals("true")) {
+			return "## 引文拓展要求\n\n" +
+					"### 引文信息\n" +
+					"- **引文内容**: " + content + "\n" +
+					"- **引文作者**: " + author + "\n" +
+					"- **引文来源**: " + source + "\n\n" +
+					"### 分析要求\n" +
+					"请按照以下Markdown格式规范给出拓展内容：\n\n" +
+					"#### 1. 全文\n" +
+					"#### 2. 译文\n" +
+					"#### 3. 注释\n" +
+					"#### 4. 序言\n" +
+					"**注意**：\n" +
+					"- 全文的内容一定要是该诗词的全部诗词句，不能有遗漏，不能有错误\n"+
+					"- 全文的内容仅包含全文，不要有多余的描述，字号用正文字号\n"+
+					"- 全文的内容过长时根据句号合理换行，避免单行过长\n"+
+					"- 译文内容为全文译文，即翻译成白话文，语言为中文，不要出现其他语言\n"+
+					"- 除全文内容外输出内容长度不超过300字\n"+
+					"- 内容准确专业客观\n" +
+					"- 使用规范的Markdown语法";
+		}
+		return "## 引文分析要求\n\n" +
+				"### 引文信息\n" +
+				"- **引文内容**: " + content + "\n" +
+				"- **引文作者**: " + author + "\n" +
+				"- **引文来源**: " + source + "\n\n" +
+				"### 分析要求\n" +
+				"请按照以下Markdown格式规范进行专业分析,并直接给出分析内容：\n\n" +
+				"#### 1. 引文赏析\n" +
+				"#### 2. 创作背景\n" +
+				"**注意**：\n" +
+				"- 分析内容不超过300字\n" +
+				"- 保持专业客观的分析态度\n" +
+				"- 使用规范的Markdown语法";
+	}
+
+	private <T> T executeWithTimeout(Callable<T> task) throws IOException {
+		Future<T> future = executor.submit(task);
+		try {
+			return future.get(readTimeout + connectTimeout + 5000, TimeUnit.MILLISECONDS);
+		} catch (TimeoutException e) {
+			future.cancel(true);
+			throw new IOException("API request timed out", e);
+		} catch (ExecutionException | InterruptedException e) {
+			throw new IOException("API request failed", e);
+		}
+	}
+
+	@PreDestroy
+	public void shutdown() {
+		// 关闭线程池
+		executor.shutdownNow();
+
+		// 关闭OkHttpClient连接池
+		if (httpClient != null) {
+			httpClient.connectionPool().evictAll();
+			httpClient.dispatcher().executorService().shutdown();
+		}
+	}
+}
