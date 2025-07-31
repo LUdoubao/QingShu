@@ -3,9 +3,10 @@ package org.doubao.mall.common.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 
-public class BaseDel extends  BaseEntity{	@TableLogic
+public class BaseDel extends  BaseEntity{
+	@TableLogic
 	@TableField("deleted")
-	private Integer deleted;
+	private Integer deleted = 0;
 
 	public Integer getDeleted() {
 		return deleted;

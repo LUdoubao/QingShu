@@ -25,6 +25,7 @@
 		<module>like-service</module>
 		<module>favorite-service</module>
 		<module>ai-service</module>
+		<module>comment-service</module>
 	</modules>
 
 	<properties>

@@ -1,6 +1,7 @@
 package org.doubao.user.server.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.user.server.dto.*;
 import org.doubao.user.server.entity.User;
 import org.doubao.user.server.vo.PageUserVo;
@@ -9,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
 
 public interface UserService extends IService<User> {
 	UserVo getById(Long id);
@@ -40,4 +42,6 @@ public interface UserService extends IService<User> {
 	void updateEmail(UpdateEmailDto dto);
 
 	String uploadAvatar(MultipartFile file, Long userId);
+
+	List<UserInfo> usersByIds(Set<Long> userIds);
 }

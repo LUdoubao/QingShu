@@ -1,6 +1,7 @@
 package org.doubao.user.server.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.user.server.entity.User;
 import org.springframework.beans.BeanUtils;
 
@@ -23,6 +24,13 @@ public class UserVo {
 		UserVo vo = new UserVo();
 		BeanUtils.copyProperties(user, vo);
 		return vo;
+	}
+
+	public static UserInfo fromVo(UserVo userVo) {
+		UserInfo userInfo = new UserInfo();
+		BeanUtils.copyProperties(userVo, userInfo);
+		userInfo.setId(String.valueOf(userVo.getId()));
+		return userInfo;
 	}
 
 	public String getRole() {

@@ -26,10 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -59,6 +56,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		userMapper.updateUserAvatar(userId, result.getFileUrl());
 		clearUserCache(userId);
 		return result.getFileUrl();
+	}
+
+	@Override
+	public List<UserInfo> usersByIds(Set<Long> userIds) {
+		List<Long> noCacheId = new ArrayList<>();
+		List<UserVo> userVoList = new ArrayList<>();
+		List<UserInfo> userInfoList = new ArrayList<>();
+		for (Long userId : userIds) {
+			String cacheKey = "USER:" + userId;
+			Object user = redisTemplate.opsForValue().get(cacheKey);
+			if (user != null) {
+				UserVo userVo = JSON.toJavaObject(JSON.parseObject(JSON.toJSONString(user)), UserVo.class);
+				userVoList.add(userVo);
+			} else {
+				noCacheId.add(userId);
+			}
+		}
+		if (!noCacheId.isEmpty()) {
+			List<User> users = this.listByIds(noCacheId);
+			for (User user : users) {
+				String cacheKey = "USER:" + user.getId();
+				UserVo userVo = UserVo.from(user);
+				userVoList.add(userVo);
+				redisTemplate.opsForValue().set(cacheKey, userVo,
+						Duration.ofMinutes(30 + new Random().nextInt(10)));
+			}
+		}
+		// UserVo 转 UserInfo
+		userVoList.forEach(userVo -> {
+			UserInfo userInfo = UserVo.fromVo(userVo);
+			userInfoList.add(userInfo);
+		});
+		return userInfoList;
 	}
 
 	@Override

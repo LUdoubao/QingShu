@@ -1,6 +1,7 @@
 package org.doubao.user.server.controller;
 
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.user.server.dto.*;
@@ -13,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/user")
@@ -41,6 +44,12 @@ public class UserController {
 	public Result<UserVo> getUser(@PathVariable Long userId) {
 		return Result.success(userService.getById(userId));
 	}
+
+	@PostMapping("/listByIds")
+	public Result<List<UserInfo>> listByIds(@RequestBody Set<Long> userIds) {
+		return Result.success(userService.usersByIds(userIds));
+	}
+
 
 	@PutMapping("/updateInfo")
 	public Result<?> updateProfile(

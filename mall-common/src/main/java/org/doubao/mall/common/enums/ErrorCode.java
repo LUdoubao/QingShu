@@ -21,7 +21,12 @@ public enum ErrorCode {
 	OLD_PASSWORD_ERROR("USER_005", "原密码错误"),
 	USERNAME_PASSWORD_ERROR("USER_003", "用户名或密码错误"),
 	INVALID_STATUS("USER_006", "无效的状态值"),
-	INVALID_ROLE("USER_007", "无效的角色类型");
+	INVALID_ROLE("USER_007", "无效的角色类型"),
+
+	COMMENT_HAS_NOT_ALLOWED("COMMENT_1001", "内容包含敏感词"),
+	COMMENT_NOT_IN_RANGE("COMMENT_1003", "评论字数需在10-500之间"),
+	COMMENT_LIMIT_REACHED("COMMENT_1002", "操作过于频繁，请稍后再试"),
+	COMMENT_PAGE_SIZE_LIMIT("COMMENT_1004", "每页最大支持50条评论");
 
 
 	private String code;

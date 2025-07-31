@@ -76,6 +76,9 @@ public class BusinessException extends RuntimeException {
 	public BusinessException(String message, ErrorCode errorCode) {
 		this(HttpStatus.BAD_REQUEST, message, errorCode, null);
 	}
+	public BusinessException(ErrorCode errorCode) {
+		this(HttpStatus.BAD_REQUEST, errorCode.getMessage(), errorCode, null);
+	}
 
 	public HttpStatus getHttpStatus() {
 		return httpStatus;

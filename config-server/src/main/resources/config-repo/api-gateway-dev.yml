@@ -9,6 +9,10 @@ spring:
 #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: comment-service
+          uri: lb://comment-service
+          predicates:
+            - Path=/comment/**
         - id: ai-service
           uri: lb://ai-service
           predicates:
