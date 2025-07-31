@@ -30,7 +30,7 @@ public class SyncLikeTask {
 	private LikeCountMapper likeCountMapper;
 
 	// 每5分钟同步一次
-	@Scheduled(fixedRate =  10* 60 * 1000)
+	@Scheduled(fixedRate =  60* 60 * 1000)
 	public void syncLikeCount() {
 		LOGGER.info("开始同步点赞数据到数据库");
 
