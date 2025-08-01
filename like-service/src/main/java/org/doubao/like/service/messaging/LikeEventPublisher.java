@@ -19,7 +19,7 @@ public class LikeEventPublisher {
 	@Autowired
 	private CommonTaskExecutor taskExecutor;
 
-	public void pushLikeNotification(Long userId, int entityType, Long entityId, boolean isLike, String content,
+	public void pushLikeNotification(Long userId, int entityType, String entityId, boolean isLike, String content,
 									 Long operatorUserId, String operatorUserName) {
 		taskExecutor.asyncExecute(() -> {
 			// 异步发送MQ消息通知文案所属用户

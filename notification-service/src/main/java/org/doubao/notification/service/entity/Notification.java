@@ -21,7 +21,7 @@ public class Notification extends BaseDel {
 	@TableField("status")
 	private int status;
 	@TableField("source_id")
-	private Long sourceId;
+	private String sourceId;
 	@TableField("source_type")
 	private String sourceType;
 
@@ -73,11 +73,11 @@ public class Notification extends BaseDel {
 		this.status = status;
 	}
 
-	public Long getSourceId() {
+	public String getSourceId() {
 		return sourceId;
 	}
 
-	public void setSourceId(Long sourceId) {
+	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 

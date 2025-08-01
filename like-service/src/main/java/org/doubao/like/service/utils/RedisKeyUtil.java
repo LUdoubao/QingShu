@@ -3,7 +3,7 @@ package org.doubao.like.service.utils;
 // RedisKeyUtil.java
 public class RedisKeyUtil {
 	// 用户点赞状态：like:{userId}:{entityType}:{entityId}
-	public static String getUserLikeKey(Long userId, String entityType, Long entityId) {
+	public static String getUserLikeKey(Long userId, String entityType, String entityId) {
 		return "like:" + userId + ":" + entityType + ":" + entityId;
 	}
 

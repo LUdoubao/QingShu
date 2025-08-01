@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.comment.service.dto.CommentDTO;
 import org.doubao.comment.service.dto.ReplyDTO;
+import org.doubao.comment.service.dto.ToggleLikeResponse;
 import org.doubao.comment.service.entity.Comment;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
@@ -29,4 +30,6 @@ public interface CommentService extends IService<Comment> {
 	void deleteComment(String commentId);
 
 	Page<ReplyVO> getRepliesByCommentId(String commentId, Integer page, Integer size);
+
+	ToggleLikeResponse toggleLike(String commentId);
 }

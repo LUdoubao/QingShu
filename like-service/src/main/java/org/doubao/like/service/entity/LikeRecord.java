@@ -19,14 +19,14 @@ public class LikeRecord extends BaseEntity {
 	@TableField("entity_type")
 	private int entityType;
 	@TableField("entity_id")
-	private Long entityId;
+	private String entityId;
 	@TableField("liked")
 	private int liked;
 
 	public LikeRecord() {
 	}
 
-	public LikeRecord(Long userId, int entityType, Long entityId, int liked, LocalDateTime now) {
+	public LikeRecord(Long userId, int entityType, String entityId, int liked, LocalDateTime now) {
 		this.userId = userId;
 		this.entityType = entityType;
 		this.entityId = entityId;
@@ -58,11 +58,11 @@ public class LikeRecord extends BaseEntity {
 		this.entityType = entityType;
 	}
 
-	public Long getEntityId() {
+	public String getEntityId() {
 		return entityId;
 	}
 
-	public void setEntityId(Long entityId) {
+	public void setEntityId(String entityId) {
 		this.entityId = entityId;
 	}
 

@@ -30,7 +30,7 @@ public class NotificationFormatter {
 
 
 		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(event.getQuoteId());
+		notification.setSourceId(String.valueOf(event.getQuoteId()));
 		notification.setSourceType("quote");
 
 		return notification;
@@ -49,7 +49,7 @@ public class NotificationFormatter {
 		content.put("result", event.getResult());
 
 		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(event.getTargetId());
+		notification.setSourceId(String.valueOf(event.getTargetId()));
 		notification.setSourceType(event.getTarget());
 
 		return notification;

@@ -16,7 +16,7 @@ public class NotificationDTO implements Serializable {
 	private String title;
 	private Map<String, Object> content;  // 将JSON内容解析为Map
 	private int status;
-	private Long sourceId;
+	private String sourceId;
 	private String sourceType;
 	private String createdTime;
 	private String updatedTime;
@@ -110,11 +110,11 @@ public class NotificationDTO implements Serializable {
 	}
 
 
-	public Long getSourceId() {
+	public String getSourceId() {
 		return sourceId;
 	}
 
-	public void setSourceId(Long sourceId) {
+	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
 

@@ -59,7 +59,7 @@ public class SyncLikeTask {
 				// 解析实体信息
 				String[] parts = key.split(":");
 				EntityTypeEnum entityType = EntityTypeEnum.getByName(parts[1]);
-				Long entityId = Long.parseLong(parts[2]);
+				String entityId = parts[2];
 
 				// 获取计数
 				Object value = redisTemplate.opsForValue().get(key);

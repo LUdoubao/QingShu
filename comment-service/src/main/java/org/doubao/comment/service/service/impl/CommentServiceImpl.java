@@ -5,14 +5,15 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang.math.RandomUtils;
-import org.doubao.comment.service.dto.CommentDTO;
-import org.doubao.comment.service.dto.ReplyDTO;
+import org.doubao.comment.service.dto.*;
 import org.doubao.comment.service.entity.Comment;
+import org.doubao.comment.service.feign.LikeClient;
 import org.doubao.comment.service.feign.UserClient;
 import org.doubao.comment.service.mapper.CommentMapper;
 import org.doubao.comment.service.service.CommentService;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
+import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
@@ -44,9 +45,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	//
 	@Autowired
 	private UserClient userClient;
-	//
-	// @Autowired
-	// private LikeClient likeClient;
+
+	@Autowired
+	private LikeClient likeClient;
 
 	@Override
 	public String createComment(CommentDTO dto) {
@@ -194,16 +195,18 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		Set<Long> userIds = replyPage.getRecords().stream().map(Comment::getUserId).collect(Collectors.toSet());
 		userIds.addAll(replyPage.getRecords().stream().map(Comment::getRepliedUserId).collect(Collectors.toSet()));
 		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
+		List<String> replyIds =  new ArrayList<>();
+		String userId = UserContext.getUser().getId();
 
-		// 4. 转换为VO对象
 		List<ReplyVO> replyVOList = replyPage.getRecords().stream()
 				.map(comment -> {
 					ReplyVO replyVO = new ReplyVO();
 					BeanUtils.copyProperties(comment, replyVO);
-
+					replyIds.add(comment.getCommentId());
 					// 设置回复ID（使用评论表的ID）
 					replyVO.setReplyId(comment.getCommentId());
 
+					replyVO.setLikeCount(comment.getLikeCount());
 					// 5. 补充用户信息（通过用户服务获取）
 					Optional<UserInfo> first = userInfos.stream().filter(userInfo -> Objects.equals(comment.getUserId(), Long.valueOf(userInfo.getId()))).findFirst();
 					if (first.isPresent()) {
@@ -220,12 +223,64 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				})
 				.collect(Collectors.toList());
 
-		// 7. 封装分页结果
+		// 3.1 设置是否点赞
+		BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
+		likeQueryDto.setEntities(replyIds.stream().map(replyId -> {
+			BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
+			request.setEntityId(replyId);
+			request.setEntityType(1);
+			return request;
+		}).collect(Collectors.toList()));
+		// 不查询点赞数量，只查询点赞状态
+		likeQueryDto.setQueryCount(false);
+		likeQueryDto.setUserId(Long.valueOf(userId));
+		BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
+		List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
+		replyVOList.forEach(replyVO -> {
+			String replyId = replyVO.getReplyId();
+			results.stream()
+					.filter(result -> Objects.equals(result.getEntityId(), replyId))
+					.findFirst()
+					.ifPresent(result -> {
+						replyVO.setLiked(result.getLiked());
+					});
+		});
 
 		Page<ReplyVO> replyVOPage = new Page<>(replyPage.getCurrent(), replyPage.getSize(),replyPage.getTotal());
 		replyVOPage.setRecords(replyVOList);
 
 		return replyVOPage;
+	}
+
+	@Override
+	public ToggleLikeResponse toggleLike(String commentId) {
+		Long operatorUserId = Long.valueOf(UserContext.getUser().getId());
+		// 1. 查询评论信息（获取评论作者ID和内容）
+		Comment comment = commentMapper.selectById(commentId);
+		if (comment == null) {
+			throw new BusinessException((ErrorCode.COMMENT_NOT_FOUND));
+		}
+
+		// 2. 构造调用点赞服务的请求参数
+		CommentLikeRequest likeRequest = new CommentLikeRequest();
+		likeRequest.setOperatorUserId(operatorUserId);  // 点赞操作的用户
+		likeRequest.setEntityType(1);  // 实体类型：1表示评论（与点赞服务约定）
+		likeRequest.setEntityId(commentId);  // 评论ID（转为Long，根据实际ID类型调整）
+		likeRequest.setUserId(comment.getUserId());  // 被点赞的评论作者ID
+		likeRequest.setContent(comment.getContent());  // 评论内容（用于通知）
+
+		// 3. 调用点赞服务的接口
+		Result<ToggleLikeResponse> feignResult = likeClient.toggleLike(likeRequest);
+		if (!feignResult.isSuccess()) {
+			throw new BusinessException((ErrorCode.COMMENT_LIKE_ERROR));
+		}
+
+		// 4. 更新评论表中的点赞数（冗余字段，提高查询效率）
+		ToggleLikeResponse response = feignResult.getData();
+		comment.setLikeCount(response.getCurrentCount());
+		commentMapper.updateById(comment);
+
+		return response;
 	}
 
 	/**
@@ -264,6 +319,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		userIds.addAll(commentPage.getRecords().stream().map(Comment::getRepliedUserId).filter(Objects::nonNull).collect(Collectors.toSet()));
 		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
 
+		String userId = UserContext.getUser().getId();
+		List<String> commentIds = commentPage.getRecords().stream().map(Comment::getCommentId).collect(Collectors.toList());
 		IPage<CommentVO> resultPage = commentPage.convert(comment -> {
 			CommentVO vo = new CommentVO();
 			BeanUtils.copyProperties(comment, vo);
@@ -275,17 +332,17 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				vo.setUser(userInfo);
 			}
 
-			// 3.2 补充点赞状态（当前登录用户是否点赞）
-			Long currentUserId = Long.valueOf(UserContext.getUser().getId());
-			// vo.setLike(likeClient.isLiked(comment.getCommentId(), currentUserId));
-			vo.setLike(false);
-
-			// 3.3 补充前2条回复（嵌套查询）
+			// 3.2 补充前2条回复（嵌套查询）
 			List<Comment> replies = commentMapper.selectReplies(
 					comment.getCommentId(), 2); // 只查前2条
-			vo.setReplyList(convertReplies(replies));
+			List<ReplyVO> voList = convertReplies(replies);
+			if (voList != null && !voList.isEmpty()) {
+				List<String> collect = voList.stream().map(ReplyVO::getReplyId).collect(Collectors.toList());
+				commentIds.addAll(collect);
+			}
+			vo.setReplyList(voList);
 
-			// 3.3.1 统计回复数
+			// 3.3 统计回复数
 			LambdaQueryWrapper<Comment> replyQuery = new LambdaQueryWrapper<Comment>()
 					.eq(Comment::getPostId, postId)
 					.eq(Comment::getParentId, comment.getCommentId())
@@ -303,6 +360,39 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			vo.setIsTop(Objects.equals(comment.getCommentId(), topCommentId) ? 1 : 0);
 
 			return vo;
+		});
+
+		// 3.1 设置是否点赞
+		BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
+		likeQueryDto.setEntities(commentIds.stream().map(commentId -> {
+			BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
+			request.setEntityId(commentId);
+			request.setEntityType(1);
+			return request;
+		}).collect(Collectors.toList()));
+		// 不查询点赞数量，只查询点赞状态
+		likeQueryDto.setQueryCount(false);
+		likeQueryDto.setUserId(Long.valueOf(userId));
+		BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
+		List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
+		resultPage.getRecords().forEach(commentVO -> {
+			String commentId = commentVO.getCommentId();
+			results.stream()
+					.filter(result -> Objects.equals(result.getEntityId(), commentId))
+					.findFirst()
+					.ifPresent(result -> {
+						commentVO.setLike(result.getLiked());
+					});
+			List<ReplyVO> replyList = commentVO.getReplyList();
+			replyList.forEach(replyVO -> {
+				String replyId = replyVO.getReplyId();
+				results.stream()
+						.filter(result -> Objects.equals(result.getEntityId(), replyId))
+						.findFirst()
+						.ifPresent(result -> {
+							replyVO.setLiked(result.getLiked());
+						});
+			});
 		});
 
 		// 4. 按热度二次排序（内存中精确计算）
@@ -330,6 +420,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			ReplyVO replyVO = new ReplyVO();
 			BeanUtils.copyProperties(reply, replyVO);
 			replyVO.setReplyId(reply.getCommentId());
+			replyVO.setLikeCount(reply.getLikeCount());
 			replyVO.setAuthorTop(reply.getIsTop() == 1);
 			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> Objects.equals(reply.getUserId(), Long.valueOf(userInfo.getId()))).findFirst();
 			if (first.isPresent()) {

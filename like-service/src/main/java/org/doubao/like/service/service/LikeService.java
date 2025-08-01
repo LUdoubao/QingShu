@@ -9,6 +9,7 @@ import org.doubao.like.service.dto.response.ToggleLikeResponse;
 import org.doubao.like.service.entity.LikeRecord;
 
 import java.util.List;
+import java.util.Map;
 
 public interface LikeService extends IService<LikeRecord> {
 

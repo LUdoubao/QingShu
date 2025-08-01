@@ -12,18 +12,18 @@ public class LikeCount {
 	@TableField(value = "entity_type")
 	private int entityType;
 	@TableField(value = "entity_id")
-	private Long entityId;
+	private String entityId;
 	@TableField(value = "count")
 	private Integer count;
 	@TableField(value = "updated_at")
 	private LocalDateTime updatedAt;
 
-	public LikeCount(int entityType, Long entityId) {
+	public LikeCount(int entityType, String entityId) {
 		this.entityType = entityType;
 		this.entityId = entityId;
 	}
 
-	public LikeCount(int entityType, Long entityId, int count, LocalDateTime updatedAt) {
+	public LikeCount(int entityType, String entityId, int count, LocalDateTime updatedAt) {
 		this.entityType = entityType;
 		this.entityId = entityId;
 		this.count = count;
@@ -42,11 +42,11 @@ public class LikeCount {
 		this.entityType = entityType;
 	}
 
-	public Long getEntityId() {
+	public String getEntityId() {
 		return entityId;
 	}
 
-	public void setEntityId(Long entityId) {
+	public void setEntityId(String entityId) {
 		this.entityId = entityId;
 	}
 

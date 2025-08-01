@@ -11,7 +11,7 @@ import java.util.List;
 @Mapper
 public interface LikeCountMapper  extends BaseMapper<LikeCount> {
 	int updateCount(@Param("type") int entityType,
-					@Param("id") Long entityId,
+					@Param("id") String entityId,
 					@Param("delta") int delta,
 					@Param("oldCount") int oldCount,
 					@Param("now") LocalDateTime now);

@@ -60,7 +60,7 @@ public class ToggleLikeRequest {
 			example = "789",
 			notes = "被点赞的文案ID或评论ID"
 	)
-	private Long entityId;
+	private String entityId;
 
 	/**
 	 * 点赞用户ID
@@ -123,13 +123,11 @@ public class ToggleLikeRequest {
 		this.entityType = entityType;
 	}
 
-	public @NotNull(message = "实体ID不能为空") Long getEntityId() {
+	public @NotNull(message = "实体ID不能为空") String getEntityId() {
 		return entityId;
 	}
 
-	public void setEntityId(@NotNull(message = "实体ID不能为空") Long entityId) {
+	public void setEntityId(@NotNull(message = "实体ID不能为空") String entityId) {
 		this.entityId = entityId;
 	}
-
-
 }

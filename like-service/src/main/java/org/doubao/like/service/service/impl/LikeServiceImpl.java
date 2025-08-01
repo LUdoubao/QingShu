@@ -2,6 +2,7 @@ package org.doubao.like.service.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.like.service.dto.LikeQueryDto;
 import org.doubao.like.service.dto.request.BatchLikeStatusRequest;
 import org.doubao.like.service.dto.request.ToggleLikeRequest;
 import org.doubao.like.service.dto.response.BatchLikeStatusResponse;
@@ -96,7 +97,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		}
 
 		int entityType = request.getEntityType();
-		Long entityId = request.getEntityId();
+		String entityId = request.getEntityId();
 
 		// 用户点赞状态键
 		String userLikeKey = RedisKeyUtil.getUserLikeKey(operatorUserId, EntityTypeEnum.getNameByType(entityType), entityId);
@@ -125,7 +126,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			}
 
 			// 通知 文案所属用户
-			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, false, request.getContent(), operatorUserId, userName);
+			// likeEventPublisher.pushLikeNotification(userId, entityType, entityId, false, request.getContent(), operatorUserId, userName);
 
 
 			response.setAction(LikeAction.CANCEL.getName());
@@ -144,7 +145,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			}
 
 			// 发送MQ消息通知文案所属用户
-			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, true,request.getContent(), operatorUserId, userName);
+			// likeEventPublisher.pushLikeNotification(userId, entityType, entityId, true,request.getContent(), operatorUserId, userName);
 
 			response.setAction(LikeAction.LIKE.getName());
 		}
@@ -162,7 +163,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		return response;
 	}
 
-	private void updateLikeRecordAndCount(Long operatorUserId, int entityType, Long entityId, ToggleLikeResponse response) {
+	private void updateLikeRecordAndCount(Long operatorUserId, int entityType, String entityId, ToggleLikeResponse response) {
 		taskExecutor.execute(() -> {
 			try {
 				// 1. 准备参数
@@ -200,7 +201,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		});
 	}
 	private void updateLikeRecord(Long userId, int entityType,
-								  Long entityId, boolean isLike,
+								  String entityId, boolean isLike,
 								  LocalDateTime now) {
 		// 存在则更新，不存在则插入
 		likeRecordMapper.insertOrUpdate(
@@ -208,7 +209,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		);
 	}
 
-	private void updateLikeCount(int entityType, Long entityId,
+	private void updateLikeCount(int entityType, String entityId,
 								 int delta, LocalDateTime now) {
 		// 使用乐观锁保证并发安全
 		int retryTimes = 3;
@@ -253,8 +254,10 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			throw new IllegalArgumentException("请求参数不合法");
 		}
 
+		boolean queryCount = request.isQueryCount();
+		boolean queryStatus = request.isQueryStatus();
 		// 准备批量查询参数（按类型分组）
-		Map<Integer, List<Long>> entityGroupMap = request.getEntities().stream()
+		Map<Integer, List<String>> entityGroupMap = request.getEntities().stream()
 				.collect(Collectors.groupingBy(
 						BatchLikeStatusRequest.EntityRequest::getEntityType,
 						Collectors.mapping(BatchLikeStatusRequest.EntityRequest::getEntityId, Collectors.toList())
@@ -266,48 +269,53 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		Map<BatchLikeStatusRequest.EntityRequest, Integer> countResultMap = new ConcurrentHashMap<>();
 
 		entityGroupMap.forEach((entityType, entityIds) -> {
-			// 并行查询点赞状态
-			futures.add(CompletableFuture.runAsync(() -> {
-				Map<Long, Boolean> statusMap = getLikeStatusWithCache(request.getUserId(), entityType, entityIds);
-				if (!statusMap.isEmpty()) {
-					entityIds.forEach(id -> {
-						if (id != null) {
-							BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
-							Boolean status = statusMap.get(id);
-							if (status != null) {
-								statusResultMap.put(key, status);
-							} else {
+			if (queryStatus) {
+				// 并行查询点赞状态
+				futures.add(CompletableFuture.runAsync(() -> {
+					Map<String, Boolean> statusMap = getLikeStatusWithCache(request.getUserId(), entityType, entityIds);
+					if (!statusMap.isEmpty()) {
+						entityIds.forEach(id -> {
+							if (id != null) {
+								BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
+								Boolean status = statusMap.get(id);
+								if (status != null) {
+									statusResultMap.put(key, status);
+								} else {
+									statusResultMap.put(key, false);
+								}
+							}
+						});
+					} else {
+						entityIds.forEach(id -> {
+							if (id != null) {
+								BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
 								statusResultMap.put(key, false);
 							}
-						}
-					});
-				} else {
-					entityIds.forEach(id -> {
-						if (id != null) {
-							BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
-							statusResultMap.put(key, false);
-						}
-					});
-				}
-			}, taskExecutor));
+						});
+					}
+				}, taskExecutor));
+			}
 
-			// 并行查询点赞数
-			futures.add(CompletableFuture.runAsync(() -> {
-				Map<Long, Integer> countMap = getLikeCountWithCache(entityType, entityIds);
-				if (!countMap.isEmpty()) {
-					entityIds.forEach(id -> {
-						if (id != null) {
-							BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
-							if (countMap.containsKey(id)) {
-								int count = countMap.get(id);
-								countResultMap.put(key, count);
-							} else {
-								countResultMap.put(key, 0);
+			if (queryCount) {
+				// 并行查询点赞数
+				futures.add(CompletableFuture.runAsync(() -> {
+					Map<String, Integer> countMap = getLikeCountWithCache(entityType, entityIds);
+					if (!countMap.isEmpty()) {
+						entityIds.forEach(id -> {
+							if (id != null) {
+								BatchLikeStatusRequest.EntityRequest key = new BatchLikeStatusRequest.EntityRequest(entityType, id);
+								if (countMap.containsKey(id)) {
+									int count = countMap.get(id);
+									countResultMap.put(key, count);
+								} else {
+									countResultMap.put(key, 0);
+								}
 							}
-						}
-					});
-				}
-			}, taskExecutor));
+						});
+					}
+				}, taskExecutor));
+			}
+
 		});
 
 		// 等待所有查询完成
@@ -322,19 +330,23 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		List<BatchLikeStatusResponse.LikeStatusResult> results = request.getEntities().stream()
 				.map(entity -> {
 					BatchLikeStatusResponse.LikeStatusResult result =  new BatchLikeStatusResponse.LikeStatusResult();
-					statusResultMap.forEach((key, value) -> {
-						if (entity.getEntityType()== (key.getEntityType()) && entity.getEntityId().equals(key.getEntityId())) {
-							result.setEntityType(key.getEntityType());
-							result.setEntityId(key.getEntityId());
-							result.setLiked(value!= null ? value : false);
-						}
-					});
+					if (queryStatus) {
+						statusResultMap.forEach((key, value) -> {
+							if (entity.getEntityType()== (key.getEntityType()) && entity.getEntityId().equals(key.getEntityId())) {
+								result.setEntityType(key.getEntityType());
+								result.setEntityId(key.getEntityId());
+								result.setLiked(value!= null ? value : false);
+							}
+						});
+					}
 
-					countResultMap.forEach((key, value) -> {
-						if (entity.getEntityType() == (key.getEntityType()) && entity.getEntityId().equals(key.getEntityId())) {
-							result.setCount(value!= null ? value : 0);
-						}
-					});
+					if (queryCount) {
+						countResultMap.forEach((key, value) -> {
+							if (entity.getEntityType() == (key.getEntityType()) && entity.getEntityId().equals(key.getEntityId())) {
+								result.setCount(value!= null ? value : 0);
+							}
+						});
+					}
 					return result;
 				})
 				.collect(Collectors.toList());
@@ -343,7 +355,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	}
 
 	// 带缓存的点赞状态查询
-	private Map<Long, Boolean> getLikeStatusWithCache(Long userId, Integer entityType, List<Long> entityIds) {
+	private Map<String, Boolean> getLikeStatusWithCache(Long userId, Integer entityType, List<String> entityIds) {
 		// 1. 构建Redis keys
 		List<String> redisKeys = entityIds.stream()
 				.map(id -> RedisKeyUtil.getUserLikeKey(userId, EntityTypeEnum.getNameByType(entityType), id))
@@ -351,12 +363,12 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		// 2. 批量从Redis获取
 		List<Object> redisResults = redisTemplate.opsForValue().multiGet(redisKeys);
-		Map<Long, Boolean> resultMap = new HashMap<>();
-		List<Long> missingIds = new ArrayList<>();
+		Map<String, Boolean> resultMap = new HashMap<>();
+		List<String> missingIds = new ArrayList<>();
 
 		// 3. 处理Redis结果
 		for (int i = 0; i < entityIds.size(); i++) {
-			Long entityId = entityIds.get(i);
+			String entityId = entityIds.get(i);
 			if (redisResults == null) {
 				missingIds.add(entityId);
 				continue;
@@ -371,7 +383,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		// 4. 查询缺失的DB数据
 		if (!missingIds.isEmpty()) {
-			Map<Long, Boolean> dbResults = getLikeStatusFromDB(userId, entityType, missingIds);
+			Map<String, Boolean> dbResults = getLikeStatusFromDB(userId, entityType, missingIds);
 			resultMap.putAll(dbResults);
 
 			// 5. 回填Redis缓存
@@ -385,7 +397,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	}
 
 	// 带缓存的点赞数查询
-	private Map<Long, Integer> getLikeCountWithCache(Integer entityType, List<Long> entityIds) {
+	private Map<String, Integer> getLikeCountWithCache(Integer entityType, List<String> entityIds) {
 		// 1. 构建Redis keys
 		List<String> redisKeys = entityIds.stream()
 				.map(id -> RedisKeyUtil.getEntityLikeCountKey(EntityTypeEnum.getNameByType(entityType), String.valueOf(id)))
@@ -393,12 +405,12 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		// 2. 批量从Redis获取
 		List<Object> redisResults = redisTemplate.opsForValue().multiGet(redisKeys);
-		Map<Long, Integer> resultMap = new HashMap<>();
-		List<Long> missingIds = new ArrayList<>();
+		Map<String, Integer> resultMap = new HashMap<>();
+		List<String> missingIds = new ArrayList<>();
 
 		// 3. 处理Redis结果
 		for (int i = 0; i < entityIds.size(); i++) {
-			Long entityId = entityIds.get(i);
+			String entityId = entityIds.get(i);
 			if (redisResults == null) {
 				missingIds.add(entityId);
 				continue;
@@ -413,7 +425,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		// 4. 查询缺失的DB数据
 		if (!missingIds.isEmpty()) {
-			Map<Long, Integer> dbResults = getLikeCountFromDB(entityType, missingIds);
+			Map<String, Integer> dbResults = getLikeCountFromDB(entityType, missingIds);
 			resultMap.putAll(dbResults);
 
 			// 5. 回填Redis缓存
@@ -427,7 +439,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	}
 
 	// 数据库查询方法
-	private Map<Long, Boolean> getLikeStatusFromDB(Long userId, Integer entityType, List<Long> entityIds) {
+	private Map<String, Boolean> getLikeStatusFromDB(Long userId, Integer entityType, List<String> entityIds) {
 		if (CollectionUtils.isEmpty(entityIds)) {
 			return Collections.emptyMap();
 		}
@@ -446,7 +458,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 				));
 	}
 
-	private Map<Long, Integer> getLikeCountFromDB(Integer entityType, List<Long> entityIds) {
+	private Map<String, Integer> getLikeCountFromDB(Integer entityType, List<String> entityIds) {
 		if (CollectionUtils.isEmpty(entityIds)) {
 			return Collections.emptyMap();
 		}

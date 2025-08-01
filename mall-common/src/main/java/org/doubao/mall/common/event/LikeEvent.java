@@ -2,14 +2,14 @@ package org.doubao.mall.common.event;
 
 public class LikeEvent extends NotificationEvent{
 	private int entityType;
-	private Long entityId;
+	private String entityId;
 	private boolean isLike;
 	private String content;
 	private Long operatorUserId;
 	private String operatorUserName;
 
 
-	public LikeEvent(Long userId, int entityType, Long entityId, boolean isLike, String content, Long operatorUserId, String operatorUserName) {
+	public LikeEvent(Long userId, int entityType, String entityId, boolean isLike, String content, Long operatorUserId, String operatorUserName) {
 		super("LIKE", userId);
 		this.entityType = entityType;
 		this.entityId = entityId;
@@ -51,11 +51,11 @@ public class LikeEvent extends NotificationEvent{
 		this.entityType = entityType;
 	}
 
-	public Long getEntityId() {
+	public String getEntityId() {
 		return entityId;
 	}
 
-	public void setEntityId(Long entityId) {
+	public void setEntityId(String entityId) {
 		this.entityId = entityId;
 	}
 

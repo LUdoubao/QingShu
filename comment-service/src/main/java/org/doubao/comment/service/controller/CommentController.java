@@ -6,6 +6,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.doubao.comment.service.dto.CommentDTO;
 import org.doubao.comment.service.dto.ReplyDTO;
+import org.doubao.comment.service.dto.ToggleLikeResponse;
 import org.doubao.comment.service.service.CommentService;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
@@ -30,14 +31,6 @@ public class CommentController {
 		String commentId = commentService.createComment(dto);
 		return Result.success(commentId);
 	}
-
-	// @GetMapping("/hot")
-	// public Result<List<CommentVO>> getHotComments(
-	// 		@RequestParam String postId,
-	// 		@RequestParam(defaultValue = "10") int limit,
-	// 		@RequestParam(defaultValue = "0") int offset) {
-	// 	return Result.success(commentService.getHotComments(postId, limit, offset));
-	// }
 
 	/**
 	 * 分页加载评论的回复列表
@@ -80,12 +73,17 @@ public class CommentController {
 		);
 		return Result.success(commentPage);
 	}
+
+	/**
+	 * 评论点赞/取消点赞接口
+	 * 前端调用此接口，无需知道底层点赞服务的存在
+	 */
 	@PostMapping("/{commentId}/like")
-	public Result<Void> likeComment(
-			@PathVariable String commentId,
-			@RequestBody Map<String, String> action) {
-		commentService.handleLike(commentId, action.get("action"));
-		return Result.success(null);
+	public Result<ToggleLikeResponse> toggleCommentLike(
+			@PathVariable String commentId) {
+		// 调用服务层处理点赞逻辑
+		ToggleLikeResponse response = commentService.toggleLike(commentId);
+		return Result.success(response);
 	}
 
 	// @PostMapping("/{commentId}/reply")

@@ -1,5 +1,6 @@
 package org.doubao.like.service.controller;
 
+import org.doubao.like.service.dto.LikeQueryDto;
 import org.doubao.like.service.dto.request.BatchLikeStatusRequest;
 import org.doubao.like.service.dto.request.ToggleLikeRequest;
 import org.doubao.like.service.dto.response.BatchLikeStatusResponse;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 // LikeController.java
 @RestController
