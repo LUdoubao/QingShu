@@ -261,6 +261,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			throw new BusinessException((ErrorCode.COMMENT_NOT_FOUND));
 		}
 
+		// 删除缓存
+		String cacheKey = "comments:post:" + comment.getPostId()+":*";
+		Set<String> keys = redisTemplate.keys(cacheKey);
+		if (keys != null && !keys.isEmpty()) {
+			redisTemplate.delete(keys);
+		}
 		// 2. 构造调用点赞服务的请求参数
 		CommentLikeRequest likeRequest = new CommentLikeRequest();
 		likeRequest.setOperatorUserId(operatorUserId);  // 点赞操作的用户
