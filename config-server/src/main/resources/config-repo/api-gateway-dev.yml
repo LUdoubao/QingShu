@@ -3,10 +3,10 @@ server:
 
 spring:
   cloud:
-#    sentinel:
-#      transport:
-#        dashboard: localhost:8080
-#        client-ip: 127.0.0.1
+    #    sentinel:
+    #      transport:
+    #        dashboard: localhost:8080
+    #        client-ip: 127.0.0.1
     gateway:
       routes:
         - id: comment-service
@@ -74,14 +74,10 @@ spring:
           uri: lb://order-service
           predicates:
             - Path=/order/**
-        - id: payment-service
-          uri: lb://payment-service
+        - id: view-count-service
+          uri: lb://view-count-service
           predicates:
-            - Path=/payment/**
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    database: 0
+            - Path=/views/**
 
 eureka:
   client:
