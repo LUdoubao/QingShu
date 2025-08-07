@@ -20,6 +20,8 @@ public class Quote extends BaseDel {
 	private Long categoryId;
 	@TableField("status")
 	private int status;
+	@TableField("original")
+	private int original;
 
 	public int getStatus() {
 		return status;
@@ -67,5 +69,13 @@ public class Quote extends BaseDel {
 
 	public void setSource(String source) {
 		this.source = source;
+	}
+
+	public int getOriginal() {
+		return original;
+	}
+
+	public void setOriginal(int original) {
+		this.original = original;
 	}
 }

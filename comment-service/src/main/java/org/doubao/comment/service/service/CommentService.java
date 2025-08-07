@@ -32,4 +32,5 @@ public interface CommentService extends IService<Comment> {
 	Page<ReplyVO> getRepliesByCommentId(String commentId, Integer page, Integer size);
 
 	ToggleLikeResponse toggleLike(String commentId);
+
 }

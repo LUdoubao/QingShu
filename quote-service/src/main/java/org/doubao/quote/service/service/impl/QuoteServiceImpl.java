@@ -59,6 +59,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
 		q.setCategoryId(dto.getCategoryId());
+		q.setOriginal(dto.getOriginal());
 		q.setStatus(1);
 		this.save(q);
 		Long qId = q.getId();

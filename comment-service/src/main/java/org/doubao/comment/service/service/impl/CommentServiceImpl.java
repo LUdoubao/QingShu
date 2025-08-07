@@ -10,9 +10,11 @@ import org.doubao.comment.service.entity.Comment;
 import org.doubao.comment.service.feign.LikeClient;
 import org.doubao.comment.service.feign.UserClient;
 import org.doubao.comment.service.mapper.CommentMapper;
+import org.doubao.comment.service.messaging.CommentEventPublisher;
 import org.doubao.comment.service.service.CommentService;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
+import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
@@ -24,6 +26,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -36,7 +39,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
 	@Autowired
 	private RedisTemplate<String, Object> redisTemplate;
-
+	@Resource
+	private CommentEventPublisher commentEventPublisher;
 	// @Autowired
 	// private AiClient aiClient;
 
@@ -64,7 +68,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		}
 
 		// 3. 频率限制
-		Integer userId = Integer.valueOf(UserContext.getUser().getId());
+		long userId = Long.parseLong(UserContext.getUser().getId());
 		String rateKey = "comment_rate:" + userId;
 		Long count = redisTemplate.opsForValue().increment(rateKey, 1);
 		if (count != null && count == 1) {
@@ -100,7 +104,22 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		this.save(comment);
 
 		// 6. 异步处理
-		// rabbitTemplate.convertAndSend("comment.queue", comment);
+		String userName = Constants.DEFAULT_USER_NAME;
+		String key = Constants.REDIS_USER + userId;
+		if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
+			UserInfo userInfo = (UserInfo) redisTemplate.opsForValue().get(key);
+			if (userInfo != null) {
+				userName = userInfo.getUsername();
+			}
+		}
+		// 发送评论通知
+		Long repliedUserId = 0L;
+		if (dto.isReply()) {
+			// 查询被回复评论所属用户
+			Comment parentComment = this.getById(comment.getParentId());
+			repliedUserId = parentComment.getUserId();
+		}
+		commentEventPublisher.pushCommentNotification(repliedUserId, !dto.isReply(), comment.getPostId(), comment.getContent(), userId, userName);
 		// 7、删除缓存
 		String cacheKey = "comments:post:" + dto.getPostId()+":*";
 		Set<String> keys = redisTemplate.keys(cacheKey);
@@ -224,27 +243,32 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				.collect(Collectors.toList());
 
 		// 3.1 设置是否点赞
-		BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
-		likeQueryDto.setEntities(replyIds.stream().map(replyId -> {
-			BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
-			request.setEntityId(replyId);
-			request.setEntityType(1);
-			return request;
-		}).collect(Collectors.toList()));
-		// 不查询点赞数量，只查询点赞状态
-		likeQueryDto.setQueryCount(false);
-		likeQueryDto.setUserId(Long.valueOf(userId));
-		BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
-		List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
-		replyVOList.forEach(replyVO -> {
-			String replyId = replyVO.getReplyId();
-			results.stream()
-					.filter(result -> Objects.equals(result.getEntityId(), replyId))
-					.findFirst()
-					.ifPresent(result -> {
-						replyVO.setLiked(result.getLiked());
-					});
-		});
+		if (!replyIds.isEmpty()) {
+			BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
+			likeQueryDto.setEntities(replyIds.stream().map(replyId -> {
+				BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
+				request.setEntityId(replyId);
+				request.setEntityType(1);
+				return request;
+			}).collect(Collectors.toList()));
+			// 不查询点赞数量，只查询点赞状态
+			likeQueryDto.setQueryCount(false);
+			likeQueryDto.setUserId(Long.valueOf(userId));
+			BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
+			List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
+			if (results != null && !results.isEmpty()) {
+				replyVOList.forEach(replyVO -> {
+					String replyId = replyVO.getReplyId();
+					results.stream()
+							.filter(result -> Objects.equals(result.getEntityId(), replyId))
+							.findFirst()
+							.ifPresent(result -> {
+								replyVO.setLiked(result.getLiked());
+							});
+				});
+			}
+		}
+
 
 		Page<ReplyVO> replyVOPage = new Page<>(replyPage.getCurrent(), replyPage.getSize(),replyPage.getTotal());
 		replyVOPage.setRecords(replyVOList);
@@ -294,8 +318,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	 */
 	@Override
 	public IPage<CommentVO> getCommentList(String postId, Page<Comment> page, String sortType) {
+		String userId = UserContext.getUser().getId();
+
 		// 1. 尝试从缓存获取（热点数据）
-		String cacheKey = "comments:post:" + postId + ":" + sortType + ":" + page.getCurrent() + ":" + page.getSize();
+		String cacheKey = "comments:post:" + postId + ":" + sortType + ":"  + userId + ":" + page.getCurrent() + ":" + page.getSize();
 		IPage<CommentVO> cachedPage = (IPage<CommentVO>) redisTemplate.opsForValue().get(cacheKey);
 		if (cachedPage != null) {
 			return cachedPage;
@@ -325,7 +351,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		userIds.addAll(commentPage.getRecords().stream().map(Comment::getRepliedUserId).filter(Objects::nonNull).collect(Collectors.toSet()));
 		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
 
-		String userId = UserContext.getUser().getId();
 		List<String> commentIds = commentPage.getRecords().stream().map(Comment::getCommentId).collect(Collectors.toList());
 		IPage<CommentVO> resultPage = commentPage.convert(comment -> {
 			CommentVO vo = new CommentVO();
@@ -369,37 +394,42 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		});
 
 		// 3.1 设置是否点赞
-		BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
-		likeQueryDto.setEntities(commentIds.stream().map(commentId -> {
-			BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
-			request.setEntityId(commentId);
-			request.setEntityType(1);
-			return request;
-		}).collect(Collectors.toList()));
-		// 不查询点赞数量，只查询点赞状态
-		likeQueryDto.setQueryCount(false);
-		likeQueryDto.setUserId(Long.valueOf(userId));
-		BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
-		List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
-		resultPage.getRecords().forEach(commentVO -> {
-			String commentId = commentVO.getCommentId();
-			results.stream()
-					.filter(result -> Objects.equals(result.getEntityId(), commentId))
-					.findFirst()
-					.ifPresent(result -> {
-						commentVO.setLike(result.getLiked());
+		if (!commentIds.isEmpty()) {
+			BatchLikeStatusRequest likeQueryDto = new BatchLikeStatusRequest();
+			likeQueryDto.setEntities(commentIds.stream().map(commentId -> {
+				BatchLikeStatusRequest.EntityRequest request = new BatchLikeStatusRequest.EntityRequest();
+				request.setEntityId(commentId);
+				request.setEntityType(1);
+				return request;
+			}).collect(Collectors.toList()));
+			// 不查询点赞数量，只查询点赞状态
+			likeQueryDto.setQueryCount(false);
+			likeQueryDto.setUserId(Long.valueOf(userId));
+			BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
+			List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
+			if (results != null && !results.isEmpty()) {
+				resultPage.getRecords().forEach(commentVO -> {
+					String commentId = commentVO.getCommentId();
+					results.stream()
+							.filter(result -> Objects.equals(result.getEntityId(), commentId))
+							.findFirst()
+							.ifPresent(result -> {
+								commentVO.setLike(result.getLiked());
+							});
+					List<ReplyVO> replyList = commentVO.getReplyList();
+					replyList.forEach(replyVO -> {
+						String replyId = replyVO.getReplyId();
+						results.stream()
+								.filter(result -> Objects.equals(result.getEntityId(), replyId))
+								.findFirst()
+								.ifPresent(result -> {
+									replyVO.setLiked(result.getLiked());
+								});
 					});
-			List<ReplyVO> replyList = commentVO.getReplyList();
-			replyList.forEach(replyVO -> {
-				String replyId = replyVO.getReplyId();
-				results.stream()
-						.filter(result -> Objects.equals(result.getEntityId(), replyId))
-						.findFirst()
-						.ifPresent(result -> {
-							replyVO.setLiked(result.getLiked());
-						});
-			});
-		});
+				});
+			}
+		}
+
 
 		// 4. 按热度二次排序（内存中精确计算）
 		if ("hot".equals(sortType)) {

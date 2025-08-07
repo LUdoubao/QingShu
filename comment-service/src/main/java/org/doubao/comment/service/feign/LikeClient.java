@@ -1,5 +1,6 @@
 package org.doubao.comment.service.feign;
 
+import org.doubao.comment.service.config.FeignErrorDecoderConfig;
 import org.doubao.comment.service.dto.BatchLikeStatusRequest;
 import org.doubao.comment.service.dto.BatchLikeStatusResponse;
 import org.doubao.comment.service.dto.CommentLikeRequest;
@@ -13,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 
 // 评论服务中定义Feign客户端，适配点赞服务接口
-@FeignClient(name = "like-service", fallback = LikeServiceFallback.class)
+@FeignClient(name = "like-service", fallback = LikeServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
 public interface LikeClient {
 
 	/**

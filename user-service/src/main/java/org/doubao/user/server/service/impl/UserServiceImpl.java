@@ -163,7 +163,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		User user = new User();
 		user.setId(dto.getUserId());
 		BeanUtils.copyProperties(dto, user);
-		userMapper.updateById(user);
+		user.setRole(null);
+		this.updateById(user);
 		clearUserCache(dto.getUserId());
 	}
 
@@ -180,22 +181,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Override
 	public PageUserVo<UserVo> adminSearchUsers(int page, int size, Integer status, String email) {
-		QueryWrapper<User> wrapper = new QueryWrapper<>();
-		wrapper.eq("deleted", false);
-
-		if (status != null) {
-			wrapper.eq("status", status);
-		}
-		if (email != null && !email.isEmpty()) {
-			wrapper.like("email", email);
-		}
-
-		Page<User> userPage = userMapper.selectPage(new Page<>(page, size), wrapper);
-		// return PageUserVo.from(userPage).setRecords(
-		// 		userPage.getRecords().stream()
-		// 				.map(UserVo::from)
-		// 				.collect(Collectors.toList())
-		// );
 		return null;
 	}
 
@@ -208,14 +193,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		User user = new User();
 		user.setId(userId);
 		user.setStatus(status);
+		user.setRole(null);
 		userMapper.updateById(user);
 		clearUserCache(userId);
-
-		// 广播状态变更事件
-		// Map<String, Object> event = new HashMap<>();
-		// event.put("userId", userId);
-		// event.put("newStatus", status);
-		// rabbitTemplate.convertAndSend("user.status.exchange", "user.status", event);
 	}
 
 	@Override
@@ -275,6 +255,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		User user = new User();
 		user.setId(dto.getUserId());
 		user.setEmail(dto.getEmail());
+		user.setRole(null);
 		userMapper.updateById(user);
 	}
 

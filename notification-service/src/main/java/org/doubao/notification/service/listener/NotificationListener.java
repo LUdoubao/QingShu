@@ -1,10 +1,7 @@
 package org.doubao.notification.service.listener;
 
+import org.doubao.mall.common.event.*;
 import org.doubao.notification.service.entity.Notification;
-import org.doubao.mall.common.event.AuditEvent;
-import org.doubao.mall.common.event.LikeEvent;
-import org.doubao.mall.common.event.NotificationEvent;
-import org.doubao.mall.common.event.SystemEvent;
 import org.doubao.notification.service.service.NotificationService;
 import org.doubao.notification.service.utils.NotificationFormatter;
 import org.slf4j.Logger;
@@ -77,6 +74,11 @@ public class NotificationListener {
 			case "LIKE":
 				if (event instanceof LikeEvent) {
 					notification = formatter.formatLikeNotification((LikeEvent) event);
+				}
+				break;
+			case "COMMENT":
+				if (event instanceof CommentEvent) {
+					notification = formatter.formatCommentNotification((CommentEvent) event);
 				}
 				break;
 			default:

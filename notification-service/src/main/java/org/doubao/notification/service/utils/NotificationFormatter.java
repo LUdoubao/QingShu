@@ -1,6 +1,7 @@
 package org.doubao.notification.service.utils;
 
 import com.alibaba.fastjson.JSON;
+import org.doubao.mall.common.event.CommentEvent;
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.mall.common.event.AuditEvent;
 import org.doubao.mall.common.event.LikeEvent;
@@ -71,6 +72,25 @@ public class NotificationFormatter {
 		notification.setContent(JSON.toJSONString(content));
 		notification.setSourceId(event.getEntityId());
 		notification.setSourceType(String.valueOf(event.getEntityType()));
+		return notification;
+	}
+
+	public Notification formatCommentNotification(CommentEvent event) {
+		Notification notification = new Notification();
+		notification.setUserId(event.getUserId());
+		notification.setType("COMMENT");
+		notification.setTitle(event.isComment() ? "评论通知" : "回复通知");
+		Map<String, Object> content = new HashMap<>();
+		content.put("target", "comment");
+		content.put("action", event.isComment());
+		content.put("content", event.getContent());
+		content.put("commentContent", event.getCommentContent());
+		content.put("id", event.getQuoteId());
+		content.put("userName", event.getOperatorUserName());
+
+		notification.setContent(JSON.toJSONString(content));
+		notification.setSourceId(event.getQuoteId());
+		notification.setSourceType("1");
 		return notification;
 	}
 }

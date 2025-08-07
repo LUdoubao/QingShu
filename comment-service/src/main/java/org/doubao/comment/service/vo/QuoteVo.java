@@ -1,13 +1,6 @@
-package org.doubao.quote.service.vo;
+package org.doubao.comment.service.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import org.doubao.mall.common.entity.BaseEntity;
-import org.doubao.quote.service.entity.Tag;
-
-import java.util.List;
 
 public class QuoteVo extends BaseEntity {
 	/**
@@ -34,30 +27,6 @@ public class QuoteVo extends BaseEntity {
 	 * 分类id
 	 */
 	private Long categoryId;
-	/**
-	 * 标签列表
-	 */
-	private List<Tag> tags;
-	/**
-	 * 是否原创
-	 */
-	private int original;
-
-	public int getOriginal() {
-		return original;
-	}
-
-	public void setOriginal(int original) {
-		this.original = original;
-	}
-
-	public List<Tag> getTags() {
-		return tags;
-	}
-
-	public void setTags(List<Tag> tags) {
-		this.tags = tags;
-	}
 
 	public String getCategoryName() {
 		return categoryName;
@@ -107,16 +76,4 @@ public class QuoteVo extends BaseEntity {
 		this.source = source;
 	}
 
-	@Override
-	public String toString() {
-		return "QuoteVo{" +
-				"id=" + id +
-				", content='" + content + '\'' +
-				", author='" + author + '\'' +
-				", source='" + source + '\'' +
-				", categoryName='" + categoryName + '\'' +
-				", categoryId=" + categoryId +
-				", tags=" + tags +
-				'}';
-	}
 }

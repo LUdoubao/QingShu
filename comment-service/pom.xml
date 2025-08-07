@@ -10,6 +10,10 @@
     <artifactId>comment-service</artifactId>
     <name>comment-service</name>
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+        </dependency>
         <!-- RabbitMQ Binder -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

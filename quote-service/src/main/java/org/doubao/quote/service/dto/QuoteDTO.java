@@ -14,6 +14,15 @@ public class QuoteDTO {
 	private List<Long> tagIds;
 	private int status;
 	private Long createdId;
+	private int original;
+
+	public int getOriginal() {
+		return original;
+	}
+
+	public void setOriginal(int original) {
+		this.original = original;
+	}
 
 	public Long getCreatedId() {
 		return createdId;
