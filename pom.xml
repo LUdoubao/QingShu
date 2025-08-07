@@ -26,6 +26,8 @@
 		<module>favorite-service</module>
 		<module>ai-service</module>
 		<module>comment-service</module>
+		<module>view-count-service</module>
+		<module>share-service</module>
 	</modules>
 
 	<properties>
