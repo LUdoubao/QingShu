@@ -55,4 +55,21 @@
         ORDER BY q.created_time DESC
         LIMIT #{pageNum}, #{pageSize}
     </select>
+
+    <select id="getQuoteType" resultType="Integer">
+        SELECT q.original
+        FROM quote q
+        WHERE q.id = #{quoteId}
+    </select>
+    <!-- boolean checkQuoteExists(@Param("quoteId") String quoteId);-->
+    <select id="checkQuoteExists" resultType="boolean">
+        SELECT EXISTS(
+        SELECT 1
+        FROM quote q
+        WHERE q.id = #{quoteId}
+        AND q.deleted = 0
+        AND q.status = 1
+        )
+    </select>
+
 </mapper>

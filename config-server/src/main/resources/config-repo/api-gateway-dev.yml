@@ -9,6 +9,10 @@ spring:
     #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: share-service
+          uri: lb://share-service
+          predicates:
+            - Path=/share/**,/public/share/**
         - id: comment-service
           uri: lb://comment-service
           predicates:
@@ -48,7 +52,7 @@ spring:
         - id: quote-service
           uri: lb://quote-service
           predicates:
-            - Path=/quote/**,/tag/**,/category/**
+            - Path=/quote/**,/tag/**,/category/**,/public/quote/**
           filters:
             # 请求速率限制过滤器（基于Redis的令牌桶算法）
             - name: CustomRateLimiter

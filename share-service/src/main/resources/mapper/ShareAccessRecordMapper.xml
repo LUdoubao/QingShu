@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.share.service.mapper.ShareAccessRecordMapper">
+    <!-- List<ShareAccessRecord> selectByShareLinkIdAndTimeRange(
+			@Param("shareLinkId") Long shareLinkId,
+			@Param("startTime") String startTime,
+			@Param("endTime") String endTime,
+			@Param("offset") int offset,
+			@Param("pageSize") int pageSize); -->
+    <select id="selectByShareLinkIdAndTimeRange" resultType="org.doubao.share.service.entity.ShareAccessRecord">
+        SELECT
+        *
+        FROM
+        share_access_record
+        WHERE
+        share_link_id = #{shareLinkId}
+        AND access_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY
+        access_time DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+    <!-- long countByShareLinkIdAndTimeRange(
+			@Param("shareLinkId") Long shareLinkId,
+			@Param("startTime") String startTime,
+			@Param("endTime") String endTime); -->
+    <select id="countByShareLinkIdAndTimeRange" resultType="long">
+        SELECT
+        COUNT(1)
+        FROM
+        share_access_record
+        WHERE
+        share_link_id = #{shareLinkId}
+        AND access_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

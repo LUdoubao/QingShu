@@ -33,4 +33,8 @@ public interface QuoteService extends IService<Quote> {
 	Result<Page<QuoteVo>> verifyPage(PageDto pageDto);
 
 	Result<List<Map<String, Object>>> batch(List<Long> ids);
+
+	String getQuoteType(String quoteId);
+
+	boolean checkQuoteExists(Map<String, String> request);
 }

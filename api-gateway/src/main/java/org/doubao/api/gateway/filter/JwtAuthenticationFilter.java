@@ -32,7 +32,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 		"/auth/",
 		"/user/login",
 		"/user/register",
-		"/user/verify"
+		"/user/verify",
+		"/public/"
 	);
 
 

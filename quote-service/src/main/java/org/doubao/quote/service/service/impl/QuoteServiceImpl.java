@@ -402,6 +402,18 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return Result.success(mapList);
 	}
 
+	@Override
+	public String getQuoteType(String quoteId) {
+		int quoteType = quoteMapper.getQuoteType(quoteId);
+		return quoteType == 1 ? "ORIGINAL" : "NON-ORIGINAL";
+	}
+
+	@Override
+	public boolean checkQuoteExists(Map<String, String> request) {
+		String quoteId = request.get("quoteId");
+		return quoteMapper.checkQuoteExists(quoteId);
+	}
+
 	@SuppressWarnings("unchecked")
 	private Result<Page<QuoteVo>> queryVerify(PageDto pageDto) {
 		LambdaQueryWrapper<QuoteVerify> queryWrapper = new LambdaQueryWrapper<QuoteVerify>()

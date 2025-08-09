@@ -31,7 +31,7 @@ public class QuoteController {
 		return quoteService.pageManager(pageDto);
 	}
 
-	@PostMapping("create")
+	@PostMapping("/create")
 	public Result<Quote> create(@RequestBody QuoteDTO dto) {
 		return quoteService.addQuote(dto);
 	}
@@ -70,5 +70,14 @@ public class QuoteController {
 		return quoteService.batch(ids);
 	}
 
+	@GetMapping("/{quoteId}/type")
+	public String getQuoteType(@PathVariable("quoteId") String quoteId) {
+		return quoteService.getQuoteType(quoteId);
+	}
+
+	@PostMapping("/inner/exists")
+	public boolean checkQuoteExists(@RequestBody Map<String, String> request) {
+		return quoteService.checkQuoteExists(request);
+	}
 }
 

@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Param;
 import org.doubao.quote.service.entity.Quote;
 
 import java.util.List;
+import java.util.Map;
 
 @Mapper
 public interface QuoteMapper extends BaseMapper<Quote> {
@@ -23,4 +24,8 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 										   @Param("pageSize") int pageSize,
 										   @Param("pageNum") int pageNum,
 										   @Param("userId") Long userId);
+
+	int getQuoteType(@Param("quoteId") String quoteId);
+
+	boolean checkQuoteExists(@Param("quoteId") String quoteId);
 }
