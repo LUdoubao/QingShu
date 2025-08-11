@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface UserService extends IService<User> {
@@ -44,4 +45,6 @@ public interface UserService extends IService<User> {
 	String uploadAvatar(MultipartFile file, Long userId);
 
 	List<UserInfo> usersByIds(Set<Long> userIds);
+
+	boolean checkUserExists(Map<String, String> request);
 }

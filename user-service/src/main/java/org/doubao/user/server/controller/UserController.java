@@ -15,6 +15,7 @@ import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -146,5 +147,10 @@ public class UserController {
 	@PostMapping("/upload/avatar")
 	public Result<?> uploadAvatar(@RequestParam("file") MultipartFile file, @RequestParam Long userId) {
 		return Result.success(userService.uploadAvatar(file, userId));
+	}
+
+	@PostMapping("/inner/exists")
+	boolean checkUserExists(@RequestBody Map<String, String> request) {
+		return userService.checkUserExists(request);
 	}
 }

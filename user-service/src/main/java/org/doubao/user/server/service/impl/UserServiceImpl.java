@@ -92,6 +92,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
+	public boolean checkUserExists(Map<String, String> request) {
+		String userId = request.get("userId");
+		return this.getById(userId) != null;
+	}
+
+	@Override
 	public UserVo getById(Long id) {
 		String cacheKey = "USER:" + id;
 		Object user = redisTemplate.opsForValue().get(cacheKey);
