@@ -8,10 +8,14 @@ import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
+import org.doubao.quote.service.duplicate.check.CitationCheckService;
+import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
@@ -46,6 +50,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Resource
 	private CategoryService categoryService;
 
+	@Resource
+	private CitationCheckService citationCheckService;
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<Page<QuoteVo>> page(PageDto pageDto) {
@@ -54,6 +60,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Override
 	public Result<Quote> addQuote(QuoteDTO dto) {
+		// 检查引文是否重复
+		DecisionEngine.DuplicationResult duplicationResult = citationCheckService.checkCitation(dto.getContent(), dto.getAuthor(), dto.getSource(), dto.getOriginal() == 1);
+		if (duplicationResult.getStatus() == DecisionEngine.DuplicationStatus.DUPLICATE) {
+			throw new BusinessException(ErrorCode.CONTENT_EXISTS);
+		}
 		Quote q = new Quote();
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
