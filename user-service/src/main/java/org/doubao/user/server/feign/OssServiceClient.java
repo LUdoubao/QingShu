@@ -1,6 +1,6 @@
 package org.doubao.user.server.feign;
 
-import org.doubao.mall.common.dto.UploadResult;
+import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.MediaType;
@@ -15,13 +15,14 @@ import org.springframework.web.multipart.MultipartFile;
 public interface OssServiceClient {
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-	Result<UploadResult> uploadFile(
-			@RequestPart("file") MultipartFile file,
-			@RequestParam(value = "prefix", required = false) String prefix,
-			@RequestParam(value = "type", defaultValue = "file") String type
+	Result<FileUploadResult> uploadFile(
+			@RequestPart("file") MultipartFile file
 	);
 
-	@GetMapping("/delete")
-	Result<Void> deleteFile(@RequestParam("path") String filePath);
+	@GetMapping("/url")
+	Result<String> generateAccessUrl(
+			@RequestParam(required = false , name = "fileKey")  String fileKey,
+			@RequestParam("storageType") String storageType
+	);
 }
 

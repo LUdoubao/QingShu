@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class OssProperties {
 	private Aliyun aliyun;
 	private Local local;
-	private String storageType;
+	private Storage storage;
 
 	public Aliyun getAliyun() {
 		return aliyun;
@@ -26,12 +26,12 @@ public class OssProperties {
 		this.local = local;
 	}
 
-	public String getStorageType() {
-		return storageType;
+	public Storage getStorage() {
+		return storage;
 	}
 
-	public void setStorageType(String storageType) {
-		this.storageType = storageType;
+	public void setStorage(Storage storage) {
+		this.storage = storage;
 	}
 
 	public static class Aliyun {
@@ -75,6 +75,24 @@ public class OssProperties {
 	public static class Local {
 		private String storagePath;
 		private String baseUrl;
+		private String defaultAvatar;
+		private String aesKey;
+
+		public String getAesKey() {
+			return aesKey;
+		}
+
+		public void setAesKey(String aesKey) {
+			this.aesKey = aesKey;
+		}
+
+		public String getDefaultAvatar() {
+			return defaultAvatar;
+		}
+
+		public void setDefaultAvatar(String defaultAvatar) {
+			this.defaultAvatar = defaultAvatar;
+		}
 
 		public String getStoragePath() {
 			return storagePath;
@@ -92,4 +110,16 @@ public class OssProperties {
 			this.baseUrl = baseUrl;
 		}
 	}
+	public static class Storage {
+		private String type;
+
+		public String getType() {
+			return type;
+		}
+
+		public void setType(String type) {
+			this.type = type;
+		}
+	}
+
 }

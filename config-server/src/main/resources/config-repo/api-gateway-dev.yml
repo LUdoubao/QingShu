@@ -28,7 +28,7 @@ spring:
         - id: oss-service
           uri: lb://oss-service
           predicates:
-            - Path=/oss/**
+            - Path=/oss/**, /public/oss/**
         - id: like-service
           uri: lb://like-service
           predicates:

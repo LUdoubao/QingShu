@@ -2,9 +2,8 @@ package org.doubao.user.server.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.doubao.mall.common.dto.UploadResult;
+import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
@@ -47,15 +46,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Override
 	public String uploadAvatar(MultipartFile avatarFile, Long userId) {
-		UploadResult result = ossServiceClient.uploadFile(
-				avatarFile,
-				"avatars/" + userId,
-				"image"
-		).getData();
+		FileUploadResult result = ossServiceClient.uploadFile(
+				avatarFile).getData();
 		// 更新用户头像URL
-		userMapper.updateUserAvatar(userId, result.getFileUrl());
+		userMapper.updateUserAvatar(userId, result.getFileKey(), result.getStorageType());
 		clearUserCache(userId);
-		return result.getFileUrl();
+		return result.getAccessUrl();
 	}
 
 	@Override
@@ -103,9 +99,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		Object user = redisTemplate.opsForValue().get(cacheKey);
 		if (user == null) {
 			user = userMapper.selectById(id);
-			UserVo userVo = UserVo.from((User) user);
+			User userEntity = (User) user;
+			UserVo userVo = UserVo.from(userEntity);
+			// 动态生成头像URL
+			userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
+					userEntity.getAvatarKey(),
+					userEntity.getStorageType()
+			).getData());
+
 			redisTemplate.opsForValue().set(cacheKey, userVo,
 					Duration.ofMinutes(30 + new Random().nextInt(10)));
+			return userVo;
 		}
 		return JSON.toJavaObject(JSON.parseObject(JSON.toJSONString(user)),UserVo.class);
 	}
@@ -114,7 +118,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	public void register(UserDto userDto) {
 		// 验证邮箱唯一性
 		if (userMapper.findByEmail(userDto.getEmail()) != null) {
-			throw new BusinessException("邮箱已被注册", ErrorCode.EMAIL_EXISTS);
+			throw new BusinessException(ErrorCode.EMAIL_EXISTS);
+		}
+		// 验证用户名唯一性
+		if (userMapper.findByUsername(userDto.getUsername())) {
+			throw new BusinessException(ErrorCode.USERNAME_EXISTS);
 		}
 
 		sendEmailCodeAndSave(userDto.getEmail(), "您的注册验证码");
@@ -127,7 +135,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String storedCode = (String) redisTemplate.opsForValue().get(redisKey);
 
 		if (storedCode == null || !storedCode.equals(code)) {
-			throw new BusinessException("验证码无效或已过期", ErrorCode.INVALID_VERIFY_CODE);
+			throw new BusinessException(ErrorCode.INVALID_VERIFY_CODE);
 		}
 
 		// 创建用户
@@ -143,23 +151,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Override
 	public UserVo login(String username, String password) {
-		User user = userMapper.findByEmail(username);
-		if (user == null) {
-			user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
-		}
+
+		User user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
 
 		if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
-			throw new BusinessException("用户名或密码错误", ErrorCode.USERNAME_PASSWORD_ERROR);
+			throw new BusinessException(ErrorCode.USERNAME_PASSWORD_ERROR);
 		}
 
 		if (user.getStatus() == 1) {
-			throw new BusinessException("用户已被禁用", ErrorCode.USER_DISABLED);
+			throw new BusinessException(ErrorCode.USER_DISABLED);
 		}
 		UserInfo userInfo = new UserInfo();
 		userInfo.setId(user.getId().toString());
 		userInfo.setUsername(user.getUsername());
 		UserInfo data = authServiceClient.login(userInfo).getData();
 		UserVo userVo = UserVo.from(user);
+		// 动态生成头像URL
+		userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
+				user.getAvatarKey(),
+				user.getStorageType()
+		).getData());
 		userVo.setToken(data.getToken());
 		return userVo;
 	}
@@ -178,7 +189,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	public void changePassword(Long userId, PasswordChangeDto dto) {
 		User user = userMapper.selectById(userId);
 		if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
-			throw new BusinessException("原密码错误", ErrorCode.OLD_PASSWORD_ERROR);
+			throw new BusinessException(ErrorCode.OLD_PASSWORD_ERROR);
 		}
 		user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
 		userMapper.updateById(user);
@@ -193,7 +204,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public void adminUpdateStatus(Long userId, Integer status) {
 		if (status != 0 && status != 1) {
-			throw new BusinessException("无效的状态值", ErrorCode.INVALID_STATUS);
+			throw new BusinessException(ErrorCode.INVALID_STATUS);
 		}
 
 		User user = new User();
@@ -213,7 +224,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public void adminUpdateRole(Long userId, String role) {
 		if (!"USER".equals(role) && !"ADMIN".equals(role)) {
-			throw new BusinessException("无效的角色类型", ErrorCode.INVALID_ROLE);
+			throw new BusinessException(ErrorCode.INVALID_ROLE);
 		}
 
 		User user = new User();
@@ -256,7 +267,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String storedCode = (String) redisTemplate.opsForValue().get(redisKey);
 
 		if (storedCode == null || !storedCode.equals(dto.getCode())) {
-			throw new BusinessException("验证码无效或已过期", ErrorCode.INVALID_VERIFY_CODE);
+			throw new BusinessException(ErrorCode.INVALID_VERIFY_CODE);
 		}
 		User user = new User();
 		user.setId(dto.getUserId());

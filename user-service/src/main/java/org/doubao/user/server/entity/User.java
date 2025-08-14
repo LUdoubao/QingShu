@@ -27,8 +27,10 @@ public class User extends BaseDel {
 	private String email;
 	@TableField(value = "signature")
 	private String signature;
-	@TableField(value = "avatar_url")
-	private String avatarUrl;
+	@TableField(value = "avatar_key")
+	private String avatarKey;
+	@TableField(value = "storage_type")
+	private String storageType = "local"; // 默认本地存储
 	@TableField(value = "status")
 	private int status = 0;
 	@TableField(value = "role")
@@ -82,12 +84,20 @@ public class User extends BaseDel {
 		this.signature = signature;
 	}
 
-	public String getAvatarUrl() {
-		return avatarUrl;
+	public String getAvatarKey() {
+		return avatarKey;
 	}
 
-	public void setAvatarUrl(String avatarUrl) {
-		this.avatarUrl = avatarUrl;
+	public void setAvatarKey(String avatarKey) {
+		this.avatarKey = avatarKey;
+	}
+
+	public String getStorageType() {
+		return storageType;
+	}
+
+	public void setStorageType(String storageType) {
+		this.storageType = storageType;
 	}
 
 	public int getStatus() {

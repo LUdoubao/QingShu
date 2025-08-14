@@ -9,6 +9,14 @@
     </select>
 
     <update id="updateUserAvatar">
-        UPDATE user SET avatar_url = #{fileUrl} WHERE id = #{userId}
+        UPDATE user SET
+            avatar_key = #{fileKey},
+            storage_type = #{storageType}
+        WHERE id = #{userId}
     </update>
+
+    <!-- boolean findByUsername(@Param("username") String username); -->
+    <select id="findByUsername" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user WHERE username = #{username})
+    </select>
 </mapper>

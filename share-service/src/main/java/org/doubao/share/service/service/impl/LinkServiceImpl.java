@@ -10,7 +10,7 @@ import org.doubao.share.service.entity.ShareLink;
 import org.doubao.share.service.feign.QuoteServiceFeign;
 import org.doubao.share.service.mapper.ShareLinkMapper;
 import org.doubao.share.service.service.LinkService;
-import org.doubao.share.service.utils.EncryptionUtil;
+import org.doubao.mall.common.util.EncryptionUtil;
 import org.doubao.share.service.vo.ShareLinkVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class LinkServiceImpl extends ServiceImpl<ShareLinkMapper, ShareLink> implements LinkService {
-
+	@Value("${share.aes.key:doubao}")
+	private String aesKey;
 	@Autowired
 	private ShareLinkMapper shareLinkMapper;
 
@@ -63,7 +64,7 @@ public class LinkServiceImpl extends ServiceImpl<ShareLinkMapper, ShareLink> imp
 		String encryptPassword = null;
 		if ("PASSWORD".equals(dto.getAccessControl())) {
 			try {
-				encryptPassword = encryptionUtil.encrypt(dto.getPassword());
+				encryptPassword = EncryptionUtil.encrypt(dto.getPassword(), aesKey);
 			} catch (Exception e) {
 				throw new RuntimeException("密码加密失败", e);
 			}
@@ -154,7 +155,7 @@ public class LinkServiceImpl extends ServiceImpl<ShareLinkMapper, ShareLink> imp
 		String encryptPassword = existingLink.getEncryptPassword();
 		if ("PASSWORD".equals(dto.getAccessControl())) {
 			try {
-				encryptPassword = encryptionUtil.encrypt(dto.getPassword());
+				encryptPassword = EncryptionUtil.encrypt(dto.getPassword(), aesKey);
 			} catch (Exception e) {
 				throw new RuntimeException("密码加密失败", e);
 			}

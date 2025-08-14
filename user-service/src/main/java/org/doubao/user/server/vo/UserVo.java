@@ -18,7 +18,6 @@ public class UserVo {
 	private LocalDateTime createdTime;
 	private String token;
 	private String role;
-
 	// 排除敏感字段
 	public static UserVo from(User user) {
 		UserVo vo = new UserVo();
@@ -32,6 +31,7 @@ public class UserVo {
 		userInfo.setId(String.valueOf(userVo.getId()));
 		return userInfo;
 	}
+
 
 	public String getRole() {
 		return role;

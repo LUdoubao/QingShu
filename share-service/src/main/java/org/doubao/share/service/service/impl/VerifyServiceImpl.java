@@ -9,10 +9,11 @@ import org.doubao.share.service.feign.UserServiceFeign;
 import org.doubao.share.service.service.LinkService;
 import org.doubao.share.service.service.RecordService;
 import org.doubao.share.service.service.VerifyService;
-import org.doubao.share.service.utils.EncryptionUtil;
+import org.doubao.mall.common.util.EncryptionUtil;
 import org.doubao.share.service.vo.VerifyResultVO;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class VerifyServiceImpl implements VerifyService {
-
+	@Value("${share.aes.key:doubao}")
+	private String aesKey;
 	@Autowired
 	private LinkService linkService;
 
@@ -128,7 +130,7 @@ public class VerifyServiceImpl implements VerifyService {
 
 		try {
 			// 解密并验证密码
-			String decryptPassword = encryptionUtil.decrypt(encryptPassword);
+			String decryptPassword = EncryptionUtil.decrypt(encryptPassword, aesKey);
 			if (decryptPassword.equals(inputPassword)) {
 				// 验证成功，清除错误计数
 				redisTemplate.delete(errorKey);
