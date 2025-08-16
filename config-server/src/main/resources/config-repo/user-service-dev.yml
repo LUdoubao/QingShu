@@ -1,30 +1,9 @@
 server:
   port: 9001
 
-spring:
-  redis:
-    host: 127.0.0.1
-    port: 6379
-    database: 0
-  redisson:
-    config: |
-      singleServerConfig:
-        address: "redis://127.0.0.1:6379"
-        connectionMinimumIdleSize: 5
-        idleConnectionTimeout: 30000
-        connectTimeout: 5000   # 连接超时设为5秒
-        timeout: 3000
-        retryAttempts: 3      # 重试次数
-        retryInterval: 1000    # 重试间隔
-
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开启SQL日志
-  global-config:
-    db-config:
-      logic-delete-field: deleted # 逻辑删除字段名
-      logic-not-delete-value: 0   # 逻辑未删除值
-      logic-delete-value: 1      # 逻辑删除值
 
 eureka:
   client:

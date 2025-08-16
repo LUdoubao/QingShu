@@ -28,6 +28,7 @@
 		<module>comment-service</module>
 		<module>view-count-service</module>
 		<module>share-service</module>
+		<module>dialog-service</module>
 	</modules>
 
 	<properties>

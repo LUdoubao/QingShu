@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.dialog.service.mapper.AssistantKnowledgeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="org.doubao.dialog.service.entity.AssistantKnowledge">
+        <id column="id" property="id"/>
+        <result column="keyword" property="keyword"/>
+        <result column="content" property="content"/>
+        <result column="module" property="module"/>
+        <result column="hit_count" property="hitCount"/>
+        <result column="enabled" property="enabled"/>
+        <result column="created_time" property="createdTime"/>
+        <result column="updated_time" property="updatedTime"/>
+    </resultMap>
+
+    <!-- 根据关键词匹配知识库 -->
+    <select id="matchByKeyword" resultMap="BaseResultMap">
+        SELECT
+        id,
+        keyword,
+        content,
+        module,
+        hit_count,
+        enabled,
+        created_time,
+        updated_time
+        FROM
+        assistant_knowledge
+        WHERE
+        keyword LIKE CONCAT('%', #{keyword}, '%')
+        OR content LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY
+        hit_count DESC,
+        updated_time DESC
+    </select>
+
+    <!-- 根据模块查询知识库 -->
+    <select id="selectByModule" resultMap="BaseResultMap">
+        SELECT
+        id,
+        keyword,
+        content,
+        module,
+        hit_count,
+        enabled,
+        created_time,
+        updated_time
+        FROM
+        assistant_knowledge
+        WHERE
+        module = #{module}
+        ORDER BY
+        updated_time DESC
+    </select>
+
+    <!-- 增加命中次数 -->
+    <update id="incrementHitCount">
+        UPDATE
+        assistant_knowledge
+        SET
+        hit_count = hit_count + 1,
+        updated_time = NOW()
+        WHERE
+        id = #{id}
+    </update>
+
+</mapper>
