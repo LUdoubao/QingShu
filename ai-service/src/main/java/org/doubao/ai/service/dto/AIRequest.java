@@ -1,4 +1,4 @@
-package org.doubao.dialog.service.dto;
+package org.doubao.ai.service.dto;
 
 import java.util.List;
 
@@ -27,7 +27,11 @@ public class AIRequest {
 	 */
 	private Double temperature;
 
+	/**
+	 * 模块名称
+	 */
 	private String module;
+
 	private String aiType;
 
 	public String getAiType() {
@@ -38,16 +42,16 @@ public class AIRequest {
 		this.aiType = aiType;
 	}
 
+	public List<ChatMessage> getMessages() {
+		return messages;
+	}
+
 	public String getModule() {
 		return module;
 	}
 
 	public void setModule(String module) {
 		this.module = module;
-	}
-
-	public List<ChatMessage> getMessages() {
-		return messages;
 	}
 
 	public void setMessages(List<ChatMessage> messages) {

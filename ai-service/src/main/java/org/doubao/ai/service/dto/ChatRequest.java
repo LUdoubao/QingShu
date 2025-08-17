@@ -1,6 +1,7 @@
 package org.doubao.ai.service.dto;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ChatRequest {
 	private boolean stream = false;
@@ -23,6 +24,10 @@ public class ChatRequest {
 		public Message(String role, String content) {
 			this.role = role;
 			this.content = content;
+		}
+
+		public static List<Message> convert(List<ChatMessage> messages) {
+			return messages.stream().map(message -> new Message(message.getRole(), message.getContent())).collect(Collectors.toList());
 		}
 
 		public String getRole() {

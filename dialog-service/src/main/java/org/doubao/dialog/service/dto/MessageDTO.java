@@ -32,6 +32,10 @@ public class MessageDTO {
 	 */
 	private Integer senderType;
 
+	private String title;
+
+
+
 	public MessageDTO(Long dialogId, String content, Boolean isAdmin, LocalDateTime sendTime, Integer senderType) {
 		this.dialogId = dialogId;
 		this.content = content;
@@ -40,6 +44,13 @@ public class MessageDTO {
 		this.senderType = senderType;
 	}
 
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
 	public MessageDTO() {
 	}

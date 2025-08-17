@@ -37,6 +37,8 @@
         LIMIT 1
         )
         WHERE d.user_id = #{userId}
+        ORDER BY
+        d.created_time DESC
     </select>
 
     <!-- 管理员查询对话列表 -->

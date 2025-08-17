@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.dialog.service.dto.*;
 import org.doubao.dialog.service.entity.AssistantDialog;
 import org.doubao.dialog.service.entity.AssistantMessage;
+import org.doubao.dialog.service.enums.ChatModule;
 import org.doubao.dialog.service.enums.DialogStatusEnum;
 import org.doubao.dialog.service.enums.SenderTypeEnum;
 import org.doubao.dialog.service.feign.AIServiceClient;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -50,9 +52,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	@Autowired
 	private WebSocketService webSocketService;
 
-	@Value("${ai.model:gpt-3.5-turbo}")
-	private String aiModel;
-
 	@Value("${ai.max-tokens:200}")
 	private Integer maxTokens;
 
@@ -69,8 +68,11 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 		// 1. 获取或创建对话
 		Long dialogId = request.getDialogId();
+		String title = request.getTitle();
 		if (dialogId == null) {
-			dialogId = createNewDialog(request.getUserId(), request.getContent());
+			AssistantDialog dialog = createNewDialog(request);
+			dialogId = dialog.getId();
+			title = dialog.getTitle();
 		}
 
 		// 2. 保存用户消息
@@ -89,7 +91,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				replyContent = "正在为您连接管理员（预计1-3分钟）";
 			} else {
 				// 调用AI生成回复
-				replyContent = callAiService(dialogId, request.getContent());
+				replyContent = callAiService(dialogId, request);
 			}
 		}
 
@@ -97,7 +99,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		saveMessage(dialogId, null, replyContent, SenderTypeEnum.AI.getCode());
 
 		// 6. 推送回复给用户（WebSocket）
-		MessageDTO replyMessage = buildReplyMessage(dialogId, replyContent, isAdmin, SenderTypeEnum.AI.getCode());
+		MessageDTO replyMessage = buildReplyMessage(dialogId, replyContent, isAdmin, SenderTypeEnum.AI.getCode(), title);
 		webSocketService.pushToUser(request.getUserId(), replyMessage);
 
 		// 7. 返回结果
@@ -163,17 +165,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 创建新对话
 	 */
-	private Long createNewDialog(Long userId, String content) {
-		// 根据消息内容生成标题
-		String title = aiServiceClient.generateTitle(content);
+	private AssistantDialog createNewDialog(MessageRequest  request) {
+		String title = callAiService(null, request);
+		log.info("==============AI服务返回的标题：{}", title);
 		AssistantDialog dialog = new AssistantDialog();
-		dialog.setUserId(userId);
+		dialog.setUserId(request.getUserId());
 		dialog.setTitle(title);
 		dialog.setStatus(DialogStatusEnum.ACTIVE.getCode());
 		dialog.setCreatedTime(LocalDateTime.now());
 		dialog.setUpdatedTime(LocalDateTime.now());
 		dialogMapper.insert(dialog);
-		return dialog.getId();
+		return dialog;
 	}
 
 	/**
@@ -192,14 +194,18 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 构建回复消息
 	 */
-	private MessageDTO buildReplyMessage(Long dialogId, String content, boolean isAdmin, int senderType) {
-		return new MessageDTO(
+	private MessageDTO buildReplyMessage(Long dialogId, String content, boolean isAdmin, int senderType, String  title) {
+		MessageDTO messageDTO = new MessageDTO(
 				dialogId,
 				content,
 				isAdmin,
 				LocalDateTime.now(),
 				senderType
 		);
+		if (title != null  && !title.isEmpty()) {
+			messageDTO.setTitle(title);
+		}
+		return messageDTO;
 	}
 
 	/**
@@ -217,11 +223,11 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 			// 检查最近4条消息是否为"用户-AI-用户-AI"且AI回复为默认内容
 			boolean isNeed = true;
 			for (int i = 0; i < 4; i += 2) {
-				if (lastMessages.get(i).getSenderType() != SenderTypeEnum.USER.getCode()) {  // 非用户消息
+				if (!Objects.equals(lastMessages.get(i).getSenderType(), SenderTypeEnum.USER.getCode())) {  // 非用户消息
 					isNeed = false;
 					break;
 				}
-				if (lastMessages.get(i+1).getSenderType() != SenderTypeEnum.AI.getCode()) {  // 非AI消息
+				if (!Objects.equals(lastMessages.get(i + 1).getSenderType(), SenderTypeEnum.AI.getCode())) {  // 非AI消息
 					isNeed = false;
 					break;
 				}
@@ -240,19 +246,20 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 调用AI服务生成回复
 	 */
-	private String callAiService(Long dialogId, String currentContent) {
+	private String callAiService(Long dialogId, MessageRequest messageRequest) {
 		try {
 			// 构建对话上下文
-			List<ChatMessage> messages = buildAIChatContext(dialogId, currentContent);
+			List<ChatMessage> messages = buildAIChatContext(dialogId, messageRequest);
 
 			// 调用AI服务
 			AIRequest request = new AIRequest();
 			request.setMessages(messages);
-			request.setModel(aiModel);
+			request.setAiType(messageRequest.getAiModel());
 			request.setMaxTokens(maxTokens);
 			request.setTemperature(temperature);
+			request.setModule(messageRequest.getModule());
 
-			AIResponse response = aiServiceClient.generateReply(request);
+			AIResponse response = aiServiceClient.generateReply(request).getData();
 
 			if (response.getSuccess() != null && !response.getSuccess()) {
 				log.error("AI服务返回错误: {}", response.getErrorMsg());
@@ -269,29 +276,75 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 构建AI对话上下文
 	 */
-	private List<ChatMessage> buildAIChatContext(Long dialogId, String currentContent) {
-		List<AssistantMessage> history = messageMapper.selectLastNByDialogId(dialogId, 6);  // 取最近6条
+	private List<ChatMessage> buildAIChatContext(Long dialogId,  MessageRequest messageRequest) {
 		List<ChatMessage> context = new ArrayList<>();
-
-		// 添加系统提示
-		context.add(new ChatMessage(
-				"system",
-				"你是引文网站的智能助手，仅回答与网站功能相关的问题（如创建引文、添加标签等）。" +
+		List<AssistantMessage> history = new ArrayList<>(6);
+		if (dialogId != null) {
+			history = messageMapper.selectLastNByDialogId(dialogId, 6);  // 取最近6条
+		}
+		String systemContent = "";
+		ChatModule chatModule;
+		if (dialogId == null) {
+			chatModule = ChatModule.CHAT_TITLE;
+		} else {
+			String module = messageRequest.getModule();
+			// 构造ChatModule
+			chatModule = ChatModule.getByValue(module);
+			if (chatModule == null) {
+				chatModule = ChatModule.CHAT_HELP;
+			}
+		}
+		switch (chatModule) {
+			case CHAT_POETRY:
+				systemContent = "你是引文网站的智能助手，仅回答与诗词相关的问题（如诗词全文、诗词注释、诗词赏析等）。" +
+						"若问题与诗词无关，回复：'抱歉，我只能回答与诗词相关的问题哦~'" +
+						"请用中文回答。" +
+						"字数不超过两百字";
+				break;
+			case CHAT_TITLE:
+				systemContent = "你是引文网站的智能助手。\n" +
+						"\n" +
+						"**你的唯一任务是：根据用户当前发送的消息内容，概括其核心意图，生成一个简短的对话标题。**\n" +
+						"\n" +
+						"**标题要求：**\n" +
+						"1.  **仅基于用户当前消息的意图概括。**\n" +
+						"2.  **字数：5 到 10 个中文字符。**\n" +
+						"3.  **直接输出标题，禁止回答消息内容本身或执行任何操作。**\n" +
+						"4.  **不得添加任何解释、说明或其他额外信息。**\n" +
+						"\n" +
+						"**注意：你只需要生成标题，不需要执行用户请求的操作或回复请求内容。**" +
+						"例如：用户发送消息：'你好，如何创建引文，你能帮助我吗' ,你生成并回复的对话标题应该是: '如何创建引文' ";
+				break;
+			case CHAT_HELP:
+			default:
+				systemContent = "你是引文网站的智能助手，仅回答与网站功能相关的问题（如创建引文、添加标签等）。" +
 						"网站功能包括：翎枢阁（首页）、墨渊境（引文列表）、采翎编（引文管理）、执翎台（新建引文）等。" +
-						"若问题与网站功能无关，回复：'抱歉，我只能回答与引文网站相关的问题哦~'"
-		));
+						"请用中文回答。" +
+						"若问题与网站功能无关，回复：'抱歉，我只能回答与引文网站相关的问题哦~'";
+		}
+		log.info("generateReply: {}", chatModule.getName());
 
-		// 倒序添加历史消息（最早的在前）
-		for (int i = history.size() - 1; i >= 0; i--) {
-			AssistantMessage msg = history.get(i);
-			String role = msg.getSenderType() == SenderTypeEnum.USER.getCode()
-					? "user"
-					: "assistant";
-			context.add(new ChatMessage(role, msg.getContent()));
+
+		ChatMessage system = new ChatMessage(
+				"system",
+				systemContent
+		);
+		// 添加系统提示
+		context.add(system);
+
+		if (!history.isEmpty()) {
+			// 倒序添加历史消息（最早的在前）
+			for (int i = history.size() - 1; i >= 0; i--) {
+				AssistantMessage msg = history.get(i);
+				String role = Objects.equals(msg.getSenderType(), SenderTypeEnum.USER.getCode())
+						? "user"
+						: "assistant";
+				context.add(new ChatMessage(role, msg.getContent()));
+			}
 		}
 
 		// 添加当前消息
-		context.add(new ChatMessage("user", currentContent));
+		context.add(new ChatMessage("user", messageRequest.getContent()));
 		return context;
 	}
 }

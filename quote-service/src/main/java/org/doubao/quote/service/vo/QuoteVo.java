@@ -1,9 +1,5 @@
 package org.doubao.quote.service.vo;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import org.doubao.mall.common.entity.BaseEntity;
 import org.doubao.quote.service.entity.Tag;
 

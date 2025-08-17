@@ -50,7 +50,7 @@ public class AssistantWebSocketHandler extends TextWebSocketHandler {
 		} else if (path.contains("/admin")) {
 			log.info("管理员端 WebSocket 连接已建立：{}",path  + query);
 			String userId = extractUserId(query);
-			webSocketService.addUserSession((!Objects.equals(userId, "") && userId != null) ? Long.parseLong(userId) : 10000L, session);
+			webSocketService.addAdminSession((!Objects.equals(userId, "") && userId != null) ? Long.parseLong(userId) : 10000L, session);
 			log.info("管理员 {} 的 WebSocket 连接已建立，当前管理员连接数: {}", userId, webSocketService.adminSessionCount());
 
 			// 发送连接确认消息

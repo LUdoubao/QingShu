@@ -1,16 +1,22 @@
 package org.doubao.dialog.service.feign;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.doubao.dialog.service.config.FeignErrorDecoderConfig;
 import org.doubao.dialog.service.dto.AIRequest;
 import org.doubao.dialog.service.dto.AIResponse;
+import org.doubao.dialog.service.dto.MessageRequest;
+import org.doubao.mall.common.entity.Result;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
- * AI服务Feign客户端
+ * AI服务Feign客户端, , fallback = AIServiceFallback.classconfiguration = FeignErrorDecoderConfig.class
  */
-@FeignClient(name = "ai-service", fallback = AIServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
+@FeignClient(name = "ai-service")
 public interface AIServiceClient {
 
 	/**
@@ -19,13 +25,5 @@ public interface AIServiceClient {
 	 * @return AI回复结果
 	 */
 	@PostMapping("/ai/generate/reply")
-	AIResponse generateReply(@RequestBody AIRequest request);
-
-	/**
-	 * 调用AI服务生成标题
-	 * @param content 输入内容
-	 * @return 标题结果
-	 */
-	@PostMapping("/ai/generate/title")
-	String generateTitle(String content);
+	Result<AIResponse> generateReply(@RequestBody AIRequest request);
 }

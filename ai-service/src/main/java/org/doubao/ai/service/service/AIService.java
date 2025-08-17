@@ -1,9 +1,12 @@
 package org.doubao.ai.service.service;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
-import org.doubao.ai.service.dto.ChatRequest;
-import org.doubao.ai.service.dto.ChatResponse;
+import org.doubao.ai.service.dto.*;
+import org.doubao.mall.common.entity.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -13,10 +16,12 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 
 @Service
 public class AIService {
+	private static final Logger LOGGER = LoggerFactory.getLogger(AIService.class);
 	private final ExecutorService executor = Executors.newFixedThreadPool(3);
 	private final ObjectMapper objectMapper;
 	private OkHttpClient httpClient;
@@ -122,6 +127,14 @@ public class AIService {
 		return request;
 	}
 
+	private ChatRequest bulidChatRequest(List<ChatMessage> messages) {
+		ChatRequest request = new ChatRequest();
+		request.setStream(false);
+		request.setMessages(ChatRequest.Message.convert(messages));
+		return request;
+	}
+
+
 	private String createStandardPrompt(String content, String author, String source, String isPoetry) {
 		if (isPoetry.equals("true")) {
 			return "## 引文拓展要求\n\n" +
@@ -181,5 +194,91 @@ public class AIService {
 			httpClient.connectionPool().evictAll();
 			httpClient.dispatcher().executorService().shutdown();
 		}
+	}
+
+	public AIResponse generateReply(AIRequest request) throws IOException {
+		ApiInfo apiInfo = buildApiInfo(request);
+		ChatRequest chatRequest = bulidChatRequest(request.getMessages());
+		chatRequest.setModel(apiInfo.apiModel);
+
+		LOGGER.info("=============chatRequest: " + JSON.toJSONString(chatRequest));
+		RequestBody requestBody = RequestBody.create(
+				objectMapper.writeValueAsString(chatRequest),
+				MediaType.parse("application/json; charset=utf-8")
+		);
+
+		Request httpRequest = new Request.Builder()
+				.url(apiInfo.apiUrl)
+				.post(requestBody)
+				.addHeader("Authorization", "Bearer " + apiInfo.apiKey)
+				.addHeader("Content-Type", "application/json")
+				.build();
+		AIResponse aiResponse = new AIResponse();
+
+		try (Response response = httpClient.newCall(httpRequest).execute()) {
+			if (response.isSuccessful() && response.body() != null) {
+				String responseJson = response.body().string();
+				LOGGER.info("=============responseJson: " + responseJson);
+				ChatResponse chatResponse = objectMapper.readValue(responseJson, ChatResponse.class);
+				if (chatResponse.getChoices() != null && !chatResponse.getChoices().isEmpty()) {
+					LOGGER.info("=============getContent: {} ", chatResponse.getChoices().get(0).getMessage().getContent());
+					aiResponse.setContent(chatResponse.getChoices().get(0).getMessage().getContent());
+					aiResponse.setSuccess(true);
+					aiResponse.setResponseTime(System.currentTimeMillis());
+					aiResponse.setErrorMsg("");
+					return aiResponse;
+				}
+				aiResponse.setSuccess(false);
+				aiResponse.setErrorMsg("API request failed. Status: " + response.code() + ", Body: " +
+						(response.body() != null ? response.body().string() : ""));
+				return aiResponse;
+			} else {
+				LOGGER.info("=============response: " + JSON.toJSONString(response));
+				aiResponse.setSuccess(false);
+				aiResponse.setErrorMsg("API request failed. Status: " + response.code() + ", Body: " +
+						(response.body() != null ? response.body().string() : ""));
+			}
+		} catch (Exception e) {
+			LOGGER.info("=============e: " + e.getMessage());
+			aiResponse.setSuccess(false);
+			aiResponse.setErrorMsg("API request failed. " + e.getMessage());
+		}
+		return aiResponse;
+	}
+	private static class ApiInfo {
+		private String apiUrl;
+		private String apiKey;
+		private String apiModel;
+	}
+
+	private ApiInfo buildApiInfo(AIRequest  request) {
+		ApiInfo apiInfo = new ApiInfo();
+		String aiType = request.getAiType();
+		LOGGER.info("=============aiType: " + aiType);
+		if (aiType == null) {
+			aiType = "baidu";
+		}
+		String url = "";
+		String key = "";
+		String model = request.getModel();
+		switch (aiType) {
+			case "deepSeek":
+				url = deepseekApiUrl;
+				key = deepseekApiKey;
+				model = model == null || model.isEmpty() ? deepseekModel : model;
+				break;
+			case "baidu":
+			default:
+				url = baiduApiUrl;
+				key = baiduApiKey;
+				model = model == null || model.isEmpty() ? baiduModel : model;
+		}
+
+		LOGGER.info("=============url: " + url);
+		LOGGER.info("=============model: " + model);
+		apiInfo.apiKey = key;
+		apiInfo.apiUrl = url;
+		apiInfo.apiModel = model;
+		return apiInfo;
 	}
 }
