@@ -24,6 +24,13 @@ public class ChatController {
 
 	@PostMapping("/appreciation")
 	public Result<String> appreciation(@RequestBody Map<String, String> request) throws IOException {
+		String userId = request.get("userId");
+
+		// 限流检查
+		String limitError = aiService.checkRateLimit(Long.valueOf(userId));
+		if (limitError != null) {
+			return Result.error(limitError); // 返回限流错误
+		}
 		String id = request.get("id");
 		String content = request.get("content");
 		String source = request.get("source");

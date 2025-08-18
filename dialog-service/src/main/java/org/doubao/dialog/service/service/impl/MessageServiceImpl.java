@@ -253,6 +253,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 			// 调用AI服务
 			AIRequest request = new AIRequest();
+			request.setUserId(String.valueOf(messageRequest.getUserId()));
 			request.setMessages(messages);
 			request.setAiType(messageRequest.getAiModel());
 			request.setMaxTokens(maxTokens);

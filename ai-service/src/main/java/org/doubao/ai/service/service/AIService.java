@@ -8,7 +8,9 @@ import org.doubao.mall.common.entity.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
@@ -16,6 +18,7 @@ import javax.annotation.PreDestroy;
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -197,6 +200,16 @@ public class AIService {
 	}
 
 	public AIResponse generateReply(AIRequest request) throws IOException {
+		AIResponse aiResponse = new AIResponse();
+
+		String userId = request.getUserId();
+		// 限流检查
+		String limitError = checkRateLimit(Long.valueOf(userId));
+		if (limitError != null) {
+			aiResponse.setErrorMsg(limitError);
+			aiResponse.setSuccess(false);
+			return aiResponse; // 返回限流错误
+		}
 		ApiInfo apiInfo = buildApiInfo(request);
 		ChatRequest chatRequest = bulidChatRequest(request.getMessages());
 		chatRequest.setModel(apiInfo.apiModel);
@@ -213,7 +226,6 @@ public class AIService {
 				.addHeader("Authorization", "Bearer " + apiInfo.apiKey)
 				.addHeader("Content-Type", "application/json")
 				.build();
-		AIResponse aiResponse = new AIResponse();
 
 		try (Response response = httpClient.newCall(httpRequest).execute()) {
 			if (response.isSuccessful() && response.body() != null) {
@@ -280,5 +292,53 @@ public class AIService {
 		apiInfo.apiUrl = url;
 		apiInfo.apiModel = model;
 		return apiInfo;
+	}
+	// 生成当天的日期字符串（格式：yyyyMMdd）
+	private String getTodayDateStr() {
+		Calendar calendar = Calendar.getInstance();
+		return String.format("%04d%02d%02d",
+				calendar.get(Calendar.YEAR),
+				calendar.get(Calendar.MONTH) + 1,
+				calendar.get(Calendar.DAY_OF_MONTH));
+	}
+	// 检查限流（返回错误信息，null表示通过）
+	public String checkRateLimit(Long userId) {
+		String today = getTodayDateStr();
+
+		// 全局限流Key
+		String globalKey = "ai:limit:global:" + today;
+		// 用户限流Key（基于userId）
+		String userKey = "ai:limit:user:" + userId + ":" + today;
+
+		ValueOperations<String, Object> ops = redisTemplate.opsForValue();
+
+		if (ops.get(globalKey) != null) {
+			// 检查全局调用次数
+			Integer globalCount = (Integer) ops.get(globalKey);
+			if (globalCount != null && globalCount >= 100) {
+				return "系统调用已达今日上限（100次），请明天再试";
+			}
+		}
+		if (ops.get(userKey) != null) {
+			// 检查用户调用次数
+			Integer userCount = (Integer) ops.get(userKey);
+			if (userCount != null && userCount >= 10) {
+				return "您的调用已达今日上限（10次），请明天再试";
+			}
+		}
+
+		// 增加计数（使用Redis事务保证原子性）
+		redisTemplate.execute((RedisCallback<Object>) connection -> {
+			// 全局计数+1（如果不存在则初始化为1，过期时间24小时）
+			ops.increment(globalKey, 1);
+			redisTemplate.expire(globalKey, 1, TimeUnit.DAYS);
+
+			// 用户计数+1（如果不存在则初始化为1，过期时间24小时）
+			ops.increment(userKey, 1);
+			redisTemplate.expire(userKey, 1, TimeUnit.DAYS);
+			return null;
+		});
+
+		return null; // 通过限流
 	}
 }
