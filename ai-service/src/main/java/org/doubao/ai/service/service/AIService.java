@@ -47,6 +47,8 @@ public class AIService {
 	private final int readTimeout = 600000;
 
 	private final static String AI_KEY = "AI_KEY:";
+	private final static String AI_LIMIT_GLOBAL = "AI:LIMIT:GLOBAL:";
+	private final static String AI_LIMIT_USER = "AI:LIMIT:USER:";
 	public AIService(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
@@ -184,18 +186,8 @@ public class AIService {
 			throw new IOException("API request timed out", e);
 		} catch (ExecutionException | InterruptedException e) {
 			throw new IOException("API request failed", e);
-		}
-	}
-
-	@PreDestroy
-	public void shutdown() {
-		// 关闭线程池
-		executor.shutdownNow();
-
-		// 关闭OkHttpClient连接池
-		if (httpClient != null) {
-			httpClient.connectionPool().evictAll();
-			httpClient.dispatcher().executorService().shutdown();
+		} finally {
+			executor.shutdown();
 		}
 	}
 
@@ -257,6 +249,7 @@ public class AIService {
 		}
 		return aiResponse;
 	}
+
 	private static class ApiInfo {
 		private String apiUrl;
 		private String apiKey;
@@ -272,7 +265,7 @@ public class AIService {
 		}
 		String url = "";
 		String key = "";
-		String model = request.getModel();
+		String model = request.getAiModel();
 		switch (aiType) {
 			case "deepSeek":
 				url = deepseekApiUrl;
@@ -306,9 +299,9 @@ public class AIService {
 		String today = getTodayDateStr();
 
 		// 全局限流Key
-		String globalKey = "ai:limit:global:" + today;
+		String globalKey = AI_LIMIT_GLOBAL + today;
 		// 用户限流Key（基于userId）
-		String userKey = "ai:limit:user:" + userId + ":" + today;
+		String userKey = AI_LIMIT_USER + userId + ":" + today;
 
 		ValueOperations<String, Object> ops = redisTemplate.opsForValue();
 

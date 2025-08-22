@@ -68,7 +68,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 		// 1. 获取或创建对话
 		Long dialogId = request.getDialogId();
-		String title = request.getTitle();
+		String title = "";
 		if (dialogId == null) {
 			AssistantDialog dialog = createNewDialog(request);
 			dialogId = dialog.getId();
@@ -255,10 +255,10 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 			AIRequest request = new AIRequest();
 			request.setUserId(String.valueOf(messageRequest.getUserId()));
 			request.setMessages(messages);
-			request.setAiType(messageRequest.getAiModel());
+			request.setAiType(messageRequest.getAiType());
+			request.setModel(messageRequest.getAiModel());
 			request.setMaxTokens(maxTokens);
 			request.setTemperature(temperature);
-			request.setModule(messageRequest.getModule());
 
 			AIResponse response = aiServiceClient.generateReply(request).getData();
 

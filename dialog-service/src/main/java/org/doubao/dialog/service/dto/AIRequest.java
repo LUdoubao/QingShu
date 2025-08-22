@@ -27,8 +27,15 @@ public class AIRequest {
 	 */
 	private Double temperature;
 
-	private String module;
+	/**
+	 * AI类型
+	 *
+	 */
 	private String aiType;
+
+	/**
+	 * 用户ID
+	 */
 	private String userId;
 
 	public String getUserId() {
@@ -45,14 +52,6 @@ public class AIRequest {
 
 	public void setAiType(String aiType) {
 		this.aiType = aiType;
-	}
-
-	public String getModule() {
-		return module;
-	}
-
-	public void setModule(String module) {
-		this.module = module;
 	}
 
 	public List<ChatMessage> getMessages() {

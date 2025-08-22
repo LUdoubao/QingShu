@@ -15,7 +15,7 @@ public class AIRequest {
 	/**
 	 * 模型名称
 	 */
-	private String model;
+	private String aiModel;
 
 	/**
 	 * 最大token数
@@ -28,12 +28,13 @@ public class AIRequest {
 	private Double temperature;
 
 	/**
-	 * 模块名称
+	 *  AI类型
 	 */
-	private String module;
-
 	private String aiType;
 
+	/**
+	 * 用户ID
+	 */
 	private String userId;
 
 	public String getUserId() {
@@ -56,24 +57,16 @@ public class AIRequest {
 		return messages;
 	}
 
-	public String getModule() {
-		return module;
-	}
-
-	public void setModule(String module) {
-		this.module = module;
-	}
-
 	public void setMessages(List<ChatMessage> messages) {
 		this.messages = messages;
 	}
 
-	public String getModel() {
-		return model;
+	public String getAiModel() {
+		return aiModel;
 	}
 
-	public void setModel(String model) {
-		this.model = model;
+	public void setAiModel(String aiModel) {
+		this.aiModel = aiModel;
 	}
 
 	public Integer getMaxTokens() {

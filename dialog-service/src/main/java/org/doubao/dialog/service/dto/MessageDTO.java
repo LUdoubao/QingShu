@@ -32,6 +32,9 @@ public class MessageDTO {
 	 */
 	private Integer senderType;
 
+	/**
+	 * 标题
+	 */
 	private String title;
 
 

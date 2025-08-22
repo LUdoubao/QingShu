@@ -1,5 +1,7 @@
 package org.doubao.dialog.service.dto;
 
+import org.doubao.dialog.service.enums.ChatModule;
+
 import javax.validation.constraints.NotBlank;
 
 /**
@@ -12,7 +14,7 @@ public class MessageRequest {
 	 */
 	private Long dialogId;
 
-	private String title;
+
 	/**
 	 * 消息内容
 	 */
@@ -22,16 +24,29 @@ public class MessageRequest {
 	 * 用户ID（未登录可为空）
 	 */
 	private Long userId;
+
+	/**
+	 * 模块名称
+	 * @see ChatModule
+	 */
 	private String module;
 
+	/**
+	 * AI类型
+	 */
+	private String aiType;
+
+	/**
+	 * AI模型名称
+	 */
 	private String aiModel;
 
-	public String getTitle() {
-		return title;
+	public String getAiType() {
+		return aiType;
 	}
 
-	public void setTitle(String title) {
-		this.title = title;
+	public void setAiType(String aiType) {
+		this.aiType = aiType;
 	}
 
 	public String getAiModel() {
