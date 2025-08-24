@@ -17,6 +17,15 @@ public class UserInfo implements Serializable {
 	private LocalDateTime createdTime;
 	private String token;
 	private String role;
+	private boolean follow;
+
+	public boolean isFollow() {
+		return follow;
+	}
+
+	public void setFollow(boolean follow) {
+		this.follow = follow;
+	}
 
 	public String getId() {
 		return id;

@@ -7,6 +7,8 @@ public enum ErrorCode {
 	FORBIDDEN("COM_403", "禁止访问"),
 	NOT_FOUND("COM_404", "资源不存在"),
 	RATE_LIMIT_EXCEEDED("COM_429", "请求过于频繁"),
+	PAGE_NUMBER_INVALID("COM_405", "页码必须大于等于1"),
+	PAGE_SIZE_INVALID("COM_406", "每页条数必须在1-100之间"),
 
 	// 业务错误
 	LIKE_ALREADY_EXISTS("LIKE_001", "重复点赞"),
@@ -25,6 +27,22 @@ public enum ErrorCode {
 	INVALID_STATUS("USER_006", "无效的状态值"),
 	INVALID_ROLE("USER_007", "无效的角色类型"),
 	USERNAME_EXISTS("USER_007", "用户名已被注册"),
+	USER_ID_EMPTY("USER_008", "用户ID不能为空"),
+	USER_DISABLED_OR_NOT_EXISTS("USER_009", "用户不存在或已被禁用"),
+	CANNOT_FOLLOW_YOURSELF("USER_010", "不能关注自己"),
+	USER_ALREADY_FOLLOWED("USER_011", "已关注该用户"),
+	USER_NOT_FOLLOWED("USER_012", "未关注该用户"),
+	USER_TARGET_LIST_EMPTY("USER_013", "目标用户列表不能为空"),
+	USER_BATCH_FOLLOW_LIMIT("USER_014", "批量关注最多支持100人"),
+	USER_NO_FOLLOW_TARGET("USER_015", "无有效关注目标"),
+	USER_NOT_LOGIN("USER_016", "用户未登录"),
+	USER_PRIVACY_FOLLOWER_LIST_NOT_OPEN("USER_017", "该用户的粉丝列表未公开"),
+	USER_PRIVACY_FOLLOWING_LIST_NOT_OPEN("USER_018", "该用户的关注列表未公开"),
+	USER_PRIVACY_QUOTE_LIST_NOT_OPEN("USER_019", "该用户的作品列表未公开"),
+	USER_INVALID_VISIBILITY("USER_020", "无效的可见性设置（仅支持1-3）"),
+
+
+
 	COMMENT_HAS_NOT_ALLOWED("COMMENT_1001", "内容包含敏感词"),
 	COMMENT_NOT_IN_RANGE("COMMENT_1003", "评论字数需在10-500之间"),
 	COMMENT_LIMIT_REACHED("COMMENT_1002", "操作过于频繁，请稍后再试"),
