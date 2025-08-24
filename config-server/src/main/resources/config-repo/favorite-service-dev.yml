@@ -1,5 +1,5 @@
 server:
-  port: 9200
+  port: 9405
 
 mybatis-plus:
   configuration:
