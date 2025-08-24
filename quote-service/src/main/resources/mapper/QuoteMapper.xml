@@ -14,6 +14,9 @@
         <if test="userId != null">
             AND q.created_id = #{userId}
         </if>
+        <if test="original != null">
+            AND q.original = #{original}
+        </if>
         <if test="tagIds != null and !tagIds.isEmpty()">
             AND q.id IN (
             SELECT quote_id
@@ -38,6 +41,9 @@
         </if>
         <if test="userId != null">
             AND q.created_id = #{userId}
+        </if>
+        <if test="original != null">
+            AND q.original = #{original}
         </if>
         <!-- 标签条件（非空且非空数组时生效） -->
         <if test="tagIds != null and tagIds.size > 0">

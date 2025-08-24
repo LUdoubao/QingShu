@@ -26,6 +26,11 @@ public class QuoteController {
 		return quoteService.page(pageDto);
 	}
 
+	@PostMapping("/original")
+	public Result<Page<QuoteVo>> originalPage(@RequestBody PageDto pageDto) {
+		return quoteService.originalPage(pageDto);
+	}
+
 	@PostMapping("/pageManager")
 	public Result<Page<QuoteVo>> pageManager(@RequestBody PageDto pageDto) {
 		return quoteService.pageManager(pageDto);

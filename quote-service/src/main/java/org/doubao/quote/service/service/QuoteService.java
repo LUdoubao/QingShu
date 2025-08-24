@@ -37,4 +37,6 @@ public interface QuoteService extends IService<Quote> {
 	String getQuoteType(String quoteId);
 
 	boolean checkQuoteExists(Map<String, String> request);
+
+	Result<Page<QuoteVo>> originalPage(PageDto pageDto);
 }

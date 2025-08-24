@@ -17,6 +17,7 @@ import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.duplicate.check.CitationCheckService;
 import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
+import org.doubao.quote.service.feign.UserClient;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
@@ -50,6 +51,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Resource
 	private CategoryService categoryService;
 
+	@Resource
+	private UserClient userClient;
 	@Resource
 	private CitationCheckService citationCheckService;
 	@Override
@@ -197,14 +200,16 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	private Result<Page<QuoteVo>> query(PageDto pageDto) {
+		Long currentUserId = UserContext.getUserId();
 		int page = pageDto.getPage();
 		int size = pageDto.getSize();
 		Long categoryId = pageDto.getCategoryId();
 		List<Long> tagIds = pageDto.getTagIds();
 		Long userId = pageDto.getUserId();
+		Integer original = pageDto.getOriginal();
 
 		// 1. 查询总数
-		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(), userId);
+		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(), userId, original);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
@@ -213,7 +218,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				tagIds == null ? 0 : tagIds.size(),
 				size,
 				(page - 1) * size,
-				userId
+				userId,
+				original
 		);
 
 		Page<QuoteVo> pageVo = new Page<>(page, size, total);
@@ -226,6 +232,12 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
 			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+			// 获取创建者信息
+			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
+			List<UserInfo> userInfos = userClient.getUsersByIds(createdIds).getData();
+			// 获取关注信息
+			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, createdIds).getData();
 
 			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
 			Map<Long, String> categoryMap = new HashMap<>();
@@ -253,6 +265,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			for (QuoteVo quoteVo : quoteVoList) {
 				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
 				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+				// 设置用户信息
+				Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+				first.ifPresent(quoteVo::setUserInfo);
+				// 设置是否关注
+				quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
 			}
 
 			pageVo.setRecords(quoteVoList);
@@ -423,6 +440,19 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	public boolean checkQuoteExists(Map<String, String> request) {
 		String quoteId = request.get("quoteId");
 		return quoteMapper.checkQuoteExists(quoteId);
+	}
+
+	@Override
+	public Result<Page<QuoteVo>> originalPage(PageDto pageDto) {
+		// 校验查询权限feign
+		Long targetUserId = pageDto.getUserId();
+		Long currentUserId = UserContext.getUserId();
+		Boolean check = userClient.checkWorkPermission(targetUserId, currentUserId).getData();
+		if (!check) {
+			throw new BusinessException(ErrorCode.USER_PRIVACY_QUOTE_LIST_NOT_OPEN);
+		}
+		// 分页查询
+		return page(pageDto);
 	}
 
 	@SuppressWarnings("unchecked")

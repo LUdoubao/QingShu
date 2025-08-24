@@ -8,6 +8,15 @@ public class PageDto {
 	private Long categoryId;
 	private List<Long> tagIds;
 	private Long userId;
+	private Integer original;
+
+	public Integer getOriginal() {
+		return original;
+	}
+
+	public void setOriginal(Integer original) {
+		this.original = original;
+	}
 
 	public Long getUserId() {
 		return userId;

@@ -15,7 +15,8 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 			@Param("categoryId") Long categoryId,
 			@Param("tagIds") List<Long> tagIds,
 			@Param("tagIdsSize") Integer tagIdsSize,
-			@Param("userId") Long userId
+			@Param("userId") Long userId,
+			@Param("original") Integer original
 	);
 
 	List<Quote> selectByTagIdsAndCategory (@Param("categoryId") Long categoryId,
@@ -23,7 +24,9 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 										   @Param("tagIdsSize") Integer tagIdsSize,
 										   @Param("pageSize") int pageSize,
 										   @Param("pageNum") int pageNum,
-										   @Param("userId") Long userId);
+										   @Param("userId") Long userId,
+										   @Param("original") Integer original
+	);
 
 	int getQuoteType(@Param("quoteId") String quoteId);
 
