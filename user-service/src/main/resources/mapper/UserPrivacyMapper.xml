@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.user.server.relation.mapper.UserPrivacyMapper">
+
+    <!-- 根据用户ID查询隐私设置 -->
+    <select id="selectByUserId" resultType="org.doubao.user.server.relation.entity.UserPrivacy">
+        SELECT id, user_id, follower_visibility, following_visibility, profile_visibility, work_visibility, created_time, updated_time
+        FROM user_privacy
+        WHERE user_id = #{userId}
+    </select>
+
+</mapper>

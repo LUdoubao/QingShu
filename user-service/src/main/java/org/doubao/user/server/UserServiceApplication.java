@@ -9,8 +9,8 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@MapperScan("org.doubao.user.server.mapper")
-@EnableFeignClients(basePackages = "org.doubao.user.server.feign")
+@MapperScan({"org.doubao.user.server.core.mapper", "org.doubao.user.server.relation.mapper"})
+@EnableFeignClients(basePackages = "org.doubao.user.server.core.feign")
 public class UserServiceApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(UserServiceApplication.class, args);

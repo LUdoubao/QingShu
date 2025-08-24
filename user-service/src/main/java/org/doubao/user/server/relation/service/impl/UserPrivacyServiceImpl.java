@@ -1,0 +1,145 @@
+package org.doubao.user.server.relation.service.impl;
+
+import com.alibaba.fastjson.JSON;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.UserContext;
+import org.doubao.user.server.relation.entity.UserPrivacy;
+import org.doubao.user.server.relation.enums.RelationType;
+import org.doubao.user.server.relation.mapper.UserPrivacyMapper;
+import org.doubao.user.server.relation.mapper.UserRelationMapper;
+import org.doubao.user.server.relation.service.UserPrivacyService;
+import org.doubao.user.server.relation.util.UserValidator;
+import org.doubao.user.server.relation.vo.PrivacySettings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+
+/**
+ * 隐私服务实现：核心逻辑为"可见性校验+关系判断"
+ */
+@Service
+public class UserPrivacyServiceImpl implements UserPrivacyService {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(UserPrivacyServiceImpl.class);
+	private static final String FOLLOWER_VISIBILITY = "followerVisibility";
+	private static final String FOLLOWING_VISIBILITY = "followingVisibility";
+
+	@Resource
+	private UserPrivacyMapper privacyMapper;
+	@Resource
+	private UserRelationMapper relationMapper; // 依赖关系表查询互关状态
+	@Resource
+	private UserValidator userValidator;
+
+	@Override
+	public boolean checkSeePermission(Long targetUserId, Long currentUserId, int seeAccessType) {
+		// 1. 获取目标用户的隐私设置（默认公开）
+		PrivacySettings settings = getSettings(targetUserId);
+		LOGGER.info("=============getSettings settings: {} " , JSON.toJSONString(settings));
+		Integer visibility;
+		switch (seeAccessType) {
+			case PrivacySettings.SeeAccessType.PROFILE:
+				visibility = settings.getProfileVisibility();
+				break;
+		    case PrivacySettings.SeeAccessType.FOLLOWERS:
+				visibility = settings.getFollowerVisibility();
+			    break;
+			case PrivacySettings.SeeAccessType.FOLLOWING:
+				visibility = settings.getFollowingVisibility();
+			    break;
+			case PrivacySettings.SeeAccessType.WORK:
+				visibility = settings.getWorkVisibility();
+			    break;
+			default:
+				throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+		}
+
+		// 2. 权限判断逻辑
+		if (visibility == 1) { // 公开：所有人可看
+			LOGGER.info("=============getSettings true");
+			return true;
+		} else if (visibility == 3) { // 私密：仅本人可看
+			return currentUserId != null && currentUserId.equals(targetUserId);
+		} else if (visibility == 2) { // 仅互关可见：需判断当前用户与目标用户是否互关
+			if (currentUserId == null) { // 未登录用户无权限
+				return false;
+			}
+			if (currentUserId.equals(targetUserId)) { // 本人永远有权限
+				return true;
+			}
+			// 查询是否互关（A关注B且B关注A）
+			int aFollowsB = relationMapper.existsRelation(
+					currentUserId, targetUserId, RelationType.FOLLOW.getValue()
+			);
+			int bFollowsA = relationMapper.existsRelation(
+					targetUserId, currentUserId, RelationType.FOLLOW.getValue()
+			);
+			return aFollowsB > 0 && bFollowsA > 0;
+		}
+
+		// 非法配置默认拒绝访问
+		return false;
+	}
+
+	@Override
+	public void updateFollowerVisibility(PrivacySettings privacySettings) {
+		Integer followingVisibility = privacySettings.getFollowingVisibility();
+		Integer followerVisibility = privacySettings.getFollowerVisibility();
+		Integer profileVisibility = privacySettings.getProfileVisibility();
+		Integer workVisibility = privacySettings.getWorkVisibility();
+		Long userId = UserContext.getUserId();
+
+		// 1. 校验参数合法性
+		if (followingVisibility < 1 || followingVisibility > 3) {
+			throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+		}
+		if (followerVisibility < 1 || followerVisibility > 3) {
+			throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+		}
+		if (profileVisibility < 1 || profileVisibility > 3) {
+			throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+		}
+		if (workVisibility < 1 || workVisibility > 3) {
+			throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+		}
+
+
+		// 2. 查询用户隐私记录（不存在则创建）
+		UserPrivacy privacy = privacyMapper.selectByUserId(userId);
+		if (privacy == null) {
+			privacy = new UserPrivacy();
+			privacy.setUserId(userId);
+			privacy.setFollowerVisibility(followerVisibility);
+			privacy.setFollowingVisibility(followingVisibility);
+			privacy.setProfileVisibility(profileVisibility);
+			privacy.setWorkVisibility(workVisibility);
+			privacyMapper.insert(privacy);
+		} else {
+			privacy.setFollowerVisibility(followerVisibility);
+			privacy.setFollowingVisibility(followingVisibility);
+			privacy.setProfileVisibility(profileVisibility);
+			privacy.setWorkVisibility(workVisibility);
+			privacyMapper.updateById(privacy);
+		}
+	}
+
+	public PrivacySettings getSettings(Long userId) {
+		LOGGER.info("=============getSettings userId: " + userId);
+		UserPrivacy privacy = privacyMapper.selectByUserId(userId);
+		LOGGER.info("=============getSettings privacy: " + JSON.toJSONString(privacy));
+		PrivacySettings settings = new PrivacySettings();
+		settings.setFollowerVisibility(privacy == null ? 1 : privacy.getFollowerVisibility());
+		settings.setFollowingVisibility(privacy == null ? 1 : privacy.getFollowingVisibility());
+		settings.setProfileVisibility(privacy == null ? 1 : privacy.getProfileVisibility());
+		settings.setWorkVisibility(privacy == null ? 1 : privacy.getWorkVisibility());
+		return settings;
+	}
+
+	public PrivacySettings getSettings() {
+		Long userId = UserContext.getUserId();
+		return getSettings(userId);
+	}
+}

@@ -8,8 +8,15 @@ spring:
   config:
     import: "optional:configserver:"  # 关键修复！必须添加！
 oss:
+  encryption:
+    current-key-id: k2025
+    key-retention-days: 365
+    keys:
+      k2025: "heSu75QlSY7yG2i1qZdFCg=="
+      k2026: "GaaDwO8zw7l9bXgrvKTMCg=="
+      k2027: "kksqqi/N6Gt1f57fjI83Tg=="
   storage:
-    type: aliyun # aliyun or local
+    type: local # aliyun or local
   # 阿里云配置
   aliyun:
     endpoint: oss-cn-beijing.aliyuncs.com
@@ -18,5 +25,7 @@ oss:
     bucket-name: doubao-1017
   # 本地存储配置
   local:
-    storage-path: ${OSS_LOCAL_STORAGE_PATH:./uploads}
-    base-url: ${OSS_LOCAL_BASE_URL:http://localhost:9005/files}
+    storage-path: /home/java/doubao/file/uploads
+    base-url: http://http://49.233.21.30/api/public/oss/files
+    default-avatar: defaultAvatar.png
+    aes-key: doubao
