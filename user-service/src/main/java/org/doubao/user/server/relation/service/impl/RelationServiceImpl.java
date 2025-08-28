@@ -345,7 +345,7 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 		if (!followerIds.isEmpty()) {
 			Set<Long> followerIdSet = new HashSet<>(followerIds);
 			followers = userService.usersByIds(followerIdSet);
-			Map<Long, Boolean> follow = isFollow(currentUserId, followerIdSet);
+			Map<Long, Boolean> follow = isFollow(targetUserId, followerIdSet);
 			for (UserInfo follower : followers) {
 				follower.setFollow(follow.getOrDefault(Long.valueOf(follower.getId()), false));
 			}
