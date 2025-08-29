@@ -3,7 +3,7 @@ package org.doubao.notification.service.utils;
 import com.alibaba.fastjson.JSON;
 import org.doubao.mall.common.event.CommentEvent;
 import org.doubao.notification.service.entity.Notification;
-import org.doubao.mall.common.event.AuditEvent;
+import org.doubao.mall.common.event.AuditQuoteEvent;
 import org.doubao.mall.common.event.LikeEvent;
 import org.doubao.mall.common.event.SystemEvent;
 import org.springframework.stereotype.Component;
@@ -15,7 +15,7 @@ import java.util.Map;
 @Component
 public class NotificationFormatter {
 
-	public Notification formatAuditNotification(AuditEvent event) {
+	public Notification formatAuditNotification(AuditQuoteEvent event) {
 		Notification notification = new Notification();
 		notification.setUserId(event.getUserId());
 		notification.setType("AUDIT");

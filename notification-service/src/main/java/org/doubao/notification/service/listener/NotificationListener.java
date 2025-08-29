@@ -1,24 +1,43 @@
 package org.doubao.notification.service.listener;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.alibaba.fastjson.parser.ParserConfig;
+import com.rabbitmq.client.Channel;
+import org.doubao.mall.common.entity.BusinessEvent;
+import org.doubao.mall.common.enums.EventType;
 import org.doubao.mall.common.event.*;
+import org.doubao.notification.service.config.UniversalDateTimeDeserializer;
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.service.NotificationService;
 import org.doubao.notification.service.utils.NotificationFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Component
 public class NotificationListener {
+	private static final ParserConfig FIXED_CONFIG;
 
+	static {
+		// 初始化配置（只执行一次）
+		FIXED_CONFIG = new ParserConfig();
+		FIXED_CONFIG.putDeserializer(LocalDateTime.class, new UniversalDateTimeDeserializer());
+	}
 	private static final Logger LOG = LoggerFactory.getLogger(NotificationListener.class);
 
 	@Autowired
@@ -29,28 +48,52 @@ public class NotificationListener {
 	@Autowired
 	private NotificationFormatter formatter;
 
-	@RabbitListener(queues = "notification.quote.verify")
-	public void verifyQuote(String quoteJson) throws MessagingException {
-		sendEmail("3082738259@qq.com", "审核引文通知", "您有待审核的引文，引文信息：" + quoteJson);
+	@RabbitListener(
+			queues = "notification.queue",
+			ackMode = "MANUAL",
+			concurrency = "3-5"
+	)
+	public void userNotification(@Payload BusinessEvent event,
+								 Channel channel,
+								 @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+		try {
+			EventType eventType = event.getEventType();
+			switch (eventType) {
+				case USER_REGISTER:
+					Map<String, Object> message = event.getExtInfo();
+					String to = String.valueOf(message.get("to"));
+					LOG.info("[userNotification] Received email to {}", to);
+					String content = String.valueOf(message.get("content"));
+					LOG.info("[userNotification] Received email content: {}", content);
+					String subject = String.valueOf(message.get("subject"));
+					LOG.info("[userNotification] Received email subject: {}", subject);
+					sendEmail(to, subject, content);
+					break;
+				case COMMENT_EVENT:
+				case LIKE_EVENT:
+				case QUOTE_EVENT:
+					Map<String, Object> extInfo = event.getExtInfo();
+					LOG.info("[userNotification] Received notification event: {}", JSON.toJSONString(extInfo));
+					Object notificationEvent = extInfo.get("NotificationEvent");
+					handleNotificationEvent(notificationEvent);
+					break;
+				default:
+					throw new IllegalArgumentException("Unsupported event type: " + eventType.getDescription());
+			}
+
+			// 成功时确认
+			channel.basicAck(deliveryTag, false);
+		} catch (Exception e) {
+			LOG.error("[userNotification] Error processing received event", e);
+			channel.basicNack(deliveryTag, false, false); // 不重新入队
+		}
+
 	}
 
-	@RabbitListener(queues = "notification.quote.add")
-	public void addQuote(String quoteJson) throws MessagingException {
-		sendEmail("3082738259@qq.com", "新增引文通知", "有新引文添加，引文信息：" + quoteJson);
-	}
-
-	@RabbitListener(queues = "notification.user.verification")
-	public void userNotification(Map<String, String>  message) throws MessagingException {
-		String to = message.get("to");
-		String content = message.get("content");
-		String subject = message.get("subject");
-		sendEmail(to, subject, content);
-	}
-
-	private void sendEmail(String to, String subject, String content) throws MessagingException {
+	private void sendEmail (String to, String subject, String content) throws MessagingException, UnsupportedEncodingException {
 		MimeMessage message = mailSender.createMimeMessage();
 		MimeMessageHelper helper = new MimeMessageHelper(message, true);
-		helper.setFrom("3411426617@qq.com");
+		helper.setFrom("3411426617@qq.com","青书");
 		helper.setTo(to);
 		helper.setSubject(subject);
 		helper.setText(content, false);
@@ -58,31 +101,31 @@ public class NotificationListener {
 	}
 
 
-	@RabbitListener(queues = "notification.queue")
-	public void handleNotificationEvent(NotificationEvent event) {
-		LOG.info("Received notification event: {}", event);
-
-		Notification notification = new Notification();
-		switch (event.getType()) {
-			case "AUDIT":
-				notification = formatter.formatAuditNotification((AuditEvent) event);
+	public void handleNotificationEvent(Object notificationEvent) {
+		LOG.info("Received notification event: {}", notificationEvent);
+		JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(notificationEvent));
+		String type = jsonObject.getString("type");
+		LOG.info("Notification type: {}", type);
+		Notification notification;
+		switch (type) {
+			case "AUDIT_QUOTE":
+				AuditQuoteEvent auditQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), AuditQuoteEvent.class, FIXED_CONFIG );
+				notification = formatter.formatAuditNotification(auditQuoteEvent);
+				break;
 			case "SYSTEM":
-				if (event instanceof SystemEvent) {
-					notification = formatter.formatSystemNotification((SystemEvent) event);
-				}
+				SystemEvent systemEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), SystemEvent.class, FIXED_CONFIG );
+				notification = formatter.formatSystemNotification(systemEvent);
 				break;
 			case "LIKE":
-				if (event instanceof LikeEvent) {
-					notification = formatter.formatLikeNotification((LikeEvent) event);
-				}
+				LikeEvent likeEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), LikeEvent.class, FIXED_CONFIG );
+				notification = formatter.formatLikeNotification(likeEvent);
 				break;
 			case "COMMENT":
-				if (event instanceof CommentEvent) {
-					notification = formatter.formatCommentNotification((CommentEvent) event);
-				}
+				CommentEvent commentEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), CommentEvent.class, FIXED_CONFIG );
+				notification = formatter.formatCommentNotification(commentEvent);
 				break;
 			default:
-				LOG.warn("Unsupported notification type: {}", event.getType());
+				LOG.warn("Unsupported notification type: {}", type);
 				return;
 		}
 

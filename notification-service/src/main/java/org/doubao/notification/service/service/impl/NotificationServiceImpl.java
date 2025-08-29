@@ -9,7 +9,6 @@ import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.enums.NotificationStatus;
 import org.doubao.notification.service.mapper.NotificationMapper;
 import org.doubao.notification.service.service.NotificationService;
-import org.doubao.notification.service.service.PushService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -26,9 +25,6 @@ public class NotificationServiceImpl implements NotificationService {
 
 	@Autowired
 	private RedisTemplate<String, String> redisTemplate;
-
-	@Autowired
-	private PushService pushService;
 
 	@Override
 	@Transactional
