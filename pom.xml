@@ -26,6 +26,7 @@
 		<module>view-count-service</module>
 		<module>share-service</module>
 		<module>dialog-service</module>
+		<module>fanout-service</module>
 	</modules>
 
 	<properties>
