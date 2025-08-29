@@ -126,7 +126,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			}
 
 			// 通知 文案所属用户
-			// likeEventPublisher.pushLikeNotification(userId, entityType, entityId, false, request.getContent(), operatorUserId, userName);
+			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, false, request.getContent(), operatorUserId, userName);
 
 
 			response.setAction(LikeAction.CANCEL.getName());
@@ -145,7 +145,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			}
 
 			// 发送MQ消息通知文案所属用户
-			// likeEventPublisher.pushLikeNotification(userId, entityType, entityId, true,request.getContent(), operatorUserId, userName);
+			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, true,request.getContent(), operatorUserId, userName);
 
 			response.setAction(LikeAction.LIKE.getName());
 		}
