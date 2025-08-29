@@ -88,7 +88,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteTagMapper.insertBatch(quoteTags);
 		}
-		quoteEventPublisher.publishQuoteAdd(q, quoteTags);
 
 		return Result.success(q);
 	}
@@ -142,10 +141,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				quoteVerify.setTag(tag);
 			}
 			quoteVerifyService.save(quoteVerify);
-			// 推送提交更新消息到用户消息中心
-			quoteEventPublisher.pushQuoteUpdateNotification(Long.valueOf(userInfo.getId()),
-					"QUOTE_UPDATED", "quote",
-					quoteId, "SUCCESS", "提交修改成功");
 
 			// 推送待审核消息到管理员消息中心
 			quoteEventPublisher.pushQuoteUpdateNotification(1L,
@@ -153,8 +148,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 					quoteId, "SUCCESS", "待审核消息");
 		}
 
-		//推送审核信息到邮箱
-		quoteEventPublisher.publishQuoteVerify(dto);
 		return Result.success(ResultCode.SUCCESS.getMessage());
 	}
 
