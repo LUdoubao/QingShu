@@ -19,6 +19,8 @@ import org.doubao.user.server.core.messaging.UserEventPublisher;
 import org.doubao.user.server.core.service.UserService;
 import org.doubao.user.server.core.vo.PageUserVo;
 import org.doubao.user.server.core.vo.UserVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,6 +49,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Resource
 	private OssServiceClient ossServiceClient;
 
+	private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 	@Override
 	public String uploadAvatar(MultipartFile avatarFile, Long userId) {
 		FileUploadResult result = ossServiceClient.uploadFile(
@@ -292,6 +295,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	private void sendEmailCodeAndSave(String email, String subject) {
 		// 生成验证码（6位数字）
 		String code = String.format("%06d", new Random().nextInt(999999));
+		logger.info("----------------Generated verification code: {}", code);
 		// 发送验证邮件
 		userEventPublisher.sendVerificationEmail(email, code, subject);
 		// 存储验证码到Redis（5分钟有效）
