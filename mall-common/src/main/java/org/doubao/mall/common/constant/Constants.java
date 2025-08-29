@@ -20,4 +20,12 @@ public class Constants {
 	public static final String NOTIFICATION_QUEUE = "notification.queue";
 	public static final String NOTIFICATION_LIKE_QUEUE = "notification.queue.like";
 	public static final String USER_NOTIFICATION_ROUTING_KEY_PREFIX = "notification.user.";
+	public static final String USER_COMMENT_NOTIFICATION_ROUTING_KEY = "notification.user.comment";
+	public static final String USER_REGISTER_ROUTING_KEY = "event.key.USER_REGISTER";
+	public static final String USER_COMMENT_ROUTING_KEY = "event.key.COMMENT_EVENT";
+	public static final String USER_LIKE_ROUTING_KEY = "event.key.LIKE_EVENT";
+	public static final String USER_QUOTE_ROUTING_KEY = "event.key.QUOTE_EVENT";
+	public static final String FANOUT_EVENT_EXCHANGE = "fanout.event.exchange";
+
+
 }

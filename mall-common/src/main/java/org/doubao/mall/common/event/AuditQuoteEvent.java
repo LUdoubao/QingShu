@@ -1,22 +1,25 @@
 package org.doubao.mall.common.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
 /**
  * 审核事件：表示引文审核结果的事件
  */
-public class AuditEvent extends NotificationEvent {
+public class AuditQuoteEvent extends NotificationEvent {
 	private Long quoteId;        // 引文ID
 	private String quoteContent;   // 引文内容（摘要）
 	private String status;          // 审核状态 (APPROVED, REJECTED, etc.)
 	private String reason;          // 审核不通过原因
 	private String submitterName;   // 提交者名称
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private LocalDateTime actionTime; // 审核时间
 	private String target = "quote";
 	private String action = "QUOTE_VERIFY";
 	// 构造函数
-	public AuditEvent() {
-		super("AUDIT");
+	public AuditQuoteEvent() {
+		super("AUDIT_QUOTE");
 	}
 
 	public String getTarget() {
@@ -35,9 +38,9 @@ public class AuditEvent extends NotificationEvent {
 		this.action = action;
 	}
 
-	public AuditEvent(Long userId, Long quoteId, String quoteContent, String status,
-					  String reason, String submitterName) {
-		super("AUDIT", userId);
+	public AuditQuoteEvent(Long userId, Long quoteId, String quoteContent, String status,
+						   String reason, String submitterName) {
+		super("AUDIT_QUOTE", userId);
 		this.quoteId = quoteId;
 		this.quoteContent = quoteContent;
 		this.status = status;
@@ -97,7 +100,7 @@ public class AuditEvent extends NotificationEvent {
 
 	@Override
 	public String toString() {
-		return "AuditEvent{" +
+		return "AuditQuoteEvent{" +
 				"quoteId=" + quoteId +
 				", quoteContent='" + quoteContent + '\'' +
 				", status='" + status + '\'' +

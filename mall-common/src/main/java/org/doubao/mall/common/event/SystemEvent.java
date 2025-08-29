@@ -1,6 +1,8 @@
 package org.doubao.mall.common.event;
 
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.time.LocalDateTime;
 
 /**
@@ -12,6 +14,7 @@ public class SystemEvent extends NotificationEvent {
 	private Long targetId;         // 目标对象ID
 	private String result;         // 操作结果 (SUCCESS, FAILURE, etc.)
 	private String details;        // 操作详情
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private LocalDateTime actionTime; // 操作时间
 
 	// 构造函数

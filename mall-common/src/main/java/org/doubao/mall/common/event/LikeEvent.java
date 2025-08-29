@@ -3,17 +3,17 @@ package org.doubao.mall.common.event;
 public class LikeEvent extends NotificationEvent{
 	private int entityType;
 	private String entityId;
-	private boolean isLike;
+	private boolean like;
 	private String content;
 	private Long operatorUserId;
 	private String operatorUserName;
 
 
-	public LikeEvent(Long userId, int entityType, String entityId, boolean isLike, String content, Long operatorUserId, String operatorUserName) {
+	public LikeEvent(Long userId, int entityType, String entityId, boolean like, String content, Long operatorUserId, String operatorUserName) {
 		super("LIKE", userId);
 		this.entityType = entityType;
 		this.entityId = entityId;
-		this.isLike = isLike;
+		this.like = like;
 		this.content = content;
 		this.operatorUserId = operatorUserId;
 		this.operatorUserName = operatorUserName;
@@ -60,12 +60,10 @@ public class LikeEvent extends NotificationEvent{
 	}
 
 	public boolean isLike() {
-		return isLike;
+		return like;
 	}
 
 	public void setLike(boolean like) {
-		isLike = like;
+		this.like = like;
 	}
-
-
 }

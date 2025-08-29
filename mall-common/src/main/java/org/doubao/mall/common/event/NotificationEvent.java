@@ -1,11 +1,14 @@
 package org.doubao.mall.common.event;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public abstract class NotificationEvent implements Serializable {
 	private String type;           // 事件类型 (AUDIT, SYSTEM, LIKE.)
 	private Long userId;           // 接收通知的用户ID
+	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private LocalDateTime eventTime; // 事件创建时间
 
 	protected NotificationEvent() {
