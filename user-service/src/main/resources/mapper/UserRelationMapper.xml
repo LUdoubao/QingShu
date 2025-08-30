@@ -3,10 +3,6 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.doubao.user.server.relation.mapper.UserRelationMapper">
-    <resultMap id="followResultMap" type="java.util.Map">
-        <result property="key" column="target_user_id"/>
-        <result property="value" column="is_follow"/>
-    </resultMap>
     <!-- int existsRelation(
 			@Param("userId") Long userId,
 			@Param("targetUserId") Long targetUserId,
@@ -53,7 +49,13 @@
         ORDER BY created_Time DESC
         LIMIT #{offset}, #{size}
     </select>
-
+    <select id="selectAllFollowerIds" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_relation
+        WHERE target_user_id = #{targetUserId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
+    </select>
     <!-- 查询关注ID列表 -->
     <select id="selectFollowingIds" resultType="java.lang.Long">
         SELECT target_user_id
@@ -62,6 +64,13 @@
         AND relation_type = #{relationType}
         ORDER BY created_Time DESC
         LIMIT #{offset}, #{size}
+    </select>
+    <select id="selectAllFollowingIds" resultType="java.lang.Long">
+        SELECT target_user_id
+        FROM user_relation
+        WHERE user_id = #{userId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
     </select>
 
     <!-- 统计粉丝总数 -->
@@ -87,6 +96,19 @@
         FROM user_relation
         WHERE user_id = #{currentUserId}
         AND target_user_id IN
+        <foreach item="item" collection="userIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY target_user_id
+    </select>
+
+    <!-- List<FollowerCount> getFollowerCounts(@Param("userIds") List<Long> userIds); -->
+    <select id="getFollowerCounts" resultType="org.doubao.user.server.relation.dto.FollowerCount">
+        SELECT
+        target_user_id AS userId,
+        COUNT(*) AS count
+        FROM user_relation
+        WHERE target_user_id IN
         <foreach item="item" collection="userIds" open="(" separator="," close=")">
             #{item}
         </foreach>

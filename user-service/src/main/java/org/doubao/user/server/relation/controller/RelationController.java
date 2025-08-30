@@ -73,6 +73,14 @@ public class RelationController {
 		return Result.success(result);
 	}
 
+	@GetMapping("/allFollowers")
+	public Result<List<Long>> allFollowers(
+			@RequestParam(name = "targetUserId") Long targetUserId
+	) {
+		List<Long> longList = relationService.allFollowers(targetUserId);
+		return Result.success(longList);
+	}
+
 	/**
 	 * 分页查询关注列表
 	 * @param userId 目标用户ID（关注者）
@@ -88,6 +96,19 @@ public class RelationController {
 	) {
 		PageResult<UserInfo> result = relationService.getFollowing(userId, page, size);
 		return Result.success(result);
+	}
+
+	@GetMapping("/allFollows")
+	public Result<List<Long>> allFollows(
+			@RequestParam(name = "targetUserId") Long targetUserId
+	) {
+		return Result.success(relationService.allFollows(targetUserId));
+	}
+
+
+	@PostMapping("/follower-counts")
+	public Result<Map<Long, Long>> getFollowerCounts(@RequestBody List<Long> userIds) {
+		return Result.success(relationService.getFollowerCounts(userIds));
 	}
 
 	/**

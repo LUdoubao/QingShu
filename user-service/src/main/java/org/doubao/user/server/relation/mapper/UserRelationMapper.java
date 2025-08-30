@@ -3,6 +3,7 @@ package org.doubao.user.server.relation.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.doubao.user.server.relation.dto.FollowerCount;
 import org.doubao.user.server.relation.entity.UserRelation;
 import org.doubao.user.server.relation.vo.FollowResult;
 
@@ -48,6 +49,11 @@ public interface UserRelationMapper extends BaseMapper<UserRelation> {
 			@Param("size") int size
 	);
 
+	List<Long> selectAllFollowerIds(
+			@Param("targetUserId") Long targetUserId,
+			@Param("relationType") Integer relationType
+	);
+
 	/**
 	 * 查询关注列表ID（分页）
 	 * @param userId 关注者ID
@@ -61,6 +67,11 @@ public interface UserRelationMapper extends BaseMapper<UserRelation> {
 			@Param("relationType") Integer relationType,
 			@Param("offset") int offset,
 			@Param("size") int size
+	);
+
+	List<Long> selectAllFollowingIds(
+			@Param("userId") Long userId,
+			@Param("relationType") Integer relationType
 	);
 
 	/**
@@ -87,4 +98,6 @@ public interface UserRelationMapper extends BaseMapper<UserRelation> {
 
 	List<FollowResult> isFollowRaw(@Param("currentUserId") Long currentUserId,
 								   @Param("userIds") Set<Long> userIds);
+
+	List<FollowerCount> getFollowerCounts(@Param("userIds") List<Long> userIds);
 }

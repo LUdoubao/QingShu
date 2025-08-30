@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.vo.PageResult;
 import org.doubao.user.server.relation.entity.UserRelation;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,9 @@ public interface RelationService extends IService<UserRelation> {
 	 */
 	PageResult<UserInfo> getFollowers(Long userId, int page, int size);
 
+
+	List<Long> allFollowers(Long userId);
+
 	/**
 	 * 获取关注列表（分页）
 	 * @param userId 目标用户ID（查询该用户关注的人）
@@ -39,6 +43,16 @@ public interface RelationService extends IService<UserRelation> {
 	 * @return 分页关注列表（包含用户ID）
 	 */
 	PageResult<UserInfo> getFollowing(Long userId, int page, int size);
+
+
+	List<Long> allFollows(Long userId);
+
+	/**
+	 * 批量获取用户粉丝数
+	 * @param userIds 用户 ID列表
+	 * @return 粉丝数列表
+	 */
+	Map<Long, Long> getFollowerCounts(List<Long> userIds);
 
 	/**
 	 * 获取用户的粉丝数和关注数

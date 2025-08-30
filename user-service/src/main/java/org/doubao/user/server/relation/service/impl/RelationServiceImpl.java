@@ -9,6 +9,7 @@ import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.PageResult;
 import org.doubao.user.server.core.service.UserService;
+import org.doubao.user.server.relation.dto.FollowerCount;
 import org.doubao.user.server.relation.entity.UserFollowOperateLog;
 import org.doubao.user.server.relation.entity.UserRelation;
 import org.doubao.user.server.relation.entity.UserRelationCount;
@@ -361,6 +362,15 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 		return result;
 	}
 
+	@Override
+	public List<Long> allFollowers(Long targetUserId) {
+		userValidator.validateActiveUser(targetUserId); // 校验用户存在
+		return userRelationMapper.selectAllFollowerIds(
+				targetUserId,
+				RelationType.FOLLOW.getValue()
+		);
+	}
+
 	/**
 	 * 获取关注列表（分页）
 	 */
@@ -410,6 +420,32 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 
 		log.info("用户 {} 的关注列表查询完成，页码：{}，条数：{}", targetUserId, page, size);
 		return result;
+	}
+
+	@Override
+	public List<Long> allFollows(Long targetUserId) {
+		userValidator.validateActiveUser(targetUserId);
+		// 4. 缓存未命中，查询数据库
+		return userRelationMapper.selectAllFollowingIds(
+				targetUserId,
+				RelationType.FOLLOW.getValue()
+		);
+	}
+
+	@Override
+	public Map<Long, Long> getFollowerCounts(List<Long> userIds) {
+		// 批量获取用户粉丝数
+		List<FollowerCount> followerCounts = userRelationMapper.getFollowerCounts(userIds);
+		if (followerCounts.isEmpty()) {
+			Map<Long, Long> emptyMap = new HashMap<>();
+			userIds.forEach(userId -> emptyMap.put(userId, 0L));
+			return emptyMap;
+		}
+		return followerCounts.stream()
+				.collect(Collectors.toMap(
+						FollowerCount::getUserId,
+						FollowerCount::getCount
+				));
 	}
 
 	@Override
