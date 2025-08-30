@@ -1,0 +1,62 @@
+spring:
+  application:
+    name: feed-service
+  profiles:
+    active: dev
+
+  config:
+    import: "optional:configserver:"  # 关键修复！必须添加！
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/feed_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+    username: root
+    password: Lg101799.
+  redis:
+    host: localhost
+    port: 6379
+    password: LG101799
+    database: 0
+rabbitmq:
+  host: localhost
+  port: 5672
+  username: doubao
+  password: 123456
+  virtual-host: /
+  publisher-confirm-type: correlated
+  publisher-returns: true
+
+
+eureka:
+  client:
+    register-with-eureka: true    # 启用注册
+    fetch-registry: true          # 获取注册表
+    service-url:
+      defaultZone: http://localhost:8761/eureka  # Eureka 地址
+
+# 服务端口
+server:
+  port: 9407
+  servlet:
+    context-path: /
+
+# 动态流配置
+feed:
+  vip-threshold: 10000  # 大V粉丝数阈值
+  page:
+    max-size: 50         # 最大分页大小
+  cache:
+    follows-ttl: 3600    # 关注列表缓存过期时间(秒)
+    vip-timeline-ttl: 604800  # 大V动态缓存过期时间(秒，7天)
+    filter-ttl: 3600     # 过滤设置缓存过期时间(秒)
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.dynamic.feed: DEBUG
+    com.dynamic.feed.client: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} [%X{traceId}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} [%X{traceId}] - %msg%n"
+  file:
+    name: logs/feed-service.log
