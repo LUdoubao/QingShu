@@ -6,7 +6,7 @@ import org.doubao.mall.common.entity.BusinessEvent;
 import org.doubao.mall.common.enums.EventType;
 import org.doubao.fanout.service.mapper.FanoutFailRecordMapper;
 import org.doubao.fanout.service.model.FanoutFailRecord;
-import org.doubao.fanout.service.model.FanoutMessage;
+import org.doubao.mall.common.entity.FanoutMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

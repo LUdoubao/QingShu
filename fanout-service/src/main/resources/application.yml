@@ -68,11 +68,8 @@ fanout:
     - message-type: DYNAMIC_PUBLISH
       targets:
         - type: QUEUE
-          name: dynamic.storage.queue
+          name: dynamic.exchange
           routingKey: dynamic.storage.key
-        - type: QUEUE
-          name: notification.queue
-          routingKey: notification.dynamic.key
 
     - message-type: DYNAMIC_TOPLIST
       targets:

@@ -20,12 +20,13 @@ public class RabbitMQConfig {
 	public static final String FANOUT_EVENT_EXCHANGE = "fanout.event.exchange";
 	public static final String FANOUT_FAIL_EXCHANGE = "fanout.fail.exchange";
 	public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
+	public static final String DYNAMIC_EXCHANGE = "dynamic.exchange";
 
 
 	// 队列名称
 	public static final String FANOUT_EVENT_QUEUE = "fanout.event.queue";
 	public static final String FANOUT_FAIL_QUEUE = "fanout.fail.queue";
-	public static final String DYNAMIC_STORAGE_QUEUE = "dynamic.storage.queue";
+	public static final String DYNAMIC_QUEUE = "dynamic.queue";
 	public static final String NOTIFICATION_QUEUE = "notification.queue";
 
 	// 死信队列
@@ -98,13 +99,17 @@ public class RabbitMQConfig {
 	 * 动态存储服务队列
 	 */
 	@Bean
-	public Queue dynamicStorageQueue() {
-		return QueueBuilder.durable(DYNAMIC_STORAGE_QUEUE)
+	public Queue dynamicQueue() {
+		return QueueBuilder.durable(DYNAMIC_QUEUE)
 				.build();
 	}
 	@Bean
 	public TopicExchange notificationExchange() {
 		return new TopicExchange(NOTIFICATION_EXCHANGE);
+	}
+	@Bean
+	public TopicExchange dynamicExchange() {
+		return new TopicExchange(DYNAMIC_EXCHANGE);
 	}
 	/**
 	 * 通知服务队列
@@ -120,6 +125,13 @@ public class RabbitMQConfig {
 		return BindingBuilder.bind(notificationQueue())
 				.to(notificationExchange())
 				.with("notification.#");
+	}
+
+	@Bean
+	public Binding dynamicBinding() {
+		return BindingBuilder.bind(dynamicQueue())
+				.to(dynamicExchange())
+				.with("dynamic.#");
 	}
 
 	/**

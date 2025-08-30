@@ -1,7 +1,8 @@
 package org.doubao.fanout.service.service;
 
-import org.doubao.fanout.service.model.FanoutMessage;
+import org.doubao.mall.common.entity.FanoutMessage;
 import org.doubao.mall.common.entity.BusinessEvent;
+import org.doubao.mall.common.entity.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,11 +39,7 @@ public class MessageAssembler {
 		message.setTargetId(event.getTargetId());
 		message.setCreateTime(System.currentTimeMillis());
 
-		// 获取创作者信息
-		String actorName = getActorName(event.getActorId());
-		message.setActorName(actorName);
 
-		// 根据事件类型组装内容
 		message.setContent(assembleContent(event));
 
 		return message;
@@ -55,19 +52,6 @@ public class MessageAssembler {
 		return "msg_" + UUID.randomUUID().toString().replaceAll("-", "").substring(0, 16);
 	}
 
-	/**
-	 * 获取创作者名称
-	 */
-	private String getActorName(Long actorId) {
-		try {
-			String userInfoKey = userInfoPrefix + actorId;
-			Object nameObj = redisTemplate.opsForHash().get(userInfoKey, "name");
-			return nameObj != null ? nameObj.toString() : "unknown";
-		} catch (Exception e) {
-			log.error("[getActorName] Error getting actor name for actorId: {}", actorId, e);
-			return "unknown";
-		}
-	}
 
 	/**
 	 * 根据事件类型组装内容
@@ -88,9 +72,6 @@ public class MessageAssembler {
 			case LIKE_CANCEL:
 				assembleLikeCancelContent(event, content);
 				break;
-			case USER_REGISTER:
-				assembleUserRegisterContent(event, content);
-				break;
 			default:
 				content.putAll(event.getExtInfo());
 				log.warn("[assembleContent] No specific content assembler for event type: {}", event.getEventType());
@@ -102,7 +83,6 @@ public class MessageAssembler {
 	private void assembleDynamicPublishContent(BusinessEvent event, Map<String, Object> content) {
 		content.put("title", event.getExtInfo().getOrDefault("dynamicTitle", ""));
 		content.put("content", event.getExtInfo().getOrDefault("dynamicContent", ""));
-		content.put("thumbnailUrl", event.getExtInfo().getOrDefault("thumbnailUrl", ""));
 		content.put("publishTime", event.getTimestamp());
 	}
 
@@ -120,12 +100,5 @@ public class MessageAssembler {
 	private void assembleLikeCancelContent(BusinessEvent event, Map<String, Object> content) {
 		content.put("dynamicId", event.getTargetId());
 		content.put("cancelTime", event.getTimestamp());
-	}
-
-	private void assembleUserRegisterContent(BusinessEvent event, Map<String, Object> content) {
-		content.put("userId", event.getActorId());
-		content.put("registerTime", event.getTimestamp());
-		content.put("email", event.getExtInfo().getOrDefault("email", ""));
-		content.put("userName", event.getExtInfo().getOrDefault("userName", ""));
 	}
 }
