@@ -9,6 +9,10 @@ spring:
     #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: feed-service
+          uri: lb://feed-service
+          predicates:
+            - Path=/feed/**
         - id: dialog-service
           uri: lb://dialog-service
           predicates:
