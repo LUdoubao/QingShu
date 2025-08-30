@@ -1,4 +1,4 @@
-package org.doubao.fanout.service.model;
+package org.doubao.mall.common.entity;
 
 
 import org.doubao.mall.common.enums.EventType;
