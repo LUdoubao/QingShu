@@ -27,6 +27,7 @@
 		<module>share-service</module>
 		<module>dialog-service</module>
 		<module>fanout-service</module>
+		<module>feed-service</module>
 	</modules>
 
 	<properties>
