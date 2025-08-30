@@ -89,6 +89,9 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quoteTagMapper.insertBatch(quoteTags);
 		}
 
+		// 推送到分发服务更新动态流
+		quoteEventPublisher.pushFanoutFeedPublish(q);
+
 		return Result.success(q);
 	}
 
@@ -417,6 +420,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				map.put("source", quoteVo.getSource());
 				map.put("categoryName", quoteVo.getCategoryName());
 				map.put("tags", quoteVo.getTags());
+				map.put("createdId", quoteVo.getCreatedId());
 				return map;
 			}).collect(Collectors.toList());
 		}
