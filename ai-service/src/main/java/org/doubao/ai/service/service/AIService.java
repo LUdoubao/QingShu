@@ -186,8 +186,6 @@ public class AIService {
 			throw new IOException("API request timed out", e);
 		} catch (ExecutionException | InterruptedException e) {
 			throw new IOException("API request failed", e);
-		} finally {
-			executor.shutdown();
 		}
 	}
 
