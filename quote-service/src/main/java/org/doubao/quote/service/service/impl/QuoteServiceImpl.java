@@ -157,6 +157,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<QuoteVo> getDetailById(Long id) {
+		Long currentUserId = UserContext.getUserId();
+
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getDeleted, 0)
 				.eq(Quote::getId, id)
@@ -165,6 +167,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		QuoteVo quoteVo = new QuoteVo();
 		if (quote != null) {
 			BeanUtils.copyProperties(quote, quoteVo);
+			Long createdId = quote.getCreatedId();
+			List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
+
+			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, Collections.singleton(createdId)).getData();
+
 			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
 			Long categoryId = quoteVo.getCategoryId();
 			Category category = categoryService.getById(categoryId);
@@ -182,6 +189,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteVo.setCategoryName(category.getName());
 			quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+			// 设置是否关注
+			quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
+			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+			first.ifPresent(quoteVo::setUserInfo);
 		}
 		return Result.success(quoteVo);
 	}
