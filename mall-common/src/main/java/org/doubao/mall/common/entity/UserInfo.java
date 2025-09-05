@@ -13,11 +13,20 @@ public class UserInfo implements Serializable {
 	private String email;
 	private String signature;
 	private String avatarUrl;
+	private String bgUrl;
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime createdTime;
 	private String token;
 	private String role;
 	private boolean follow;
+
+	public String getBgUrl() {
+		return bgUrl;
+	}
+
+	public void setBgUrl(String bgUrl) {
+		this.bgUrl = bgUrl;
+	}
 
 	public boolean isFollow() {
 		return follow;
