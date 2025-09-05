@@ -108,13 +108,23 @@ public class NotificationListener {
 		LOG.info("Notification type: {}", type);
 		Notification notification;
 		switch (type) {
-			case "AUDIT_QUOTE":
-				AuditQuoteEvent auditQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), AuditQuoteEvent.class, FIXED_CONFIG );
-				notification = formatter.formatAuditNotification(auditQuoteEvent);
-				break;
 			case "SYSTEM":
-				SystemEvent systemEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), SystemEvent.class, FIXED_CONFIG );
-				notification = formatter.formatSystemNotification(systemEvent);
+				String action = jsonObject.getString("action");
+				switch ( action) {
+					case "AUDIT_QUOTE":
+						AuditQuoteEvent auditQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), AuditQuoteEvent.class, FIXED_CONFIG );
+						notification = formatter.formatSystemNotification(auditQuoteEvent);
+
+						break;
+					case "VERIFY_QUOTE":
+						VerifyQuoteEvent verifyQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), VerifyQuoteEvent.class, FIXED_CONFIG );
+						notification = formatter.formatSystemNotification(verifyQuoteEvent);
+
+						break;
+					default:
+						LOG.error("Unsupported notification action: {}",action);
+						throw new IllegalArgumentException("Unsupported event action: " +action);
+				}
 				break;
 			case "LIKE":
 				LikeEvent likeEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), LikeEvent.class, FIXED_CONFIG );
@@ -125,7 +135,7 @@ public class NotificationListener {
 				notification = formatter.formatCommentNotification(commentEvent);
 				break;
 			default:
-				LOG.warn("Unsupported notification type: {}", type);
+				LOG.error("Unsupported notification type: {}", type);
 				return;
 		}
 

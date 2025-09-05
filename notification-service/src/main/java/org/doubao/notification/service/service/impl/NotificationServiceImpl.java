@@ -3,7 +3,11 @@ package org.doubao.notification.service.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang.StringUtils;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
+import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.enums.NotificationStatus;
@@ -39,13 +43,24 @@ public class NotificationServiceImpl implements NotificationService {
 
 	@Override
 	@SuppressWarnings("unchecked")
-	public Page<NotificationDTO> getUserNotifications(Long userId, int page, int size, String status) {
+	public Page<NotificationDTO> getUserNotifications(NotificationQueryDto notificationQueryDto) {
 		LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
-		query.eq(Notification::getUserId, userId)
+		query.eq(Notification::getUserId, notificationQueryDto.getUserId())
 				.orderByDesc(Notification::getCreatedTime);
 
-		if (StringUtils.isNotBlank(status)) {
-			query.eq(Notification::getStatus, NotificationStatus.valueOf(status));
+		if (StringUtils.isNotBlank(notificationQueryDto.getStatus())) {
+			query.eq(Notification::getStatus, NotificationStatus.valueOf(notificationQueryDto.getStatus()));
+		}
+		if (StringUtils.isNotBlank(notificationQueryDto.getType())) {
+			query.eq(Notification::getType, notificationQueryDto.getType());
+		}
+		if (StringUtils.isNotBlank(notificationQueryDto.getAction())) {
+			query.eq(Notification::getAction, notificationQueryDto.getAction());
+		}
+		int page = notificationQueryDto.getPage();
+		int size = notificationQueryDto.getSize();
+		if (page <= 0 || size <= 0) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
 
 		Page<Notification> notificationPage = notificationMapper.selectPage(
@@ -121,5 +136,21 @@ public class NotificationServiceImpl implements NotificationService {
 			return NotificationDTO.fromEntity(notification);
 		}
 		return null;
+	}
+
+	@Override
+	public UnreadCountDTO getUnreadCountType(NotificationQueryDto notificationQueryDto) {
+		Long userId = notificationQueryDto.getUserId();
+		LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
+		query.eq(Notification::getUserId, userId)
+						.eq(Notification::getStatus, NotificationStatus.UNREAD.getCode());
+		if (StringUtils.isNotBlank(notificationQueryDto.getType())) {
+			query.eq(Notification::getType, notificationQueryDto.getType());
+		}
+		if (StringUtils.isNotBlank(notificationQueryDto.getAction())) {
+			query.eq(Notification::getAction, notificationQueryDto.getAction());
+		}
+		Integer count = notificationMapper.selectCount(query);
+		return new UnreadCountDTO(count);
 	}
 }

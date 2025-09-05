@@ -14,6 +14,7 @@ public class NotificationDTO implements Serializable {
 	private Long userId;
 	private String type;
 	private String title;
+	private String action;
 	private Map<String, Object> content;  // 将JSON内容解析为Map
 	private int status;
 	private String sourceId;
@@ -32,6 +33,7 @@ public class NotificationDTO implements Serializable {
 		dto.setStatus(notification.getStatus());
 		dto.setSourceId(notification.getSourceId());
 		dto.setSourceType(notification.getSourceType());
+		dto.setAction(notification.getAction());
 
 		// 解析JSON内容
 		if (StringUtils.isNotBlank(notification.getContent())) {
@@ -45,28 +47,17 @@ public class NotificationDTO implements Serializable {
 		return dto;
 	}
 
-	// 转换为实体类
-	public Notification toEntity() {
-		Notification entity = new Notification();
-		entity.setId(this.id);
-		entity.setUserId(this.userId);
-		entity.setType(this.type);
-		entity.setTitle(this.title);
-		entity.setStatus(this.status);
-		entity.setSourceId(this.sourceId);
-		entity.setSourceType(this.sourceType);
-
-		// 将Map内容转换为JSON字符串
-		if (this.content != null && !this.content.isEmpty()) {
-			entity.setContent(JSON.toJSONString(this.content));
-		}
-
-		return entity;
-	}
-
 	private static String formatDateTime(LocalDateTime dateTime) {
 		if (dateTime == null) return null;
 		return dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
+	}
+
+	public String getAction() {
+		return action;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
 	}
 
 	public Long getId() {

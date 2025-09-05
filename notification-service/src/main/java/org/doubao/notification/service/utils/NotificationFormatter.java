@@ -1,11 +1,10 @@
 package org.doubao.notification.service.utils;
 
 import com.alibaba.fastjson.JSON;
-import org.doubao.mall.common.event.CommentEvent;
+import org.doubao.mall.common.event.*;
 import org.doubao.notification.service.entity.Notification;
-import org.doubao.mall.common.event.AuditQuoteEvent;
-import org.doubao.mall.common.event.LikeEvent;
-import org.doubao.mall.common.event.SystemEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -15,44 +14,38 @@ import java.util.Map;
 @Component
 public class NotificationFormatter {
 
-	public Notification formatAuditNotification(AuditQuoteEvent event) {
+	private static final Logger LOGGER = LoggerFactory.getLogger(NotificationFormatter.class);
+	public Notification formatSystemNotification(AuditQuoteEvent event) {
+
 		Notification notification = new Notification();
 		notification.setUserId(event.getUserId());
-		notification.setType("AUDIT");
-		notification.setTitle("引文审核通知");
-
-		Map<String, Object> content = new HashMap<>();
-		content.put("id", event.getQuoteId());
-		content.put("status", event.getStatus());
-		content.put("reason", event.getReason());
-		content.put("action_time", LocalDateTime.now());
-		content.put("content", event.getQuoteContent());
-		content.put("target", event.getTarget());
-
-
-		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(String.valueOf(event.getQuoteId()));
-		notification.setSourceType("quote");
-
-		return notification;
-	}
-
-	public Notification formatSystemNotification(SystemEvent event) {
-		Notification notification = new Notification();
-		notification.setUserId(event.getUserId());
-		notification.setType("SYSTEM");
-		notification.setTitle("系统通知");
-
-		Map<String, Object> content = new HashMap<>();
-		content.put("action", event.getAction());
-		content.put("target", event.getTarget());
-		content.put("id", event.getTargetId());
-		content.put("result", event.getResult());
-
-		notification.setContent(JSON.toJSONString(content));
+		notification.setType(event.getType());
+		notification.setTitle(event.getTitle());
+		notification.setAction(event.getAction());
 		notification.setSourceId(String.valueOf(event.getTargetId()));
 		notification.setSourceType(event.getTarget());
 
+		Map<String, Object> content = new HashMap<>();
+		content.put("quoteContent", event.getQuoteContent());
+		content.put("reason", event.getReason());
+		content.put("submitterName", event.getSubmitterName());
+		notification.setContent(JSON.toJSONString(content));
+
+		return notification;
+	}
+	public Notification formatSystemNotification(VerifyQuoteEvent event) {
+
+		Notification notification = new Notification();
+		notification.setUserId(event.getUserId());
+		notification.setType(event.getType());
+		notification.setTitle(event.getTitle());
+		notification.setAction(event.getAction());
+		notification.setSourceId(String.valueOf(event.getTargetId()));
+		notification.setSourceType(event.getTarget());
+
+		Map<String, Object> content = new HashMap<>();
+		content.put("quoteContent", event.getQuoteContent());
+		notification.setContent(JSON.toJSONString(content));
 		return notification;
 	}
 

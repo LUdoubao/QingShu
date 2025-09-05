@@ -3,7 +3,9 @@ package org.doubao.notification.service.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
+import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;
 import org.doubao.notification.service.service.NotificationService;
 import org.springframework.http.ResponseEntity;
@@ -20,33 +22,25 @@ public class NotificationController {
 	@Resource
 	private NotificationService notificationService;
 
-	@GetMapping("/user/{userId}")
+	@PostMapping("/user")
 	public Result<Page<NotificationDTO>> getUserNotifications(
-			@PathVariable Long userId,
-			@RequestParam(defaultValue = "1") int page,
-			@RequestParam(defaultValue = "10") int size,
-			@RequestParam(required = false) String status) {
+			@RequestBody NotificationQueryDto notificationQuery) {
 
 		Page<NotificationDTO> result = notificationService.getUserNotifications(
-				userId, page, size, status);
+				notificationQuery);
 
 		return Result.success(result);
 	}
 
-	@GetMapping("/latest/{userId}")
+	@PostMapping("/latest")
 	public Result<Page<NotificationDTO>> getLatestUserNotifications(
-			@PathVariable Long userId,
-			@RequestParam(defaultValue = "1", required = false) int page,
-			@RequestParam(defaultValue = "5", required = false) int size) {
+			@RequestBody NotificationQueryDto notificationQuery) {
 
 		Page<NotificationDTO> result = notificationService.getUserNotifications(
-				userId, page, size, null);
+				notificationQuery);
 
 		return Result.success(result);
 	}
-
-
-
 
 	@GetMapping("/{id}/read")
 	public Result<UnreadCountDTO> markAsRead(@PathVariable Long id) {
@@ -68,6 +62,11 @@ public class NotificationController {
 	@GetMapping("/unread-count/{userId}")
 	public Result<UnreadCountDTO> getUnreadCount(@PathVariable Long userId) {
 		return Result.success(notificationService.getUnreadCount(userId));
+	}
+
+	@PostMapping("/unread-count-type")
+	public Result<UnreadCountDTO> getUnreadCountType(@RequestBody NotificationQueryDto notificationQueryDto) {
+		return Result.success(notificationService.getUnreadCountType(notificationQueryDto));
 	}
 
 	@GetMapping("/detail/{id}")
