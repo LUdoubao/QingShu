@@ -88,7 +88,8 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 				RedisKeyUtil.getRateLimitKey(operatorUserId),
 				10,
 				60)) {
-			throw new RateLimitException(operatorUserId, RateLimitException.RateLimitType.LIKE_OPERATION);
+			LOGGER.warn("Rate limit exceeded for user: {}", operatorUserId);
+			throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED);
 		}
 
 		String userName = Constants.DEFAULT_USER_NAME;
