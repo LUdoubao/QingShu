@@ -24,6 +24,8 @@ public interface QuoteService extends IService<Quote> {
 
 	Result<QuoteVo> getDetailById(Long id);
 
+	Result<QuoteVo> publicGetDetailById(Long id);
+
 	Result<Page<QuoteVo>> pageManager(PageDto pageDto);
 
 	Result<String> verify(QuoteDTO dto);

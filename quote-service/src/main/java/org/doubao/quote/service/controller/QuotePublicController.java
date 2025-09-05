@@ -22,7 +22,7 @@ public class QuotePublicController {
 	private QuoteService quoteService;
 	@GetMapping("/detail/{id}")
 	public Result<QuoteVo> detail(@PathVariable Long id) {
-		return quoteService.getDetailById(id);
+		return quoteService.publicGetDetailById(id);
 	}
 }
 

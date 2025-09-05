@@ -157,8 +157,20 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<QuoteVo> getDetailById(Long id) {
+		QuoteVo quoteVo = publicGetDetailById(id).getData();
+		if (quoteVo == null) {
+			throw new BusinessException(ErrorCode.NOT_FOUND);
+		}
 		Long currentUserId = UserContext.getUserId();
+		Long createdId = quoteVo.getCreatedId();
+		Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, Collections.singleton(createdId)).getData();
 
+		// 设置是否关注
+		quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
+		return Result.success(quoteVo);
+	}
+	@Override
+	public Result<QuoteVo> publicGetDetailById(Long id) {
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getDeleted, 0)
 				.eq(Quote::getId, id)
@@ -167,10 +179,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		QuoteVo quoteVo = new QuoteVo();
 		if (quote != null) {
 			BeanUtils.copyProperties(quote, quoteVo);
-			Long createdId = quote.getCreatedId();
+			Long createdId = quoteVo.getCreatedId();
 			List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
-
-			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, Collections.singleton(createdId)).getData();
 
 			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
 			Long categoryId = quoteVo.getCategoryId();
@@ -189,8 +199,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteVo.setCategoryName(category.getName());
 			quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
-			// 设置是否关注
-			quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
 			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
 			first.ifPresent(quoteVo::setUserInfo);
 		}
