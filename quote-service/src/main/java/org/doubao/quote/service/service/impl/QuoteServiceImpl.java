@@ -147,8 +147,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 			// 推送待审核消息到管理员消息中心
 			quoteEventPublisher.pushQuoteUpdateNotification(1L,
-					"QUOTE_VERIFY", "quote",
-					quoteId, "SUCCESS", "待审核消息");
+					quoteId, dto.getAfterQuoteVo().getContent());
 		}
 
 		return Result.success(ResultCode.SUCCESS.getMessage());

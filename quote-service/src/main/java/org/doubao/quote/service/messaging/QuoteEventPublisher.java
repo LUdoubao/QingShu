@@ -5,8 +5,8 @@ import org.doubao.mall.common.entity.BusinessEvent;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.EventType;
 import org.doubao.mall.common.event.AuditQuoteEvent;
+import org.doubao.mall.common.event.VerifyQuoteEvent;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
-import org.doubao.mall.common.event.SystemEvent;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.feign.UserClient;
 import org.slf4j.Logger;
@@ -33,16 +33,13 @@ public class QuoteEventPublisher {
 	private UserClient userClient;
 
 	// 推送引文更新通知(系统通知)
-	public void pushQuoteUpdateNotification(Long userId, String action, String target,
-											Long targetId, String result, String details) {
+	public void pushQuoteUpdateNotification(Long userId,
+											Long targetId, String quoteContent) {
 		taskExecutor.asyncExecute(() -> {
-			SystemEvent event = new SystemEvent(
+			VerifyQuoteEvent event = new VerifyQuoteEvent(
 					userId,
-					action,
-					target,
 					targetId,
-					result,
-					details
+					quoteContent
 			);
 			Map<String, Object> message = new HashMap<>();
 			message.put("NotificationEvent", event);
@@ -76,8 +73,8 @@ public class QuoteEventPublisher {
 			AuditQuoteEvent event = new AuditQuoteEvent(
 					receiverId,
 					quoteId,
-					content,
 					status,
+					content,
 					reason,
 					submitterName
 			);
