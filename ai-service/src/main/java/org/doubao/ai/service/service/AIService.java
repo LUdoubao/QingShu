@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import okhttp3.*;
 import org.doubao.ai.service.dto.*;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 @Service
@@ -68,13 +71,16 @@ public class AIService {
 				.build();
 	}
 
-	public ChatResponse sendChatRequest(String content, String author, String source, String model, String id, String twice, String isPoetry) throws IOException {
+	public ChatResponse sendChatRequest(String userId, String content, String author, String source, String model, String id, String twice, String isPoetry) throws IOException {
 		if(twice == null || !twice.equals("true")) {
 			// 从redis获取
 			if (Boolean.TRUE.equals(redisTemplate.hasKey(AI_KEY + id))) {
 				return (ChatResponse) redisTemplate.opsForValue().get(AI_KEY + id);
 			}
 		}
+		// 检查限流
+		checkRateLimit(Long.valueOf(userId));
+
 		String url = "";
 		String key = "";
 		if (isPoetry.equals("true")) {
@@ -194,11 +200,13 @@ public class AIService {
 
 		String userId = request.getUserId();
 		// 限流检查
-		String limitError = checkRateLimit(Long.valueOf(userId));
-		if (limitError != null) {
-			aiResponse.setErrorMsg(limitError);
+		try {
+			 checkRateLimit(Long.valueOf(userId));
+		} catch (Exception e) {
+			LOGGER.error("限流检查异常", e);
+			aiResponse.setErrorMsg(e.getMessage());
 			aiResponse.setSuccess(false);
-			return aiResponse; // 返回限流错误
+			return aiResponse;
 		}
 		ApiInfo apiInfo = buildApiInfo(request);
 		ChatRequest chatRequest = bulidChatRequest(request.getMessages());
@@ -248,6 +256,22 @@ public class AIService {
 		return aiResponse;
 	}
 
+	public String appreciation(Map<String, String> request) throws IOException {
+		String userId = request.get("userId");
+
+		String id = request.get("id");
+		String content = request.get("content");
+		String source = request.get("source");
+		String author = request.get("author");
+		String model = request.get("model");
+		String twice = request.get("twice");
+		String isPoetry = request.get("isPoetry");
+		ChatResponse response = sendChatRequest(userId, content, author, source,model, id, twice, isPoetry);
+
+		// 提取AI回复内容
+		return response.getChoices().get(0).getMessage().getContent();
+	}
+
 	private static class ApiInfo {
 		private String apiUrl;
 		private String apiKey;
@@ -293,7 +317,7 @@ public class AIService {
 				calendar.get(Calendar.DAY_OF_MONTH));
 	}
 	// 检查限流（返回错误信息，null表示通过）
-	public String checkRateLimit(Long userId) {
+	public void checkRateLimit(Long userId) {
 		String today = getTodayDateStr();
 
 		// 全局限流Key
@@ -307,14 +331,14 @@ public class AIService {
 			// 检查全局调用次数
 			Integer globalCount = (Integer) ops.get(globalKey);
 			if (globalCount != null && globalCount >= 100) {
-				return "系统调用已达今日上限（100次），请明天再试";
+				throw new BusinessException(ErrorCode.AI_LIMIT_EXCEEDED_SYSTEM);
 			}
 		}
 		if (ops.get(userKey) != null) {
 			// 检查用户调用次数
 			Integer userCount = (Integer) ops.get(userKey);
 			if (userCount != null && userCount >= 10) {
-				return "您的调用已达今日上限（10次），请明天再试";
+				throw new BusinessException(ErrorCode.AI_LIMIT_EXCEEDED_TODAY);
 			}
 		}
 
@@ -329,7 +353,5 @@ public class AIService {
 			redisTemplate.expire(userKey, 1, TimeUnit.DAYS);
 			return null;
 		});
-
-		return null; // 通过限流
 	}
 }
