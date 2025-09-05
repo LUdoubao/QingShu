@@ -7,6 +7,7 @@ import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.UserContext;
 import org.doubao.user.server.core.dto.PasswordChangeDto;
 import org.doubao.user.server.core.dto.UpdateEmailDto;
 import org.doubao.user.server.core.dto.UserDto;
@@ -197,7 +198,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
-	public void changePassword(Long userId, PasswordChangeDto dto) {
+	public void changePassword(PasswordChangeDto dto) {
+		Long userId = UserContext.getUserId();
+		// 2. 参数校验（新密码复杂度）
+		if (!isValidNewPassword(dto.getNewPassword())) {
+			throw new BusinessException(ErrorCode.USER_INVALID_NEW_PASSWORD);
+		}
 		User user = userMapper.selectById(userId);
 		if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
 			throw new BusinessException(ErrorCode.OLD_PASSWORD_ERROR);
@@ -206,7 +212,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		userMapper.updateById(user);
 		clearUserCache(userId);
 	}
-
+	// 新密码复杂度校验
+	private boolean isValidNewPassword(String newPassword) {
+		if (newPassword == null || newPassword.length() < 8 || newPassword.length() > 20) {
+			return false;
+		}
+		// 正则：包含至少1个字母和1个数字
+		return newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d).+$");
+	}
 	@Override
 	public PageUserVo<UserVo> adminSearchUsers(int page, int size, Integer status, String email) {
 		return null;

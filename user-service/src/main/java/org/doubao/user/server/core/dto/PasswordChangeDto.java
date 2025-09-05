@@ -9,7 +9,7 @@ public class PasswordChangeDto {
 	private String oldPassword;
 
 	@NotEmpty
-	@Length(min = 6, max = 20)
+	@Length(min = 8, max = 20)
 	private String newPassword;
 
 	public @NotEmpty String getOldPassword() {
@@ -20,11 +20,11 @@ public class PasswordChangeDto {
 		this.oldPassword = oldPassword;
 	}
 
-	public @NotEmpty @Length(min = 6, max = 20) String getNewPassword() {
+	public @NotEmpty @Length(min = 8, max = 20) String getNewPassword() {
 		return newPassword;
 	}
 
-	public void setNewPassword(@NotEmpty @Length(min = 6, max = 20) String newPassword) {
+	public void setNewPassword(@NotEmpty @Length(min = 8, max = 20) String newPassword) {
 		this.newPassword = newPassword;
 	}
 }

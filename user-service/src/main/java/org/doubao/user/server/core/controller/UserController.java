@@ -57,12 +57,11 @@ public class UserController {
 		return Result.success(true);
 	}
 
-	@PatchMapping("/password")
+	@PostMapping("/password")
 	public Result<?> changePassword(
-			@RequestHeader("X-User-Id") Long userId,
 			@Valid @RequestBody PasswordChangeDto dto
 	) {
-		userService.changePassword(userId, dto);
+		userService.changePassword(dto);
 		return Result.success(true);
 	}
 

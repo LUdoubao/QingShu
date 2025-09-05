@@ -27,7 +27,7 @@ public interface UserService extends IService<User> {
 
 	void updateProfile(UserUpdateDto dto);
 
-	void changePassword(Long userId, PasswordChangeDto dto);
+	void changePassword(PasswordChangeDto dto);
 
 	PageUserVo<UserVo> adminSearchUsers(int page, int size, Integer status, String email);
 
