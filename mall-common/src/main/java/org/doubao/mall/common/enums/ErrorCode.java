@@ -60,7 +60,10 @@ public enum ErrorCode {
 	LOCAL_URL_ERROR("FILE_1008", "获取文件url失败"),
 
 	FAVORITE_EXIST("fav_1001", "收藏已存在"),
-	FAVORITE_FOLDER_NOT_EXIST("fav_1002", "收藏夹不存在");
+	FAVORITE_FOLDER_NOT_EXIST("fav_1002", "收藏夹不存在"),
+
+	AI_LIMIT_EXCEEDED_TODAY("ai_001", "今日AI服务调用次数已达上限"),
+	AI_LIMIT_EXCEEDED_SYSTEM("ai_002", "系统调用已达今日上限，请明天再试");
 
 
 	private String code;
