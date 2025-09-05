@@ -93,6 +93,11 @@ public class UserController {
 		return Result.success(userService.uploadAvatar(file, userId));
 	}
 
+	@PostMapping("/upload/bg")
+	public Result<?> uploadBg(@RequestParam("file") MultipartFile file, @RequestParam Long userId) {
+		return Result.success(userService.uploadBg(file, userId));
+	}
+
 	@PostMapping("/inner/exists")
 	boolean checkUserExists(@RequestBody Map<String, String> request) {
 		return userService.checkUserExists(request);

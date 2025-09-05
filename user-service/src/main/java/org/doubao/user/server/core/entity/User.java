@@ -27,14 +27,30 @@ public class User extends BaseDel {
 	private String email;
 	@TableField(value = "signature")
 	private String signature;
+	/**
+	 * 头像key
+	 */
 	@TableField(value = "avatar_key")
 	private String avatarKey;
+	/**
+	 * 背景图key
+	 */
+	@TableField(value = "bg_key")
+	private String bgKey;
 	@TableField(value = "storage_type")
 	private String storageType = "local"; // 默认本地存储
 	@TableField(value = "status")
 	private int status = 0;
 	@TableField(value = "role")
 	private String role =  "USER";
+
+	public String getBgKey() {
+		return bgKey;
+	}
+
+	public void setBgKey(String bgKey) {
+		this.bgKey = bgKey;
+	}
 
 	public Long getId() {
 		return id;

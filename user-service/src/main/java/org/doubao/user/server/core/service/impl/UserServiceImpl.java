@@ -62,6 +62,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
+	public String uploadBg(MultipartFile file, Long userId) {
+		FileUploadResult result = ossServiceClient.uploadFile(
+				file).getData();
+		userMapper.updateUserBg(userId, result.getFileKey(), result.getStorageType());
+		clearUserCache(userId);
+		return result.getAccessUrl();
+	}
+
+	@Override
 	public List<UserInfo> usersByIds(Set<Long> userIds) {
 		List<Long> noCacheId = new ArrayList<>();
 		List<UserVo> userVoList = new ArrayList<>();
@@ -84,6 +93,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				// 动态生成头像URL
 				userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
 						user.getAvatarKey(),
+						user.getStorageType()
+				).getData());
+				userVo.setBgUrl(ossServiceClient.generateAccessUrl(
+						user.getBgKey(),
 						user.getStorageType()
 				).getData());
 				userVoList.add(userVo);
@@ -116,6 +129,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 			// 动态生成头像URL
 			userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
 					userEntity.getAvatarKey(),
+					userEntity.getStorageType()
+			).getData());
+			userVo.setBgUrl(ossServiceClient.generateAccessUrl(
+					userEntity.getBgKey(),
 					userEntity.getStorageType()
 			).getData());
 
@@ -181,6 +198,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 动态生成头像URL
 		userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
 				user.getAvatarKey(),
+				user.getStorageType()
+		).getData());
+		userVo.setBgUrl(ossServiceClient.generateAccessUrl(
+				user.getBgKey(),
 				user.getStorageType()
 		).getData());
 		userVo.setToken(data.getToken());

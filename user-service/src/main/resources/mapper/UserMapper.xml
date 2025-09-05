@@ -15,6 +15,13 @@
         WHERE id = #{userId}
     </update>
 
+    <update id="updateUserBg">
+        UPDATE user SET
+            bg_key = #{fileKey},
+            storage_type = #{storageType}
+        WHERE id = #{userId}
+    </update>
+
     <!-- boolean findByUsername(@Param("username") String username); -->
     <select id="findByUsername" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM user WHERE username = #{username})

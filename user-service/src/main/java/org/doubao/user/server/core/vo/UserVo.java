@@ -14,10 +14,20 @@ public class UserVo {
 	private String email;
 	private String signature;
 	private String avatarUrl;
+	private String bgUrl;
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
 	private LocalDateTime createdTime;
 	private String token;
 	private String role;
+
+	public String getBgUrl() {
+		return bgUrl;
+	}
+
+	public void setBgUrl(String bgUrl) {
+		this.bgUrl = bgUrl;
+	}
+
 	// 排除敏感字段
 	public static UserVo from(User user) {
 		UserVo vo = new UserVo();

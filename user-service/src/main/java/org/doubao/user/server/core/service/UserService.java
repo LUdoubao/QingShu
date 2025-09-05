@@ -47,6 +47,8 @@ public interface UserService extends IService<User> {
 
 	String uploadAvatar(MultipartFile file, Long userId);
 
+	String uploadBg(MultipartFile file, Long userId);
+
 	List<UserInfo> usersByIds(Set<Long> userIds);
 
 	boolean checkUserExists(Map<String, String> request);

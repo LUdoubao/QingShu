@@ -4,7 +4,6 @@ public class UserUpdateDto {
 	private Long userId;
 	private String nickname;
 	private String signature;
-	private String avatarUrl;
 
 	public Long getUserId() {
 		return userId;
@@ -30,11 +29,4 @@ public class UserUpdateDto {
 		this.signature = signature;
 	}
 
-	public String getAvatarUrl() {
-		return avatarUrl;
-	}
-
-	public void setAvatarUrl(String avatarUrl) {
-		this.avatarUrl = avatarUrl;
-	}
 }
