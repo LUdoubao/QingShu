@@ -5,7 +5,7 @@
 <mapper namespace="org.doubao.like.service.mapper.LikeRecordMapper">
     <!-- 通用查询结果映射 -->
     <resultMap id="BaseResultMap" type="org.doubao.like.service.entity.LikeRecord">
-        <id column="id" property="likeId" jdbcType="BIGINT"/>
+        <id column="like_id" property="likeId" jdbcType="BIGINT"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="entity_type" property="entityType" jdbcType="INTEGER"/>
         <result column="entity_id" property="entityId" jdbcType="BIGINT"/>
@@ -32,7 +32,7 @@
 			@Param("entityIds") List<Long> entityIds
 	); -->
     <select id="countByEntities" resultType="org.doubao.like.service.dto.LikeCountDTO">
-        SELECT entity_id, COUNT(id) AS count
+        SELECT entity_id, COUNT(like_id) AS count
         FROM like_records
         WHERE entity_type = #{entityType}
         <if test="entityIds != null and entityIds.size > 0">

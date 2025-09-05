@@ -1,12 +1,16 @@
 package org.doubao.like.service.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.like.service.dto.LikeCountDTO;
 import org.doubao.like.service.dto.LikeQueryDto;
 import org.doubao.like.service.dto.request.BatchLikeStatusRequest;
 import org.doubao.like.service.dto.request.ToggleLikeRequest;
 import org.doubao.like.service.dto.response.BatchLikeStatusResponse;
 import org.doubao.like.service.dto.response.HotContentResponse;
+import org.doubao.like.service.dto.response.LikeQuoteVo;
 import org.doubao.like.service.dto.response.ToggleLikeResponse;
 import org.doubao.like.service.entity.LikeCount;
 import org.doubao.like.service.entity.LikeRecord;
@@ -529,6 +533,36 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 		HotContentResponse response = new HotContentResponse();
 		response.setHotContents(hotContents);
 		return Collections.singletonList(response);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Page<LikeQuoteVo> likeList(Long userId, int page, int size) {
+		Page<LikeRecord> pageParam = new Page<>(page, size);
+		LambdaQueryWrapper<LikeRecord> queryWrapper = new LambdaQueryWrapper<LikeRecord>();
+		queryWrapper.eq(LikeRecord::getUserId, userId)
+				.eq(LikeRecord::getLiked, 1)
+				.eq(LikeRecord::getEntityType, EntityTypeEnum.CONTENT.getType())
+				.orderByDesc(LikeRecord::getCreatedTime);
+		Page<LikeRecord> favorites = likeRecordMapper.selectPage(pageParam, queryWrapper);
+		Page<LikeQuoteVo> favoritePage = new Page<>(page, size, favorites.getTotal());
+		if (favorites.getRecords().isEmpty()) {
+			return favoritePage;
+		}
+		List<Long> quoteIds =  favorites.getRecords().stream().map(LikeRecord::getEntityId).map(Long::parseLong).collect(Collectors.toList());
+		List<Map<String, Object>> data = quoteServiceClient.getQuotesByIds(quoteIds).getData();
+		List<LikeCountDTO> likeCountDTOS = likeRecordMapper.countByEntities(EntityTypeEnum.CONTENT.getType(), quoteIds);
+		if (data != null && !data.isEmpty()) {
+			favoritePage.setRecords(favorites.getRecords().stream().map(favorite -> {
+				LikeQuoteVo favoriteVo = new LikeQuoteVo();
+				Optional<Map<String, Object>> first = data.stream().filter(d -> String.valueOf(d.get("id")).equals(favorite.getEntityId())).findFirst();
+				favoriteVo.setQuote(first.orElse(null));
+				Optional<LikeCountDTO> countDTO = likeCountDTOS.stream().filter(d -> String.valueOf(d.getEntityId()).equals(favorite.getEntityId())).findFirst();
+				favoriteVo.setLikeCount(countDTO.isPresent() ? countDTO.get().getCount() : 0L);
+				return favoriteVo;
+			}).collect(Collectors.toList()));
+		}
+		return favoritePage;
 	}
 
 	/**

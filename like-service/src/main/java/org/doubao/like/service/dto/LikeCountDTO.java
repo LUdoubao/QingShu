@@ -2,7 +2,7 @@ package org.doubao.like.service.dto;
 
 public class LikeCountDTO {
 	private Long entityId;
-	private Integer count;
+	private Long count;
 
 	public Long getEntityId() {
 		return entityId;
@@ -12,11 +12,11 @@ public class LikeCountDTO {
 		this.entityId = entityId;
 	}
 
-	public Integer getCount() {
+	public Long getCount() {
 		return count;
 	}
 
-	public void setCount(Integer count) {
+	public void setCount(Long count) {
 		this.count = count;
 	}
 }
