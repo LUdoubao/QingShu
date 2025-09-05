@@ -1,6 +1,7 @@
 package org.doubao.favorite.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.doubao.favorite.service.dto.BatchDelDto;
 import org.doubao.favorite.service.entity.FavoriteContent;
 import org.doubao.favorite.service.service.FavoriteService;
 import org.doubao.favorite.service.vo.FavoriteContentVo;
@@ -39,6 +40,14 @@ public class FavoriteController {
 			@RequestParam Long quoteId
 	) {
 		favoriteService.removeFavorite(userId, quoteId);
+		return Result.success();
+	}
+
+	@PostMapping("/batch-delete")
+	public Result<Void> batchDelete(
+			@RequestBody BatchDelDto batchDelDto
+	) {
+		favoriteService.batchDelete(batchDelDto);
 		return Result.success();
 	}
 

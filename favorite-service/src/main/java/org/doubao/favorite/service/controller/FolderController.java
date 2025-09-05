@@ -2,6 +2,7 @@ package org.doubao.favorite.service.controller;
 
 import org.doubao.favorite.service.entity.FavoriteFolder;
 import org.doubao.favorite.service.service.FolderService;
+import org.doubao.favorite.service.vo.FavoriteFolderVo;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -33,6 +34,12 @@ public class FolderController {
 	public Result<List<FavoriteFolder>> getUserFolders(@RequestParam Long userId) {
 		List<FavoriteFolder> folders = folderService.getUserFolders(userId);
 		return Result.success(folders);
+	}
+
+	@GetMapping("/detail")
+	public Result<FavoriteFolderVo> getDetailById(@RequestParam Long folderId) {
+	    FavoriteFolderVo folderVo = folderService.getDetailById(folderId);
+		return Result.success(folderVo);
 	}
 
 	// 重命名收藏夹

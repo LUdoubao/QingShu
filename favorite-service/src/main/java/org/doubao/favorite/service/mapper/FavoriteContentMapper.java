@@ -24,4 +24,8 @@ public interface FavoriteContentMapper extends BaseMapper<FavoriteContent> {
 	Set<Long> selectFavoriteIdsByUserAndQuotes(@Param("userId") Long userId, @Param("quoteIds") List<Long> quoteIds);
 
 	List<QuoteCountDTO> countQuotes(@Param("quoteIds") List<Long> quoteIds);
+
+	void removeByFolderId(@Param("folderId") Long folderId);
+
+	void batchDelete(@Param("folderId") Long folderId, @Param("quoteIds") List<Long> quoteIds, @Param("userId")Long userId);
 }

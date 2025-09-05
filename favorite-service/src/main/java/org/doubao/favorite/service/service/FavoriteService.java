@@ -4,6 +4,7 @@ package org.doubao.favorite.service.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.doubao.favorite.service.dto.BatchDelDto;
 import org.doubao.favorite.service.entity.FavoriteContent;
 import org.doubao.favorite.service.vo.FavoriteContentVo;
 
@@ -19,4 +20,6 @@ public interface FavoriteService extends IService<FavoriteContent> {
 	Map<Long, Boolean> getFavoriteStatus(Long userId, List<Long> quoteIds);
 
 	Map<Long, Long> countQuotes(List<Long> quoteIds);
+
+	void batchDelete(BatchDelDto batchDelDto);
 }

@@ -65,4 +65,20 @@
         AND deleted = 0
         GROUP BY quote_id
     </select>
+    <select id="removeByFolderId" resultType="int">
+        UPDATE favorite_content
+        SET deleted = 1
+        WHERE folder_id = #{folderId}
+    </select>
+
+    <update id="batchDelete">
+        UPDATE favorite_content
+        SET deleted = 1
+        WHERE folder_id = #{folderId}
+        AND user_id = #{userId}
+        AND quote_id IN
+        <foreach item="id" collection="quoteIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

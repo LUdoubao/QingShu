@@ -8,6 +8,14 @@
         FROM favorite_folder
         WHERE user_id = #{userId}
         AND deleted = 0
+        AND is_default != 1
         ORDER BY is_default DESC, order_num DESC, updated_time DESC
+    </select>
+    <!-- Long selectFavoriteCount(Long folderId); -->
+    <select id="selectFavoriteCount" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM favorite_content
+        WHERE folder_id = #{folderId}
+        AND deleted = 0
     </select>
 </mapper>

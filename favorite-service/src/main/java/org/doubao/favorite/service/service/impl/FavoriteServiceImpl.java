@@ -2,17 +2,22 @@ package org.doubao.favorite.service.service.impl;
 
 
 import com.alibaba.fastjson.JSON;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.favorite.service.dto.BatchDelDto;
 import org.doubao.favorite.service.dto.QuoteCountDTO;
 import org.doubao.favorite.service.entity.FavoriteContent;
 import org.doubao.favorite.service.entity.FavoriteFolder;
 import org.doubao.favorite.service.feign.QuoteServiceClient;
 import org.doubao.favorite.service.mapper.FavoriteContentMapper;
 import org.doubao.favorite.service.service.FavoriteService;
-import org.doubao.favorite.service.service.FolderService;
+import org.doubao.favorite.service.utils.FavoriteComponent;
 import org.doubao.favorite.service.vo.FavoriteContentVo;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -20,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,41 +35,39 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 	private final static Logger LOGGER = LoggerFactory.getLogger(FavoriteServiceImpl.class);
 	private final QuoteServiceClient quoteServiceClient;
 	private final FavoriteContentMapper favoriteMapper;
-	private final FolderService folderService;
 
+	@Resource
+	private FavoriteComponent favoriteComponent;
 	@Autowired
-	public FavoriteServiceImpl(FavoriteContentMapper favoriteMapper, FolderService folderService, QuoteServiceClient quoteServiceClient) {
+	public FavoriteServiceImpl(FavoriteContentMapper favoriteMapper, QuoteServiceClient quoteServiceClient) {
 		this.favoriteMapper = favoriteMapper;
-		this.folderService = folderService;
 		this.quoteServiceClient = quoteServiceClient;
 	}
 
 	@Override
 	@Transactional
 	public FavoriteContent addFavorite(Long userId, Long quoteId, Long folderId) {
-		// 确保用户创建了默认文件夹
-		FavoriteFolder folder = null;
+		FavoriteFolder folder;
 		if (folderId == null) {
-			folder = folderService.getUserDefaultFolder(userId);
-		} else {
-			folder = folderService.getUserFolders(userId).stream()
-					.filter(f -> f.getId().equals(folderId))
-					.findFirst()
-					.orElseThrow(() -> new RuntimeException("收藏夹不存在"));
+			// 默认存入默认收藏夹
+			folder = favoriteComponent.getUserDefaultFolder(userId);
+			if (folder == null) {
+				throw new BusinessException(ErrorCode.FAVORITE_FOLDER_NOT_EXIST);
+			}
+			folderId = folder.getId();
 		}
 
 		// 检查是否已收藏
 		FavoriteContent existing = favoriteMapper.selectByUserAndQuote(userId, quoteId);
 		if (existing != null) {
-			// 如果已收藏，返回已收藏的内容
-			return existing;
+			throw new BusinessException(ErrorCode.FAVORITE_EXIST);
 		}
 
 		// 创建新的收藏
 		FavoriteContent favorite = new FavoriteContent();
 		favorite.setUserId(userId);
 		favorite.setQuoteId(quoteId);
-		favorite.setFolderId(folder.getId());
+		favorite.setFolderId(folderId);
 		favorite.setCreatedTime(LocalDateTime.now());
 
 		favoriteMapper.insert(favorite);
@@ -74,11 +78,10 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 	@Transactional
 	public void removeFavorite(Long userId, Long quoteId) {
 		// 查找用户收藏记录
-		FavoriteContent favorite = favoriteMapper.selectByUserAndQuote(userId, quoteId);
-		if (favorite != null) {
-			// 软删除
-			this.removeById(favorite.getId());
-		}
+		LambdaQueryWrapper<FavoriteContent> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(FavoriteContent::getUserId, userId)
+				.eq(FavoriteContent::getQuoteId, quoteId);
+		this.removeById(queryWrapper);
 	}
 
 	@Override
@@ -111,6 +114,7 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 				return favoriteVo;
 			}).collect(Collectors.toList());
 			List<Map<String, Object>> data = quoteServiceClient.getQuotesByIds(quoteIds).getData();
+			Map<Long, Long> countQuotes = countQuotes(quoteIds);
 			LOGGER.info("quoteIds: {}, data: {}", JSON.toJSONString(quoteIds), JSON.toJSONString(data));
 			if (data != null && !data.isEmpty()) {
 				collect.forEach(favoriteVo -> {
@@ -121,6 +125,7 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 						if (Long.valueOf(d.get("id").toString()).equals(Long.valueOf(favoriteVo.getQuoteId().toString()))) {
 							LOGGER.info("d1: {}", JSON.toJSONString(d));
 							favoriteVo.setQuote(d);
+							favoriteVo.setFavoriteCount(countQuotes.getOrDefault(favoriteVo.getQuoteId(), 0L));
 							break;
 						}
 					}
@@ -163,5 +168,25 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 			longLongMap.put(quoteId, count);
 		}
 		return longLongMap;
+	}
+
+	@Override
+	public void batchDelete(BatchDelDto batchDelDto) {
+		Long folderId = batchDelDto.getFolderId();
+		List<Long> quoteIds = batchDelDto.getQuoteIds();
+		Long userId = batchDelDto.getUserId();
+		// 防御性检查
+		if (folderId == null || quoteIds == null || quoteIds.isEmpty()) {
+			// 打印各参数
+			LOGGER.error("folderId: {}, quoteIds: {}, userId: {}", folderId, quoteIds, userId);
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+		Long loginUserId = UserContext.getUserId();
+		if (!loginUserId.equals(userId)) {
+			LOGGER.error("loginUserId: {}, userId: {}", loginUserId, userId);
+			throw new BusinessException(ErrorCode.FORBIDDEN);
+		}
+		favoriteMapper.batchDelete(folderId, quoteIds, userId);
+		LOGGER.info("删除收藏夹中的内容成功: {}", folderId);
 	}
 }
