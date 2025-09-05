@@ -40,6 +40,7 @@ public enum ErrorCode {
 	USER_PRIVACY_FOLLOWING_LIST_NOT_OPEN("USER_018", "该用户的关注列表未公开"),
 	USER_PRIVACY_QUOTE_LIST_NOT_OPEN("USER_019", "该用户的作品列表未公开"),
 	USER_INVALID_VISIBILITY("USER_020", "无效的可见性设置（仅支持1-3）"),
+	USER_INVALID_NEW_PASSWORD("USER_021", "新密码需包含字母和数字，且至少8位,最多20位"),
 
 
 
@@ -56,7 +57,10 @@ public enum ErrorCode {
 	DELETE_FAIL("FILE_1005", "删除文件失败"),
 	FILE_UPLOAD_FAIL("FILE_1006", "文件上传失败"),
 	LOCAL_FOLDER_CREATED_ERROR("FILE_1007", "无法创建本地存储目录"),
-	LOCAL_URL_ERROR("FILE_1008", "获取文件url失败");
+	LOCAL_URL_ERROR("FILE_1008", "获取文件url失败"),
+
+	FAVORITE_EXIST("fav_1001", "收藏已存在"),
+	FAVORITE_FOLDER_NOT_EXIST("fav_1002", "收藏夹不存在");
 
 
 	private String code;
