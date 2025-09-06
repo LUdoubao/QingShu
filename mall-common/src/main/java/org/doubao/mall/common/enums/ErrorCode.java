@@ -62,6 +62,8 @@ public enum ErrorCode {
 	FAVORITE_EXIST("fav_1001", "收藏已存在"),
 	FAVORITE_FOLDER_NOT_EXIST("fav_1002", "收藏夹不存在"),
 
+	QUOTE_NOT_FOUND("quote_1001", "引文不存在或待审核"),
+
 	AI_LIMIT_EXCEEDED_TODAY("ai_001", "今日AI服务调用次数已达上限"),
 	AI_LIMIT_EXCEEDED_SYSTEM("ai_002", "系统调用已达今日上限，请明天再试");
 
