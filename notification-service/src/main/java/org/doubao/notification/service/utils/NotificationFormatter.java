@@ -54,19 +54,17 @@ public class NotificationFormatter {
 	public Notification formatLikeNotification(LikeEvent event) {
 		Notification notification = new Notification();
 		notification.setUserId(event.getUserId());
-		notification.setType("LIKE");
-		notification.setTitle("点赞通知");
+		notification.setType(event.getType());
+		notification.setAction(event.getAction());
 		Map<String, Object> content = new HashMap<>();
-		content.put("target", "like");
-		content.put("action", event.isLike());
-		content.put("entityType", event.getEntityType());
 		content.put("content", event.getContent());
-		content.put("id", event.getEntityId());
-		content.put("userName", event.getOperatorUserName());
+		content.put("operatorUserId", event.getOperatorUserId());
+		content.put("operatorUserName", event.getOperatorUserName());
+		content.put("operatorUserAvatar", event.getOperatorUserAvatar());
 
 		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(event.getEntityId());
-		notification.setSourceType(String.valueOf(event.getEntityType()));
+		notification.setSourceId(event.getTargetId());
+		notification.setSourceType(String.valueOf(event.getTarget()));
 		return notification;
 	}
 

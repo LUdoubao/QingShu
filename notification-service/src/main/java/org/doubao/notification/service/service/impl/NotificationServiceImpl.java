@@ -111,6 +111,9 @@ public class NotificationServiceImpl implements NotificationService {
 
 	@Override
 	public void deleteNotification(Long id) {
+		// 先将通知标记为已读
+		markAsRead(id);
+		// 删除通知
 		notificationMapper.deleteById(id);
 	}
 

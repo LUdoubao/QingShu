@@ -34,7 +34,6 @@ public class NotificationDTO implements Serializable {
 		dto.setSourceId(notification.getSourceId());
 		dto.setSourceType(notification.getSourceType());
 		dto.setAction(notification.getAction());
-
 		// 解析JSON内容
 		if (StringUtils.isNotBlank(notification.getContent())) {
 			dto.setContent(JSON.parseObject(notification.getContent(), Map.class));
@@ -51,6 +50,7 @@ public class NotificationDTO implements Serializable {
 		if (dateTime == null) return null;
 		return dateTime.format(DateTimeFormatter.ISO_DATE_TIME);
 	}
+
 
 	public String getAction() {
 		return action;
