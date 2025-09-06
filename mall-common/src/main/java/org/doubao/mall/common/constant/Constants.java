@@ -1,7 +1,7 @@
 package org.doubao.mall.common.constant;
 
 public class Constants {
-	public static final String REDIS_USER =  "user:";
+	public static final String REDIS_USER =  "USER:";
 	public static final String DEFAULT_USER_NAME =  "未知用户";
 
 	public static final String USER_REGISTER_ROUTING_KEY = "event.key.USER_REGISTER";
