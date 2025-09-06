@@ -29,6 +29,7 @@ public class NotificationFormatter {
 		content.put("quoteContent", event.getQuoteContent());
 		content.put("reason", event.getReason());
 		content.put("submitterName", event.getSubmitterName());
+		content.put("result", event.getResult());
 		notification.setContent(JSON.toJSONString(content));
 
 		return notification;
@@ -45,6 +46,7 @@ public class NotificationFormatter {
 
 		Map<String, Object> content = new HashMap<>();
 		content.put("quoteContent", event.getQuoteContent());
+		content.put("quoteCreatedId", event.getQuoteCreatedId());
 		notification.setContent(JSON.toJSONString(content));
 		return notification;
 	}
