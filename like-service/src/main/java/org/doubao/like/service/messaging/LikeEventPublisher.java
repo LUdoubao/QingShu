@@ -25,22 +25,23 @@ public class LikeEventPublisher {
 	@Autowired
 	private CommonTaskExecutor taskExecutor;
 
-	public void pushLikeNotification(Long userId, int entityType, String entityId, boolean isLike, String content,
-									 Long operatorUserId, String operatorUserName) {
+	public void pushLikeNotification(Long userId, int entityType, String entityId, String content,
+									 Long operatorUserId, String operatorUserName, String operatorUserAvatar) {
 		if (Objects.equals(userId, operatorUserId)) {
-			LOGGER.info("用户{}对内容{}进行{}操作，无需通知自己", operatorUserId, entityId, isLike ? "点赞" : "取消点赞");
+			LOGGER.info("用户{}对内容{}进行点赞操作，无需通知自己", operatorUserId, entityId);
 			return;
 		}
 		taskExecutor.asyncExecute(() -> {
 			// 异步发送MQ消息通知文案所属用户
 			LikeEvent event = new LikeEvent(
+					entityType == 0 ? "LIKE_QUOTE" : "LIKE_COMMENT",
 					userId,
-					entityType,
+					entityType == 0 ? "quote" : "comment",
 					entityId,
-					isLike,
 					content,
 					operatorUserId,
-					operatorUserName
+					operatorUserName,
+					operatorUserAvatar
 			);
 			Map<String, Object> message = new HashMap<>();
 			message.put("NotificationEvent", event);

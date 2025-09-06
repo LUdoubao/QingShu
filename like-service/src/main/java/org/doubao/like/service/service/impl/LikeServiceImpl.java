@@ -18,6 +18,7 @@ import org.doubao.like.service.enums.EntityTypeEnum;
 import org.doubao.like.service.enums.LikeAction;
 import org.doubao.like.service.exception.RateLimitException;
 import org.doubao.like.service.feign.QuoteServiceClient;
+import org.doubao.like.service.feign.UserClient;
 import org.doubao.like.service.mapper.LikeCountMapper;
 import org.doubao.like.service.mapper.LikeRecordMapper;
 import org.doubao.like.service.messaging.LikeEventPublisher;
@@ -57,6 +58,8 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	@Resource
 	private QuoteServiceClient quoteServiceClient;
 	@Resource
+	private UserClient userClient;
+	@Resource
 	private RedisTemplate<String, Object> redisTemplate;
 	@Autowired
 	private TransactionTemplate transactionTemplate;
@@ -92,13 +95,13 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED);
 		}
 
-		String userName = Constants.DEFAULT_USER_NAME;
-		String key = Constants.REDIS_USER + operatorUserId;
-		if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-			UserInfo userInfo = (UserInfo) redisTemplate.opsForValue().get(key);
-			if (userInfo != null) {
-				userName = userInfo.getUsername();
-			}
+		String operatorUserName = Constants.DEFAULT_USER_NAME;
+		String operatorUserAvatar = "";
+		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(operatorUserId)).getData();
+		if (!CollectionUtils.isEmpty(userInfos)) {
+			UserInfo userInfo = userInfos.get(0);
+			operatorUserName = userInfo.getNickname() == null ? userInfo.getUsername() : userInfo.getNickname();
+			operatorUserAvatar = userInfo.getAvatarUrl();
 		}
 
 		int entityType = request.getEntityType();
@@ -125,14 +128,10 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			if (request.getEntityType() == EntityTypeEnum.CONTENT.getType()) {
 				redisTemplate.opsForZSet().incrementScore(
 						RedisKeyUtil.getHotContentsKey(),
-						entityId.toString(),
+						entityId,
 						-1
 				);
 			}
-
-			// 通知 文案所属用户
-			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, false, request.getContent(), operatorUserId, userName);
-
 
 			response.setAction(LikeAction.CANCEL.getName());
 		} else {
@@ -144,13 +143,14 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			if (request.getEntityType() == EntityTypeEnum.CONTENT.getType()) {
 				redisTemplate.opsForZSet().incrementScore(
 						RedisKeyUtil.getHotContentsKey(),
-						entityId.toString(),
+						entityId,
 						1
 				);
 			}
 
 			// 发送MQ消息通知文案所属用户
-			likeEventPublisher.pushLikeNotification(userId, entityType, entityId, true,request.getContent(), operatorUserId, userName);
+			likeEventPublisher.pushLikeNotification(userId, entityType, entityId,request.getContent(),
+					operatorUserId, operatorUserName, operatorUserAvatar);
 
 			response.setAction(LikeAction.LIKE.getName());
 		}
