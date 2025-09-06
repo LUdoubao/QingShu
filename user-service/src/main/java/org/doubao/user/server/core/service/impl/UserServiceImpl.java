@@ -205,6 +205,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				user.getStorageType()
 		).getData());
 		userVo.setToken(data.getToken());
+		String cacheKey = "USER:" + user.getId();
+		redisTemplate.opsForValue().set(cacheKey, userVo,
+				Duration.ofMinutes(30 + new Random().nextInt(10)));
 		return userVo;
 	}
 
