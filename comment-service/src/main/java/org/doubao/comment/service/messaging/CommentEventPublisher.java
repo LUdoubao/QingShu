@@ -30,14 +30,18 @@ public class CommentEventPublisher {
 	@Resource
 	private QuoteClient quoteClient;
 
-	public void pushCommentNotification(Long repliedUserId, boolean isComment, String quoteId, String content,
-									 Long operatorUserId, String operatorUserName) {
+	public void pushCommentNotification(Long repliedUserId, boolean isComment, String quoteId, String content, String originalComment,
+									 Long operatorUserId, String operatorUserName, String operatorUserAvatar) {
 
 		taskExecutor.asyncExecute(() -> {
+			String action = "REPLY_COMMENT";
+			String target = "comment";
 			LOGGER.info("==================开始构建MQ消息");
 			Long receiverId = repliedUserId;
 			QuoteVo quoteVo = quoteClient.detail(Long.parseLong(quoteId)).getData();
 			if (isComment) {
+				action = "QUOTE_COMMENT";
+				target = "quote";
 				// 查询引文所属用户
 				receiverId = quoteVo.getCreatedId();
 			}
@@ -47,13 +51,17 @@ public class CommentEventPublisher {
 			}
 			// 异步发送MQ消息通知文案所属用户
 			CommentEvent event = new CommentEvent(
+					action,
 					receiverId,
-					isComment,
+					target,
 					quoteId,
+					isComment ? 0 : 1,
 					quoteVo.getContent(),
-					content,
+					isComment ? content : originalComment,
+					isComment ? "" : content,
 					operatorUserId,
-					operatorUserName
+					operatorUserName,
+					operatorUserAvatar
 			);
 			Map<String, Object> message = new HashMap<>();
 			message.put("NotificationEvent", event);

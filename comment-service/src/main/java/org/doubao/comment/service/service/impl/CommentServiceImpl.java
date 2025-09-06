@@ -25,6 +25,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.*;
@@ -103,23 +104,26 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		// 5. 保存评论
 		this.save(comment);
 
-		// 6. 异步处理
-		String userName = Constants.DEFAULT_USER_NAME;
-		String key = Constants.REDIS_USER + userId;
-		if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
-			UserInfo userInfo = (UserInfo) redisTemplate.opsForValue().get(key);
-			if (userInfo != null) {
-				userName = userInfo.getUsername();
-			}
-		}
 		// 发送评论通知
 		Long repliedUserId = 0L;
+		String originalComment = "";
 		if (dto.isReply()) {
 			// 查询被回复评论所属用户
 			Comment parentComment = this.getById(comment.getParentId());
 			repliedUserId = parentComment.getUserId();
+			originalComment = parentComment.getContent();
 		}
-		commentEventPublisher.pushCommentNotification(repliedUserId, !dto.isReply(), comment.getPostId(), comment.getContent(), userId, userName);
+
+		String operatorUserName = Constants.DEFAULT_USER_NAME;
+		String operatorUserAvatar = "";
+		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(userId)).getData();
+		if (!CollectionUtils.isEmpty(userInfos)) {
+			UserInfo userInfo = userInfos.get(0);
+			operatorUserName = userInfo.getNickname() == null ? userInfo.getUsername() : userInfo.getNickname();
+			operatorUserAvatar = userInfo.getAvatarUrl();
+		}
+		commentEventPublisher.pushCommentNotification(repliedUserId, !dto.isReply(), comment.getPostId(), comment.getContent(), originalComment,
+				userId, operatorUserName, operatorUserAvatar);
 		// 7、删除缓存
 		String cacheKey = "comments:post:" + dto.getPostId()+":*";
 		Set<String> keys = redisTemplate.keys(cacheKey);
