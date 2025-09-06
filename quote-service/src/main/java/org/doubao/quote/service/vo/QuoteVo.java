@@ -50,6 +50,7 @@ public class QuoteVo extends BaseEntity {
 	 */
 	private boolean follow;
 
+
 	public UserInfo getUserInfo() {
 		return userInfo;
 	}

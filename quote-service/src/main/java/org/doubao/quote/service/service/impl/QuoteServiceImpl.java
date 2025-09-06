@@ -147,7 +147,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 			// 推送待审核消息到管理员消息中心
 			quoteEventPublisher.pushQuoteUpdateNotification(1L,
-					quoteId, dto.getAfterQuoteVo().getContent());
+					quoteId, dto.getAfterQuoteVo().getContent(), quote.getCreatedId());
 		}
 
 		return Result.success(ResultCode.SUCCESS.getMessage());
@@ -175,32 +175,34 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				.eq(Quote::getId, id)
 				.eq(Quote::getStatus,1);
 		Quote quote = this.getOne(queryWrapper);
-		QuoteVo quoteVo = new QuoteVo();
-		if (quote != null) {
-			BeanUtils.copyProperties(quote, quoteVo);
-			Long createdId = quoteVo.getCreatedId();
-			List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
-
-			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
-			Long categoryId = quoteVo.getCategoryId();
-			Category category = categoryService.getById(categoryId);
-			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
-			for (Map<String, Object> map : tagMappings) {
-				Long quoteId = ((Number) map.get("quote_id")).longValue();
-				Long tagId = ((Number) map.get("tag_id")).longValue();
-				String tagName = (String) map.get("tag_name");
-
-				Tag tag = new Tag();
-				tag.setId(tagId);
-				tag.setName(tagName);
-
-				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
-			}
-			quoteVo.setCategoryName(category.getName());
-			quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
-			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
-			first.ifPresent(quoteVo::setUserInfo);
+		if (quote == null) {
+			// 引文不存在或待审核
+			throw new BusinessException(ErrorCode.QUOTE_NOT_FOUND);
 		}
+		QuoteVo quoteVo = new QuoteVo();
+		BeanUtils.copyProperties(quote, quoteVo);
+		Long createdId = quoteVo.getCreatedId();
+		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
+
+		List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
+		Long categoryId = quoteVo.getCategoryId();
+		Category category = categoryService.getById(categoryId);
+		Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+		for (Map<String, Object> map : tagMappings) {
+			Long quoteId = ((Number) map.get("quote_id")).longValue();
+			Long tagId = ((Number) map.get("tag_id")).longValue();
+			String tagName = (String) map.get("tag_name");
+
+			Tag tag = new Tag();
+			tag.setId(tagId);
+			tag.setName(tagName);
+
+			quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+		}
+		quoteVo.setCategoryName(category.getName());
+		quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+		Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+		first.ifPresent(quoteVo::setUserInfo);
 		return Result.success(quoteVo);
 	}
 
@@ -301,54 +303,56 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 		Long quoteId = dto.getId();
 		UserInfo user = UserContext.getUser();
-		switch (status) {
-			case 0:
-				// 审核不通过
-				// 引文表状态恢复1
-				LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
-				updateWrapper.eq(Quote::getId, quoteId)
-						.set(Quote::getStatus, 1);
-				this.update(updateWrapper);
+		if (status == 0) {// 审核不通过
+			// 引文表状态恢复1
+			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
+			updateWrapper.eq(Quote::getId, quoteId)
+					.set(Quote::getStatus, 1);
+			this.update(updateWrapper);
 
-				quoteEventPublisher.pushQuoteVerifyNotification(
-						quoteId,
-						dto.getContent(),
-						"REJECTED",
-						"审核驳回",
-						user.getUsername(),
-						dto.getCreatedId()
-				);
-				break;
-			default:
-				Quote quote = this.getById(quoteId);
-				quote.setStatus(1);
-				List<Long> tagIds = dto.getTagIds();
-				List<QuoteTag> quoteTags = new ArrayList<>();
-				if (tagIds != null && !tagIds.isEmpty()) {
-					for (Long tagId : tagIds) {
-						QuoteTag qt = new QuoteTag();
-						qt.setQuoteId(quoteId);
-						qt.setTagId(tagId);
-						quoteTags.add(qt);
-					}
-					saveOrUpdateQuoteTags(quoteTags);
+			quoteEventPublisher.pushQuoteVerifyNotification(
+					quoteId,
+					dto.getContent(),
+					"REJECTED",
+					"审核驳回",
+					user.getUsername(),
+					dto.getCreatedId()
+			);
+		} else {
+			Quote quote = this.getById(quoteId);
+			quote.setStatus(1);
+			QuoteVerify quoteVerify = quoteVerifyService.getById(quoteId);
+			String verifyTag = quoteVerify.getTag();
+			List<QuoteTag> quoteTags = new ArrayList<>();
+			if (verifyTag != null && !verifyTag.isEmpty()) {
+				// ,号分割
+				String[] tags = verifyTag.split(",");
+				for (String tagId : tags) {
+					QuoteTag qt = new QuoteTag();
+					qt.setQuoteId(quoteId);
+					qt.setTagId(Long.valueOf(tagId));
+					quoteTags.add(qt);
 				}
-				this.updateById(quote);
-				quoteEventPublisher.pushQuoteVerifyNotification(
-						quoteId,
-						dto.getContent(),
-						"APPROVED",
-						"审核通过",
-						user.getUsername(),
-						dto.getCreatedId()
-				);
-				break;
+				saveOrUpdateQuoteTags(quoteTags);
+			}
+			quote.setSource(quoteVerify.getSource());
+			quote.setAuthor(quoteVerify.getAuthor());
+			quote.setCategoryId(quoteVerify.getCategoryId());
+			quote.setContent(quoteVerify.getContent());
+			this.updateById(quote);
+			quoteEventPublisher.pushQuoteVerifyNotification(
+					quoteId,
+					dto.getContent(),
+					"APPROVED",
+					"审核通过",
+					user.getUsername(),
+					dto.getCreatedId()
+			);
 		}
 		// 删除审核表数据
 		LambdaQueryWrapper<QuoteVerify> wrapper = new LambdaQueryWrapper<>();
 		wrapper.eq(QuoteVerify::getId, quoteId);
 		quoteVerifyService.remove(wrapper);
-		// 推送消息到用户消息中心TODO
 		return Result.success(ResultCode.SUCCESS.getMessage());
 	}
 

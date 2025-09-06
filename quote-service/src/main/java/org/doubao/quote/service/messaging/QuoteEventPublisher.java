@@ -34,12 +34,13 @@ public class QuoteEventPublisher {
 
 	// 推送引文更新通知(系统通知)
 	public void pushQuoteUpdateNotification(Long userId,
-											Long targetId, String quoteContent) {
+											Long targetId, String quoteContent, Long quoteCreatedId) {
 		taskExecutor.asyncExecute(() -> {
 			VerifyQuoteEvent event = new VerifyQuoteEvent(
 					userId,
 					targetId,
-					quoteContent
+					quoteContent,
+					quoteCreatedId
 			);
 			Map<String, Object> message = new HashMap<>();
 			message.put("NotificationEvent", event);
