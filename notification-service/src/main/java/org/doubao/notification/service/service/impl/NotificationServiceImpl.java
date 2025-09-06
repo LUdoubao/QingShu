@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.UserContext;
 import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
 import org.doubao.notification.service.dto.NotificationQueryDto;
@@ -13,6 +14,8 @@ import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.enums.NotificationStatus;
 import org.doubao.notification.service.mapper.NotificationMapper;
 import org.doubao.notification.service.service.NotificationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -27,6 +30,7 @@ public class NotificationServiceImpl implements NotificationService {
 	@Autowired
 	private NotificationMapper notificationMapper;
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(NotificationServiceImpl.class);
 	@Autowired
 	private RedisTemplate<String, String> redisTemplate;
 
@@ -90,9 +94,21 @@ public class NotificationServiceImpl implements NotificationService {
 	@Override
 	@Transactional
 	public void batchMarkAsRead(List<Long> ids) {
-		if (ids == null || ids.isEmpty()) return;
+
+		Long loginUserId = UserContext.getUserId();
+		String key = "notification:unread:" + loginUserId;
+		if (ids == null || ids.isEmpty()) {
+			// 全部已读
+			notificationMapper.allRead(loginUserId);
+			LOGGER.info("用户 {} 全部已读", loginUserId);
+			redisTemplate.delete(key);
+			return;
+		}
 
 		List<Notification> notifications = notificationMapper.selectBatchIds(ids);
+		if (notifications == null || notifications.isEmpty()) {
+			return;
+		}
 		Map<Long, Long> userCountMap = notifications.stream()
 				.filter(n -> n.getStatus() == NotificationStatus.UNREAD.getCode())
 				.collect(Collectors.groupingBy(
@@ -104,7 +120,6 @@ public class NotificationServiceImpl implements NotificationService {
 
 		// 批量更新Redis未读计数
 		userCountMap.forEach((userId, count) -> {
-			String key = "notification:unread:" + userId;
 			redisTemplate.opsForValue().decrement(key, count);
 		});
 	}

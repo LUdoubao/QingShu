@@ -23,4 +23,12 @@
         </foreach>
     </update>
 
+    <!-- void allRead(@Param("userId") Long userId); -->
+    <update id="allRead">
+        UPDATE notification
+        SET status = 1,
+        updated_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
 </mapper>

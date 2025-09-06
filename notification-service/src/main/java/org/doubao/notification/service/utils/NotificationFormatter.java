@@ -71,19 +71,20 @@ public class NotificationFormatter {
 	public Notification formatCommentNotification(CommentEvent event) {
 		Notification notification = new Notification();
 		notification.setUserId(event.getUserId());
-		notification.setType("COMMENT");
-		notification.setTitle(event.isComment() ? "评论通知" : "回复通知");
+		notification.setType(event.getType());
+		notification.setAction(event.getAction());
 		Map<String, Object> content = new HashMap<>();
-		content.put("target", "comment");
-		content.put("action", event.isComment());
+		content.put("commentType", event.getCommentType());
 		content.put("content", event.getContent());
 		content.put("commentContent", event.getCommentContent());
-		content.put("id", event.getQuoteId());
-		content.put("userName", event.getOperatorUserName());
+		content.put("replyContent", event.getReplyContent());
+		content.put("operatorUserId", event.getOperatorUserId());
+		content.put("operatorUserName", event.getOperatorUserName());
+		content.put("operatorUserAvatar", event.getOperatorUserAvatar());
 
 		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(event.getQuoteId());
-		notification.setSourceType("1");
+		notification.setSourceId(event.getTargetId());
+		notification.setSourceType(event.getTarget());
 		return notification;
 	}
 }

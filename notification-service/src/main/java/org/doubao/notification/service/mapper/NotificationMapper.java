@@ -12,4 +12,6 @@ public interface NotificationMapper extends BaseMapper<Notification> {
 	int selectUnreadCount(@Param("userId") Long userId);
 
 	int batchMarkAsRead(@Param("ids") List<Long> ids);
+
+	void allRead(@Param("userId") Long userId);
 }
