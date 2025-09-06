@@ -35,8 +35,6 @@ public class AuthController {
 		LOGGER.info("用户 {} 登录成功", userInfo.getUsername());
 		String token = jwtUtil.generateToken(userInfo);
 		userInfo.setToken(token);
-		String key = Constants.REDIS_USER+ userInfo.getId();
-		redisTemplate.opsForValue().set(key, userInfo);
 		return Result.success(userInfo);
 	}
 	@GetMapping("/verify")
