@@ -28,6 +28,7 @@
 		<module>dialog-service</module>
 		<module>fanout-service</module>
 		<module>feed-service</module>
+		<module>search-service</module>
 	</modules>
 
 	<properties>
