@@ -15,6 +15,7 @@ import org.doubao.user.server.relation.entity.UserRelation;
 import org.doubao.user.server.relation.entity.UserRelationCount;
 import org.doubao.user.server.relation.enums.OperateType;
 import org.doubao.user.server.relation.enums.RelationType;
+import org.doubao.user.server.relation.feign.DialogClient;
 import org.doubao.user.server.relation.mapper.UserFollowOperateLogMapper;
 import org.doubao.user.server.relation.mapper.UserRelationCountMapper;
 import org.doubao.user.server.relation.mapper.UserRelationMapper;
@@ -24,6 +25,7 @@ import org.doubao.user.server.relation.service.UserPrivacyService;
 import org.doubao.user.server.relation.util.UserValidator;
 import org.doubao.user.server.relation.vo.FollowResult;
 import org.doubao.user.server.relation.vo.PrivacySettings;
+import org.doubao.user.server.relation.vo.SessionCreateReq;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -46,6 +48,8 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	private static final Logger log = LoggerFactory.getLogger(RelationServiceImpl.class);
 	@Resource
 	private UserService userService;
+	@Resource
+	private DialogClient dialogClient;
 	@Resource
 	private UserRelationMapper userRelationMapper;
 	@Resource
@@ -138,6 +142,12 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 
 		//  9. 删除缓存
 		clearCache(userId, targetUserId);
+
+		// 创建私信对话记录
+		SessionCreateReq createReq = new SessionCreateReq();
+		createReq.setTargetId(targetUserId);
+		createReq.setSessionType("USER");
+		dialogClient.createSession(createReq);
 
 		log.info("用户 {} 关注了用户 {}", userId, targetUserId);
 	}
