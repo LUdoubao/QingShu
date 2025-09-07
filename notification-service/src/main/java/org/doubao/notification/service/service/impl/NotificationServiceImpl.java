@@ -12,6 +12,7 @@ import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;
 import org.doubao.notification.service.entity.Notification;
 import org.doubao.notification.service.enums.NotificationStatus;
+import org.doubao.notification.service.enums.NotificationType;
 import org.doubao.notification.service.mapper.NotificationMapper;
 import org.doubao.notification.service.service.NotificationService;
 import org.slf4j.Logger;
@@ -134,17 +135,49 @@ public class NotificationServiceImpl implements NotificationService {
 
 	@Override
 	public UnreadCountDTO getUnreadCount(Long userId) {
+		Long loginUserId = UserContext.getUserId();
+		if (!loginUserId.equals(userId)) {
+			throw new BusinessException(ErrorCode.FORBIDDEN);
+		}
+		UnreadCountDTO unreadCountDTO = new UnreadCountDTO();
+
+		// 总未读数
 		String key = "notification:unread:" + userId;
 		String countStr = redisTemplate.opsForValue().get(key);
-
 		if (countStr == null) {
 			// 缓存未命中，从数据库加载
 			int count = notificationMapper.selectUnreadCount(userId);
 			redisTemplate.opsForValue().set(key, String.valueOf(count));
-			return new UnreadCountDTO(count);
+			unreadCountDTO.setUnreadCount(count);
+		} else {
+			// 缓存命中
+			unreadCountDTO.setUnreadCount(Integer.parseInt(countStr));
 		}
 
-		return new UnreadCountDTO(Integer.parseInt(countStr));
+
+		// 查询comment通知数
+		LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
+		query.eq(Notification::getUserId, userId)
+				.eq(Notification::getStatus, NotificationStatus.UNREAD.getCode())
+				.eq(Notification::getType, NotificationType.COMMENT.getValue());
+		int commentCount = notificationMapper.selectCount(query);
+		unreadCountDTO.setCommentCount(commentCount);
+		// 查询like通知数
+		query.clear();
+		query.eq(Notification::getStatus, NotificationStatus.UNREAD.getCode())
+				.eq(Notification::getUserId, userId)
+				.eq(Notification::getType, NotificationType.LIKE.getValue());
+		int likeCount = notificationMapper.selectCount(query);
+		unreadCountDTO.setLikeCount(likeCount);
+		// 查询system通知数
+		query.clear();
+		query.eq(Notification::getStatus, NotificationStatus.UNREAD.getCode())
+				.eq(Notification::getUserId, userId)
+				.eq(Notification::getType, NotificationType.SYSTEM.getValue());
+		int systemCount = notificationMapper.selectCount(query);
+		unreadCountDTO.setSystemCount(systemCount);
+
+		return unreadCountDTO;
 	}
 
 	@Override
