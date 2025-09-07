@@ -1,40 +1,95 @@
 package org.doubao.dialog.service.service.impl;
 
 
+import com.alibaba.fastjson.JSONObject;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.dialog.service.dto.*;
 import org.doubao.dialog.service.entity.AssistantDialog;
 import org.doubao.dialog.service.entity.AssistantMessage;
+import org.doubao.dialog.service.entity.DialogMessage;
+import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.ChatModule;
 import org.doubao.dialog.service.enums.DialogStatusEnum;
 import org.doubao.dialog.service.enums.SenderTypeEnum;
 import org.doubao.dialog.service.feign.AIServiceClient;
+import org.doubao.dialog.service.feign.NotificationFeignClient;
+import org.doubao.dialog.service.feign.UserFeignClient;
 import org.doubao.dialog.service.mapper.AssistantDialogMapper;
 import org.doubao.dialog.service.mapper.AssistantMessageMapper;
-import org.doubao.dialog.service.service.KnowledgeService;
-import org.doubao.dialog.service.service.MessageService;
-import org.doubao.dialog.service.service.WebSocketService;
+import org.doubao.dialog.service.mapper.DialogSessionMapper;
+import org.doubao.dialog.service.req.MessageSendReq;
+import org.doubao.dialog.service.req.NotificationReq;
+import org.doubao.dialog.service.service.*;
+import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.DialogQuery;
 import org.doubao.dialog.service.vo.DialogVO;
+import org.doubao.dialog.service.vo.MessageVO;
+import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * 消息服务实现类
+ * 消息管理服务实现类
+ * 核心逻辑：1. 消息存储（MongoDB）与会话同步（MySQL）2. 实时推送（WebSocket）与离线通知（MQ）3. 消息状态管理
  */
 @Service
 public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, AssistantMessage> implements MessageService {
+	// ===================== 常量定义 =====================
+	/** AI助手固定ID */
+	private static final Long AI_SENDER_ID = 10000L;
+	/** 消息预览最大长度（20字） */
+	private static final Integer MSG_PREVIEW_MAX_LEN = 20;
+	/** 消息缓存过期时间（秒）- 30分钟 */
+	private static final Integer MSG_CACHE_EXPIRE_SEC = 1800;
+
+	// ===================== 依赖注入 =====================
+	@Autowired
+	private MongoTemplate mongoTemplate;
+
+	@Autowired
+	private DialogSessionMapper sessionMapper;
+
+	@Autowired
+	private SessionService sessionService;
+
+	@Autowired
+	private UserFeignClient userFeignClient;
+
+	@Autowired
+	private NotificationFeignClient notificationFeignClient;
+
+	@Autowired
+	private RabbitTemplate rabbitTemplate;
+
+	@Autowired
+	private DialogWebSocketHandler webSocketHandler;
+
+	@Autowired
+	private RedisCacheUtil redisCacheUtil;
 
 	private static final Logger log = LoggerFactory.getLogger(MessageServiceImpl.class);
 	@Autowired
@@ -347,5 +402,628 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		// 添加当前消息
 		context.add(new ChatMessage("user", messageRequest.getContent()));
 		return context;
+	}
+
+
+	// ===================== 接口实现 =====================
+
+	/**
+	 * 发送消息核心逻辑：
+	 * 1. 校验会话归属（发送者是否为会话参与者）
+	 * 2. 构建消息PO并插入MongoDB
+	 * 3. 更新会话最后消息信息（MySQL）
+	 * 4. 更新接收方未读计数（Redis+MySQL）
+	 * 5. 推送消息：在线用WebSocket，离线用MQ触发系统通知
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public String sendMessage(MessageSendReq sendReq, Long senderId) {
+		// 1. 解析请求参数
+		Long sessionId = sendReq.getSessionId();
+		String content = sendReq.getContent();
+		DialogMessage.ContentTypeEnum contentType = DialogMessage.ContentTypeEnum.valueOf(sendReq.getContentType());
+
+		// 2. 校验会话合法性（发送者是否为会话参与者）
+		DialogSession sessionPO = validateSessionAndSender(sessionId, senderId);
+
+		// 3. 确定接收者ID（会话所有者为senderId则接收者是targetId，反之亦然）
+		Long receiverId = Objects.equals(sessionPO.getUserId(), senderId)
+				? sessionPO.getTargetId()
+				: sessionPO.getUserId();
+
+		// 4. 校验消息内容（非空、长度限制）
+		validateMessageContent(content, contentType);
+
+		// 5. 构建消息PO并插入MongoDB
+		DialogMessage messagePO = buildMessagePO(sessionId, senderId, receiverId, content, contentType);
+		DialogMessage savedMsg = mongoTemplate.insert(messagePO);
+
+		// 6. 更新会话最后消息信息（MySQL）
+		updateSessionLastMsg(sessionPO, savedMsg, content, contentType);
+
+		// 7. 处理接收方未读计数（AI接收者无需未读）
+		if (!Objects.equals(receiverId, AI_SENDER_ID)) {
+			incrementReceiverUnreadCount(receiverId, sessionId);
+		}
+
+		// 8. 推送消息给接收者（异步处理，避免阻塞主流程）
+		pushMessageToReceiver(savedMsg, receiverId, sessionPO);
+
+		// 9. 返回消息ID（MongoDB的ObjectId）
+		return String.valueOf(savedMsg.getId());
+	}
+
+	/**
+	 * 查询历史消息核心逻辑：
+	 * 1. 校验会话归属（当前用户是否为会话参与者）
+	 * 2. MongoDB分页查询（按发送时间倒序）
+	 * 3. 转换为VO并补充发送者信息（头像、昵称）
+	 * 4. 返回分页结果
+	 */
+	@Override
+	public Page<MessageVO> getMessageHistory(Long sessionId, Long userId, Integer pageNum, Integer pageSize) {
+		// 1. 校验会话归属（当前用户是否为会话参与者）
+		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, userId);
+		if (sessionPO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+		}
+		// 补充校验：若当前用户是targetId，需确认会话存在（因SessionService查询的是userId=当前用户的会话）
+		if (!Objects.equals(sessionPO.getUserId(), userId) && !Objects.equals(sessionPO.getTargetId(), userId)) {
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_ALLOW_SEE);
+		}
+
+		// 2. 构建MongoDB分页查询条件（按发送时间倒序）
+		// 计算跳过的条数：(pageNum-1)*pageSize（MongoDB分页从0开始）
+		long skip = (long) (pageNum - 1) * pageSize;
+		Query query = Query.query(Criteria.where("sessionId").is(sessionId))
+				.with(Sort.by(Sort.Direction.DESC, "sendTime"))
+				.skip(skip)
+				.limit(pageSize);
+
+		// 3. 执行查询（总数+列表）
+		long total = mongoTemplate.count(query, DialogSession.class);
+		List<DialogMessage> messagePOList = mongoTemplate.find(query, DialogMessage.class);
+
+		// 4. 转换为VO并补充发送者信息
+		List<MessageVO> messageVOList = messagePOList.stream()
+				.map(messagePO -> convertToMessageVO(messagePO, userId))
+				.collect(Collectors.toList());
+
+		// 5. 构建分页结果
+		Page<MessageVO> resultPage = new Page<>(pageNum, pageSize);
+		resultPage.setTotal(total);
+		resultPage.setRecords(messageVOList);
+
+		// 6. 返回结果
+		return resultPage;
+	}
+
+	/**
+	 * 重发失败消息核心逻辑：
+	 * 1. 校验消息归属（发送者是否为消息所有者）
+	 * 2. 校验消息状态（必须是FAILED）
+	 * 3. 更新消息状态为SENT（MongoDB）
+	 * 4. 重新推送消息给接收者
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void resendMessage(String msgId, Long senderId) {
+		// 1. 查询消息并校验归属
+		DialogMessage messagePO = getMessageByIdAndSenderId(msgId, senderId);
+		if (messagePO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_EXIST);
+		}
+
+		// 2. 校验消息状态（仅FAILED状态可重发）
+		if (messagePO.getStatus() != DialogMessage.MessageStatusEnum.FAILED) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW_RESEND);
+		}
+
+		// 3. 更新消息状态为SENT（MongoDB）
+		Update update = new Update();
+		update.set("status", DialogMessage.MessageStatusEnum.SENT.getValue())
+				.set("sendTime", LocalDateTime.now()) // 重发时间更新为当前时间
+				.set("updatedAt", LocalDateTime.now()); // 新增updatedAt字段（需在PO中添加）
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(msgId)),
+				update,
+				DialogSession.class
+		);
+
+		// 4. 重新查询更新后的消息
+		messagePO = mongoTemplate.findById(msgId, DialogMessage.class);
+		if (messagePO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW_RESEND_QUERY);
+		}
+
+		// 5. 查询会话信息（用于推送）
+		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(messagePO.getSessionId(), senderId);
+		if (sessionPO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_EXIST_IN_SESSION);
+		}
+
+		// 6. 重新推送消息给接收者
+		pushMessageToReceiver(messagePO, messagePO.getReceiverId(), sessionPO);
+	}
+
+	/**
+	 * 清空会话消息核心逻辑：
+	 * 1. 校验会话归属
+	 * 2. 物理删除MongoDB中该会话的所有消息
+	 * 3. 重置会话最后消息信息（MySQL）
+	 * 4. 删除消息缓存
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void clearSessionMessages(Long sessionId, Long userId) {
+		// 1. 校验会话归属
+		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, userId);
+		if (sessionPO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+		}
+
+		// 2. 物理删除MongoDB中该会话的所有消息
+		Query query = Query.query(Criteria.where("sessionId").is(sessionId));
+		mongoTemplate.remove(query, DialogSession.class);
+
+		// 3. 重置会话最后消息信息（MySQL）
+		sessionPO.setLastMsgId(null);
+		sessionPO.setLastMsgContent(null);
+		sessionPO.setLastMsgTime(null);
+		sessionPO.setUnreadCount(0); // 清空消息时同步清零未读
+		sessionPO.setUpdatedTime(LocalDateTime.now());
+		sessionMapper.updateById(sessionPO);
+
+		// 4. 同步缓存（重置会话信息+清空未读计数）
+		redisCacheUtil.setSessionCache(userId, sessionId, sessionPO, MSG_CACHE_EXPIRE_SEC);
+		redisCacheUtil.setSessionUnreadCount(userId, sessionId, 0);
+
+		// 5. 删除消息缓存（若有）
+		redisCacheUtil.deleteMessageCache(sessionId);
+	}
+
+	/**
+	 * 标记消息为已读核心逻辑：
+	 * 1. 校验会话归属（当前用户是否为接收者）
+	 * 2. 构建查询条件（msgIds为空则查询所有未读消息）
+	 * 3. 更新消息状态为READ（MongoDB）
+	 * 4. 推送已读状态给发送者（WebSocket）
+	 * 5. 同步未读计数（清零）
+	 */
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public void markMessagesAsRead(Long sessionId, Long receiverId, List<String> msgIds) {
+		// 1. 校验会话归属（当前用户是否为接收者）
+		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, receiverId);
+		if (sessionPO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+		}
+		// 补充校验：当前用户必须是会话接收者
+		if (!Objects.equals(sessionPO.getUserId(), receiverId) && !Objects.equals(sessionPO.getTargetId(), receiverId)) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW_MARK_READ);
+		}
+
+		// 2. 构建MongoDB查询条件
+		Criteria criteria = Criteria.where("sessionId").is(sessionId)
+				.and("receiverId").is(receiverId)
+				.and("status").is(DialogMessage.MessageStatusEnum.SENT.getValue()); // 仅SENT状态可标记为READ
+
+		// 若msgIds不为空，添加消息ID条件
+		if (!msgIds.isEmpty()) {
+			criteria.and("_id").in(msgIds);
+		}
+
+		Query query = Query.query(criteria);
+
+		// 3. 统计未读消息数量（用于后续同步未读计数）
+		long unreadCount = mongoTemplate.count(query, DialogSession.class);
+		if (unreadCount == 0) {
+			return; // 无未读消息，无需操作
+		}
+
+		// 4. 更新消息状态为READ（MongoDB）
+		Update update = new Update();
+		update.set("status", DialogMessage.MessageStatusEnum.READ.getValue())
+				.set("readTime", LocalDateTime.now())
+				.set("updatedAt", LocalDateTime.now());
+		mongoTemplate.updateMulti(query, update, DialogSession.class);
+
+		// 5. 同步未读计数（清零）
+		sessionService.clearSessionUnread(receiverId, sessionId);
+
+		// 6. 推送已读状态给发送者（获取发送者ID并推送）
+		Long senderId = Objects.equals(sessionPO.getUserId(), receiverId)
+				? sessionPO.getTargetId()
+				: sessionPO.getUserId();
+		pushReadStatusToSender(senderId, sessionId, msgIds);
+	}
+
+	/**
+	 * 根据消息ID和发送者ID查询消息（用于重发校验）
+	 * 优先从缓存查询，缓存不存在则从MongoDB查询并同步到缓存
+	 */
+	@Override
+	public DialogMessage getMessageByIdAndSenderId(String msgId, Long senderId) {
+		// 1. 优先从缓存查询
+		DialogMessage messagePO = redisCacheUtil.getMessageCache(msgId);
+		if (messagePO != null) {
+			// 校验消息归属（缓存可能过期，需二次校验）
+			if (Objects.equals(messagePO.getSenderId(), senderId)) {
+				return messagePO;
+			} else {
+				throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW);
+			}
+		}
+
+		// 2. 缓存不存在，从MongoDB查询
+		Query query = Query.query(Criteria.where("_id").is(msgId)
+				.and("senderId").is(senderId));
+		messagePO = mongoTemplate.findOne(query, DialogMessage.class);
+
+		// 3. MongoDB查询结果同步到缓存（存在则同步）
+		if (messagePO != null) {
+			redisCacheUtil.setMessageCache(messagePO, MSG_CACHE_EXPIRE_SEC);
+		}
+
+		// 4. 返回结果
+		return messagePO;
+	}
+
+	// ===================== 辅助方法 =====================
+
+	/**
+	 * 校验会话和发送者合法性（发送者是否为会话参与者）
+	 * @param sessionId 会话ID
+	 * @param senderId 发送者ID
+	 * @return 会话PO（校验通过）
+	 */
+	private DialogSession validateSessionAndSender(Long sessionId, Long senderId) {
+		// 1. 查询会话（从SessionService获取，已包含缓存逻辑）
+		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, senderId);
+		// 2. 若会话不存在，尝试查询发送者为targetId的会话（因会话可能归属targetId）
+		if (sessionPO == null) {
+			LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.eq(DialogSession::getId, sessionId)
+					.eq(DialogSession::getTargetId, senderId)
+					.eq(DialogSession::getDeleted, 0);
+			sessionPO = sessionMapper.selectOne(queryWrapper);
+		}
+
+		// 3. 会话不存在或已删除
+		if (sessionPO == null) {
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+		}
+
+		// 4. 发送者不是会话参与者（既不是userId也不是targetId）
+		if (!Objects.equals(sessionPO.getUserId(), senderId) && !Objects.equals(sessionPO.getTargetId(), senderId)) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW_SEND);
+		}
+
+		return sessionPO;
+	}
+
+	/**
+	 * 校验消息内容合法性
+	 * @param content 消息内容
+	 * @param contentType 消息类型
+	 */
+	private void validateMessageContent(String content, DialogMessage.ContentTypeEnum contentType) {
+		// 1. 内容非空校验
+		if (content == null || content.trim().isEmpty()) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CONTENT_EMPTY);
+		}
+
+		// 2. 文字消息长度限制（最大500字）
+		if (contentType == DialogMessage.ContentTypeEnum.TEXT && content.length() > 500) {
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CONTENT_TOO_LONG);
+		}
+
+		// 3. 表情消息格式校验（需符合[表情名]格式，如[微笑]）
+		if (contentType == DialogMessage.ContentTypeEnum.EMOJI) {
+			if (!content.matches("^\\[\\w+\\]$")) {
+				throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CONTENT_INVALID);
+			}
+		}
+	}
+
+	/**
+	 * 构建消息PO对象
+	 * @param sessionId 会话ID
+	 * @param senderId 发送者ID
+	 * @param receiverId 接收者ID
+	 * @param content 消息内容
+	 * @param contentType 消息类型
+	 * @return 消息PO
+	 */
+	private DialogMessage buildMessagePO(Long sessionId, Long senderId, Long receiverId, String content, DialogMessage.ContentTypeEnum contentType) {
+		DialogMessage messagePO = new DialogMessage();
+		messagePO.setSessionId(sessionId);
+		messagePO.setSenderId(senderId);
+		messagePO.setReceiverId(receiverId);
+		messagePO.setContent(content);
+		messagePO.setContentType(contentType);
+		messagePO.setStatus(DialogMessage.MessageStatusEnum.SENT); // 初始状态为已发送
+		messagePO.setSendTime(LocalDateTime.now());
+		messagePO.setReadTime(null); // 初始未读
+		messagePO.setIsRevoked(0); // 初始未撤回
+		messagePO.setUpdatedAt(LocalDateTime.now()); // 新增updatedAt字段（需在PO中添加）
+		return messagePO;
+	}
+
+	/**
+	 * 更新会话最后消息信息（MySQL）
+	 * @param sessionPO 会话PO
+	 * @param messagePO 消息PO
+	 * @param content 消息内容
+	 * @param contentType 消息类型
+	 */
+	private void updateSessionLastMsg(DialogSession sessionPO, DialogMessage messagePO, String content, DialogMessage.ContentTypeEnum contentType) {
+		// 1. 生成消息预览（文字取前20字，表情显示[表情]）
+		String lastMsgContent;
+		if (contentType == DialogMessage.ContentTypeEnum.EMOJI) {
+			lastMsgContent = "[表情]";
+		} else {
+			lastMsgContent = content.length() > MSG_PREVIEW_MAX_LEN
+					? content.substring(0, MSG_PREVIEW_MAX_LEN) + "..."
+					: content;
+		}
+
+		// 2. 更新会话PO
+		sessionPO.setLastMsgId(messagePO.getId());
+		sessionPO.setLastMsgContent(lastMsgContent);
+		sessionPO.setLastMsgTime(messagePO.getSendTime());
+		sessionPO.setUpdatedTime(LocalDateTime.now());
+
+		// 3. 保存到MySQL
+		sessionMapper.updateById(sessionPO);
+
+		// 4. 同步会话缓存（更新后的最后消息信息）
+		redisCacheUtil.setSessionCache(sessionPO.getUserId(), sessionPO.getId(), sessionPO, MSG_CACHE_EXPIRE_SEC);
+		// 若发送者是targetId，还需同步targetId的会话缓存（因会话可能归属targetId）
+		if (Objects.equals(sessionPO.getTargetId(), messagePO.getSenderId())) {
+			redisCacheUtil.setSessionCache(sessionPO.getTargetId(), sessionPO.getId(), sessionPO, MSG_CACHE_EXPIRE_SEC);
+		}
+	}
+
+	/**
+	 * 增加接收者未读计数（Redis+MySQL）
+	 * @param receiverId 接收者ID
+	 * @param sessionId 会话ID
+	 */
+	private void incrementReceiverUnreadCount(Long receiverId, Long sessionId) {
+		// 1. Redis未读计数自增（优先更新缓存）
+		redisCacheUtil.incrementSessionUnreadCount(receiverId, sessionId);
+
+		// 2. MySQL未读计数自增（最终一致性，可异步更新）
+		DialogSession receiverSessionPO = sessionService.getSessionByIdAndUserId(sessionId, receiverId);
+		if (receiverSessionPO != null) {
+			receiverSessionPO.setUnreadCount(receiverSessionPO.getUnreadCount() + 1);
+			receiverSessionPO.setUpdatedTime(LocalDateTime.now());
+			sessionMapper.updateById(receiverSessionPO);
+		}
+	}
+
+	/**
+	 * 推送消息给接收者（异步）
+	 * 逻辑：在线→WebSocket推送，离线→MQ触发系统通知
+	 * @param messagePO 消息PO
+	 * @param receiverId 接收者ID
+	 * @param sessionPO 会话PO
+	 */
+	@Async // 异步处理，避免阻塞消息发送主流程
+	protected void pushMessageToReceiver(DialogMessage messagePO, Long receiverId, DialogSession sessionPO) {
+		try {
+			// 1. 转换消息PO为VO（用于推送）
+			MessageVO messageVO = convertToMessageVO(messagePO, receiverId);
+
+			// 2. 检查接收者是否在线（WebSocket会话是否存在）
+			if (webSocketHandler.isUserOnline(receiverId)) {
+				// 2.1 在线：WebSocket实时推送
+				webSocketHandler.pushPrivateMessage(
+						receiverId,
+						messageVO
+				);
+			} else {
+				// 2.2 离线：通过MQ发送系统通知（调用notification-service）
+				sendOfflineNotification(messageVO, receiverId, sessionPO);
+			}
+		} catch (Exception e) {
+			// 推送失败：更新消息状态为FAILED，便于后续重发
+			updateMessageStatusToFailed(messagePO.getId());
+			org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
+					.error("推送消息给接收者{}失败，消息ID：{}", receiverId, messagePO.getId(), e);
+		}
+	}
+
+	/**
+	 * 发送离线系统通知（通过MQ）
+	 * @param messageVO 消息VO
+	 * @param receiverId 接收者ID
+	 * @param sessionPO 会话PO
+	 */
+	private void sendOfflineNotification(MessageVO messageVO, Long receiverId, DialogSession sessionPO) {
+		// 1. 构建通知请求参数
+		NotificationReq notificationReq = new NotificationReq();
+		notificationReq.setTargetUserId(receiverId);
+		notificationReq.setTitle("新私信消息");
+
+		// 2. 获取发送者名称（AI/用户）
+		String senderName = getSenderName(messageVO.getSenderId());
+
+		// 3. 构建通知内容（如：“AI助手：你好！”）
+		String content = String.format("%s：%s", senderName, messageVO.getContentPreview());
+		notificationReq.setContent(content);
+
+		// 4. 设置通知跳转参数（点击通知跳转至会话页）
+		JSONObject extra = new JSONObject();
+		extra.put("sessionId", sessionPO.getId());
+		extra.put("targetId", messageVO.getSenderId());
+		notificationReq.setExtra(extra.toJSONString());
+
+		// 5. 发送MQ消息（路由键：dialog.notification.push.{receiverId}）
+		// String routingKey = MqConfig.DIALOG_NOTIFICATION_ROUTING_KEY_PREFIX + receiverId;
+		// rabbitTemplate.convertAndSend(
+		// 		MqConfig.DIALOG_NOTIFICATION_EXCHANGE,
+		// 		routingKey,
+		// 		notificationReq
+		// );
+
+		// 6. 同步调用notification-service（兜底，确保通知发送）
+		try {
+			Result<Void> notifyResult = notificationFeignClient.sendNotification(notificationReq);
+			if (!notifyResult.isSuccess()) {
+				org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
+						.warn("同步发送离线通知失败，用户ID：{}，消息ID：{}", receiverId, messageVO.getId());
+			}
+		} catch (Exception e) {
+			org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
+					.error("同步调用notification-service异常，用户ID：{}", receiverId, e);
+		}
+	}
+
+	/**
+	 * 推送已读状态给发送者（WebSocket）
+	 * @param senderId 发送者ID
+	 * @param sessionId 会话ID
+	 * @param msgIds 已读消息ID列表（为空则表示所有消息）
+	 */
+	private void pushReadStatusToSender(Long senderId, Long sessionId, List<String> msgIds) {
+		// 1. 检查发送者是否在线
+		if (!webSocketHandler.isUserOnline(senderId)) {
+			return; // 发送者离线，无需推送
+		}
+
+		// 2. 构建已读状态推送数据
+		JSONObject readData = new JSONObject();
+		readData.put("sessionId", sessionId);
+		readData.put("msgIds", msgIds.isEmpty() ? "all" : msgIds); // 空列表表示所有消息已读
+		readData.put("readTime", LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+		// 3. WebSocket推送已读状态
+		webSocketHandler.pushMessage(
+				senderId,
+				DialogWebSocketHandler.MessagePushType.MSG_READ,
+				readData
+		);
+	}
+
+	/**
+	 * 更新消息状态为FAILED（MongoDB）
+	 * @param msgId 消息ID
+	 */
+	private void updateMessageStatusToFailed(String msgId) {
+		Update update = new Update();
+		update.set("status", DialogMessage.MessageStatusEnum.FAILED.getValue())
+				.set("updatedAt", LocalDateTime.now());
+		mongoTemplate.updateFirst(
+				Query.query(Criteria.where("_id").is(msgId)),
+				update,
+				DialogSession.class
+		);
+
+		// 同步缓存（更新后的失败状态）
+		DialogMessage messagePO = mongoTemplate.findById(msgId, DialogMessage.class);
+		if (messagePO != null) {
+			redisCacheUtil.setMessageCache(messagePO, MSG_CACHE_EXPIRE_SEC);
+		}
+	}
+
+	/**
+	 * 获取发送者名称（AI/用户）
+	 * @param senderId 发送者ID
+	 * @return 发送者名称（AI助手/用户昵称）
+	 */
+	private String getSenderName(Long senderId) {
+		// AI助手固定名称
+		if (Objects.equals(senderId, AI_SENDER_ID)) {
+			return "AI助手";
+		}
+
+		// 用户名称：调用user-service查询
+		Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(senderId));
+		if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
+			UserInfo userInfo = userResult.getData().get(0);
+			return userInfo.getNickname();
+		} else {
+			return "未知用户";
+		}
+	}
+
+	/**
+	 * 将消息PO转换为VO（补充发送者信息、内容预览、时间格式化）
+	 * @param messagePO 消息PO
+	 * @param currentUserId 当前用户ID（用于判断消息方向：自己发送/对方发送）
+	 * @return 消息VO
+	 */
+	private MessageVO convertToMessageVO(DialogMessage messagePO, Long currentUserId) {
+		MessageVO messageVO = new MessageVO();
+		BeanUtils.copyProperties(messagePO, messageVO);
+
+		// 1. 补充消息方向（自己发送/对方发送）
+		messageVO.setSelfSend(Objects.equals(messagePO.getSenderId(), currentUserId));
+
+		// 2. 补充发送者信息（头像、昵称）
+		if (Objects.equals(messagePO.getSenderId(), AI_SENDER_ID)) {
+			messageVO.setSenderNickname("AI助手");
+			messageVO.setSenderAvatarUrl(""); // AI默认头像
+		} else {
+			Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(messagePO.getSenderId()));
+			if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
+				UserInfo senderUser = userResult.getData().get(0);
+				messageVO.setSenderNickname(senderUser.getNickname());
+				messageVO.setSenderAvatarUrl(senderUser.getAvatarUrl());
+			} else {
+				messageVO.setSenderNickname("未知用户");
+				messageVO.setSenderAvatarUrl(""); // 默认头像
+			}
+		}
+
+		// 3. 补充内容预览（与会话最后消息预览一致）
+		if (messagePO.getContentType() == DialogMessage.ContentTypeEnum.EMOJI) {
+			messageVO.setContentPreview("[表情]");
+		} else {
+			String content = messagePO.getContent();
+			messageVO.setContentPreview(content.length() > MSG_PREVIEW_MAX_LEN
+					? content.substring(0, MSG_PREVIEW_MAX_LEN) + "..."
+					: content);
+		}
+
+		// 4. 格式化发送时间（如：15:30、昨天 15:30、06-12 15:30）
+		messageVO.setSendTimeStr(formatSendTime(messagePO.getSendTime()));
+
+		return messageVO;
+	}
+
+	/**
+	 * 格式化发送时间（抖音风格）
+	 * @param sendTime 发送时间
+	 * @return 格式化后的时间字符串
+	 */
+	private String formatSendTime(LocalDateTime sendTime) {
+		if (sendTime == null) {
+			return "";
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime yesterday = now.minusDays(1);
+		LocalDateTime oneMonthAgo = now.minusMonths(1);
+
+		// 今天：HH:mm
+		if (sendTime.toLocalDate().isEqual(now.toLocalDate())) {
+			return sendTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+		}
+
+		// 昨天：昨天 HH:mm
+		if (sendTime.toLocalDate().isEqual(yesterday.toLocalDate())) {
+			return "昨天 " + sendTime.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"));
+		}
+
+		// 一个月内：MM-dd HH:mm
+		if (sendTime.isAfter(oneMonthAgo)) {
+			return sendTime.format(java.time.format.DateTimeFormatter.ofPattern("MM-dd HH:mm"));
+		}
+
+		// 超过一个月：yyyy-MM-dd HH:mm
+		return sendTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
 	}
 }
