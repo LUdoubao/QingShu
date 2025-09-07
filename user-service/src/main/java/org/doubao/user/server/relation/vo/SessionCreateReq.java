@@ -14,6 +14,7 @@ import javax.validation.constraints.NotNull;
 @ApiModel(description = "会话创建请求参数，包含目标ID和会话类型")
 public class SessionCreateReq {
 
+    private Long userId;
     /**
      * 目标ID
      * 业务规则：
@@ -57,5 +58,13 @@ public class SessionCreateReq {
 
     public void setSessionType(@NotBlank(message = "会话类型不能为空，请选择USER或AI") String sessionType) {
         this.sessionType = sessionType;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

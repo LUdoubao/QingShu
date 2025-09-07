@@ -147,6 +147,7 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 		SessionCreateReq createReq = new SessionCreateReq();
 		createReq.setTargetId(targetUserId);
 		createReq.setSessionType("USER");
+		createReq.setUserId(userId);
 		dialogClient.createSession(createReq);
 
 		log.info("用户 {} 关注了用户 {}", userId, targetUserId);
