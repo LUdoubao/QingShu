@@ -9,6 +9,8 @@ public enum ErrorCode {
 	RATE_LIMIT_EXCEEDED("COM_429", "请求过于频繁"),
 	PAGE_NUMBER_INVALID("COM_405", "页码必须大于等于1"),
 	PAGE_SIZE_INVALID("COM_406", "每页条数必须在1-100之间"),
+	TOKEN_ERROR("COM_501", "Token格式错误（需Bearer前缀）"),
+	TOKEN_INVALID("COM_502", "Token无效或已过期"),
 
 	// 业务错误
 	LIKE_ALREADY_EXISTS("LIKE_001", "重复点赞"),
@@ -65,7 +67,25 @@ public enum ErrorCode {
 	QUOTE_NOT_FOUND("quote_1001", "引文不存在或待审核"),
 
 	AI_LIMIT_EXCEEDED_TODAY("ai_001", "今日AI服务调用次数已达上限"),
-	AI_LIMIT_EXCEEDED_SYSTEM("ai_002", "系统调用已达今日上限，请明天再试");
+	AI_LIMIT_EXCEEDED_SYSTEM("ai_002", "系统调用已达今日上限，请明天再试"),
+
+
+	DIALOG_SESSION_SELF_CREATE("dialog_001", "不能与自己创建会话"),
+	DIALOG_SESSION_NOT_EXIST("dialog_002", "会话不存在或已删除"),
+	DIALOG_SESSION_NOT_ALLOW_DELETE("dialog_004", "AI助手会话不允许删除"),
+	DIALOG_SESSION_ALREADY_TOP("dialog_003", "会话已处于该置顶状态"),
+	DIALOG_SESSION_NOT_ALLOW_SEE("dialog_005", "无权限查看该会话消息"),
+	DIALOG_MESSAGE_NOT_EXIST("dialog_006", "消息不存在或已删除"),
+	DIALOG_MESSAGE_NOT_ALLOW_RESEND( "dialog_007", "仅失败状态的消息可重发"),
+	DIALOG_MESSAGE_NOT_ALLOW_RESEND_QUERY( "dialog_008", "消息重发后查询失败"),
+	DIALOG_MESSAGE_NOT_EXIST_IN_SESSION( "dialog_009", "会话不存在，无法重发消息"),
+	DIALOG_MESSAGE_NOT_ALLOW_MARK_READ( "dialog_010", "无权限标记该会话消息为已读"),
+	DIALOG_MESSAGE_NOT_ALLOW( "dialog_011", "无权限操作该消息"),
+	DIALOG_MESSAGE_NOT_ALLOW_SEND( "dialog_012", "无权限在该会话发送消息"),
+	DIALOG_MESSAGE_CONTENT_EMPTY( "dialog_013", "消息内容不能为空"),
+	DIALOG_MESSAGE_CONTENT_TOO_LONG( "dialog_014", "文字消息长度不能超过500字"),
+	DIALOG_MESSAGE_CONTENT_INVALID( "dialog_015", "表情消息格式错误（需符合[表情名]格式，如[微笑]）");
+
 
 
 	private String code;
