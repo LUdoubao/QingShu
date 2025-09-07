@@ -1,0 +1,66 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: search-service
+
+
+  # Elasticsearch配置
+  elasticsearch:
+    rest:
+      uris: ${ES_HOST:localhost}:${ES_PORT:9200}
+      username: ${ES_USERNAME:}
+      password: ${ES_PASSWORD:}
+    connection-timeout: 5000ms
+    socket-timeout: 3000ms
+
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.example.search: DEBUG
+    org.elasticsearch: WARN
+    org.springframework.data.elasticsearch: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+
+# 应用配置
+server:
+  port: 9408
+  servlet:
+    context-path: /
+
+# 搜索服务自定义配置
+search:
+  elasticsearch:
+    index:
+      copywriting: copywriting
+    page:
+      default-size: 20
+      max-size: 100
+  suggest:
+    min-length: 2
+    max-count: 10
+  history:
+    max-count: 10
+  cache:
+    hot-search-expire-minutes: 10
+    suggest-expire-minutes: 60
+    result-expire-minutes: 10
+  synonyms:
+    file-path: classpath:synonyms.txt
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  endpoint:
+    health:
+      show-details: always

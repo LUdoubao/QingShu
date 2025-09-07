@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.SearchHistoryMapper">
+    <select id="selectByUserId" resultType="org.doubao.search.service.model.entity.SearchHistory">
+        SELECT id, keyword, search_time, result_count
+        FROM search_history
+        WHERE user_id = #{userId}
+          AND is_deleted = 0
+        ORDER BY search_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteByUserId">
+        UPDATE search_history
+        SET is_deleted = 1,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </delete>
+</mapper>
