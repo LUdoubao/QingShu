@@ -38,7 +38,7 @@ public class QuoteEventPublisher {
 		taskExecutor.asyncExecute(() -> {
 			VerifyQuoteEvent event = new VerifyQuoteEvent(
 					userId,
-					targetId,
+					String.valueOf(targetId),
 					quoteContent,
 					quoteCreatedId
 			);
@@ -73,7 +73,7 @@ public class QuoteEventPublisher {
 			// 异步发送MQ消息通知
 			AuditQuoteEvent event = new AuditQuoteEvent(
 					receiverId,
-					quoteId,
+					String.valueOf(quoteId),
 					status,
 					content,
 					reason,
