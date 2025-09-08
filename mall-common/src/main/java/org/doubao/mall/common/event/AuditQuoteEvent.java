@@ -12,7 +12,7 @@ public class AuditQuoteEvent extends SystemEvent {
 	private String reason;         // 审核不通过原因
 	private String submitterName;   // 提交者名称
 	public AuditQuoteEvent(Long userId,
-						   Long targetId, String result, String quoteContent, String reason, String submitterName) {
+						   String targetId, String result, String quoteContent, String reason, String submitterName) {
 		super(userId, "AUDIT_QUOTE", "quote", targetId, result, "引文审核结果");
 		this.quoteContent = quoteContent;
 		this.reason = reason;

@@ -9,15 +9,18 @@ import java.time.LocalDateTime;
  * 系统事件：表示系统操作成功/失败的事件
  */
 public class SystemEvent extends NotificationEvent {
-	private String title;
+	private String title; // 操作标题
 	private String target;         // 操作目标对象 (引文, 用户, 评论等)
-	private Long targetId;       // 目标对象ID
+	private String targetId;       // 目标对象ID
 	private String result;       // 操作结果 (SUCCESS, FAILURE, etc.)
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private LocalDateTime actionTime; // 操作时间
 
+	public SystemEvent() {
+	}
+
 	public SystemEvent(Long userId, String action, String target,
-					   Long targetId, String result, String title) {
+					   String targetId, String result, String title) {
 		super("SYSTEM", userId, action);
 		this.target = target;
 		this.targetId = targetId;
@@ -43,11 +46,11 @@ public class SystemEvent extends NotificationEvent {
 		this.target = target;
 	}
 
-	public Long getTargetId() {
+	public String getTargetId() {
 		return targetId;
 	}
 
-	public void setTargetId(Long targetId) {
+	public void setTargetId(String targetId) {
 		this.targetId = targetId;
 	}
 

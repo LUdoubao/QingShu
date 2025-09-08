@@ -8,7 +8,7 @@ public class VerifyQuoteEvent extends SystemEvent {
 	private Long quoteCreatedId;
 
 	public VerifyQuoteEvent(Long userId,
-						   Long targetId, String quoteContent, Long quoteCreatedId) {
+							String targetId, String quoteContent, Long quoteCreatedId) {
 		super(userId, "VERIFY_QUOTE", "quote", targetId, "", "新引文待审核");
 		this.quoteContent = quoteContent;
 		this.quoteCreatedId = quoteCreatedId;

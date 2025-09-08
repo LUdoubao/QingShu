@@ -84,6 +84,7 @@ public enum ErrorCode {
 	DIALOG_MESSAGE_NOT_ALLOW_SEND( "dialog_012", "无权限在该会话发送消息"),
 	DIALOG_MESSAGE_CONTENT_EMPTY( "dialog_013", "消息内容不能为空"),
 	DIALOG_MESSAGE_CONTENT_TOO_LONG( "dialog_014", "文字消息长度不能超过500字"),
+	DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID( "dialog_016", "会话缓存过期时间必须大于0秒"),
 	DIALOG_MESSAGE_CONTENT_INVALID( "dialog_015", "表情消息格式错误（需符合[表情名]格式，如[微笑]）");
 
 

@@ -16,6 +16,9 @@ public enum EventType {
 	COMMENT_EVENT("评论事件", 6),
 	LIKE_EVENT("点赞事件",7),
 
+	// 聊天相关事件
+	NEW_MESSAGE("新消息", 9),
+
 	// 引文事件
 	QUOTE_EVENT("引文事件", 8);
 
