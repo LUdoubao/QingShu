@@ -87,4 +87,21 @@ public class NotificationFormatter {
 		notification.setSourceType(event.getTarget());
 		return notification;
 	}
+
+	public Notification formatNewMessageNotification(DialogEvent newMessageEvent) {
+		Notification notification = new Notification();
+		notification.setUserId(newMessageEvent.getUserId());
+		notification.setType(newMessageEvent.getType());
+		notification.setAction(newMessageEvent.getAction());
+		Map<String, Object> content = new HashMap<>();
+		content.put("dialogContent", newMessageEvent.getDialogContent());
+		String extra = newMessageEvent.getExtra();
+		if (extra != null && !extra.isEmpty()) {
+			content.put("extra", JSON.parseObject(extra));
+		}
+		notification.setContent(JSON.toJSONString(content));
+		notification.setSourceId(newMessageEvent.getTargetId());
+		notification.setSourceType(newMessageEvent.getTarget());
+		return notification;
+	}
 }

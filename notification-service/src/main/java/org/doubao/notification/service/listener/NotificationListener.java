@@ -58,23 +58,26 @@ public class NotificationListener {
 								 @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
 		try {
 			EventType eventType = event.getEventType();
+			Map<String, Object> extInfo = event.getExtInfo();
+			Object notificationEvent = extInfo.get("NotificationEvent");
 			switch (eventType) {
 				case USER_REGISTER:
-					Map<String, Object> message = event.getExtInfo();
-					String to = String.valueOf(message.get("to"));
-					LOG.info("[userNotification] Received email to {}", to);
-					String content = String.valueOf(message.get("content"));
-					LOG.info("[userNotification] Received email content: {}", content);
-					String subject = String.valueOf(message.get("subject"));
-					LOG.info("[userNotification] Received email subject: {}", subject);
+					String to = String.valueOf(extInfo.get("to"));
+					LOG.info("[用户相关事件] Received email to {}", to);
+					String content = String.valueOf(extInfo.get("content"));
+					LOG.info("[用户相关事件] Received email content: {}", content);
+					String subject = String.valueOf(extInfo.get("subject"));
+					LOG.info("[用户相关事件] Received email subject: {}", subject);
 					sendEmail(to, subject, content);
 					break;
 				case COMMENT_EVENT:
 				case LIKE_EVENT:
 				case QUOTE_EVENT:
-					Map<String, Object> extInfo = event.getExtInfo();
-					LOG.info("[userNotification] Received notification event: {}", JSON.toJSONString(extInfo));
-					Object notificationEvent = extInfo.get("NotificationEvent");
+					LOG.info("[引文事件] Received notification event: {}", JSON.toJSONString(extInfo));
+					handleNotificationEvent(notificationEvent);
+					break;
+				case NEW_MESSAGE:
+					LOG.info("[新消息事件] Received notification event: {}", JSON.toJSONString(extInfo));
 					handleNotificationEvent(notificationEvent);
 					break;
 				default:
@@ -119,8 +122,10 @@ public class NotificationListener {
 					case "VERIFY_QUOTE":
 						VerifyQuoteEvent verifyQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), VerifyQuoteEvent.class, FIXED_CONFIG );
 						notification = formatter.formatSystemNotification(verifyQuoteEvent);
-
 						break;
+					case "NEW_MESSAGE":
+						DialogEvent newMessageEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), DialogEvent.class, FIXED_CONFIG );
+						notification = formatter.formatNewMessageNotification(newMessageEvent);
 					default:
 						LOG.error("Unsupported notification action: {}",action);
 						throw new IllegalArgumentException("Unsupported event action: " +action);
