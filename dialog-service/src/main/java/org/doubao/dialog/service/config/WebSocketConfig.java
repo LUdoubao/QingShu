@@ -1,12 +1,9 @@
 package org.doubao.dialog.service.config;
 
-import org.doubao.dialog.service.service.DialogWebSocketHandler;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
 import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry;
-import org.springframework.web.socket.server.standard.ServerEndpointExporter;
 
 /**
  * WebSocket配置类
@@ -35,7 +32,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 		registry.addHandler(webSocketHandler, "/dialog/ws/admin")
 				.setAllowedOrigins("*");
 
-		registry.addHandler(dialogWebSocketHandler, "/dialog/ws/dialog")
+		registry.addHandler(dialogWebSocketHandler, "/dialog/ws/chat")
 				.setAllowedOrigins("*")
 				.addInterceptors(webSocketAuthInterceptor);
 	}

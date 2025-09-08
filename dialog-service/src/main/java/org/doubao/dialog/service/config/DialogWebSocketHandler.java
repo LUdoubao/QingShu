@@ -1,10 +1,11 @@
-package org.doubao.dialog.service.service;
+package org.doubao.dialog.service.config;
 
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import org.doubao.dialog.service.enums.MessagePushType;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.MessageVO;
 import org.slf4j.Logger;
@@ -65,13 +66,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		if (ObjectUtil.isNotNull(oldSession) && oldSession.isOpen()) {
 			// 关闭旧连接（确保同一用户仅保持一个有效连接）
 			oldSession.close(CloseStatus.NORMAL.withReason("账号在其他设备登录，当前连接已断开"));
-			log.warn("WebSocket old session closed | userId: {}, oldSessionId: {}, newSessionId: {}",
+			log.error("WebSocket old session closed | userId: {}, oldSessionId: {}, newSessionId: {}",
 					userId, oldSession.getId(), session.getId());
 		}
 
 		// 3. 更新Redis在线状态（key=用户在线前缀+用户ID，value=会话ID，过期时间=30分钟）
 		String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
-		// redisCacheUtil.set(onlineKey, session.getId(), 30, TimeUnit.MINUTES);
+		redisCacheUtil.set(onlineKey, session.getId(), 30, TimeUnit.MINUTES);
 
 		// 4. 日志记录连接成功
 		log.info("WebSocket connection established | userId: {}, sessionId: {}, onlineUserCount: {}",
@@ -90,7 +91,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		// 1. 从会话属性中获取用户ID
 		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
 		if (ObjectUtil.isNull(userId)) {
-			log.warn("WebSocket connection closed | userId is null (sessionId: {})", session.getId());
+			log.error("WebSocket connection closed | userId is null (sessionId: {})", session.getId());
 			return;
 		}
 
@@ -100,7 +101,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			onlineUserSessionMap.remove(userId);
 			// 3. 清除Redis在线状态（延迟10秒，防止网络波动导致的误下线）
 			String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
-			// redisCacheUtil.expire(onlineKey, 10, TimeUnit.SECONDS);
+			redisCacheUtil.expire(onlineKey, 10, TimeUnit.SECONDS);
 		}
 
 		// 4. 日志记录连接关闭
@@ -121,7 +122,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
 		String msgContent = message.getPayload();
-		log.debug("WebSocket receive message | userId: {}, sessionId: {}, content: {}",
+		log.info("WebSocket receive message | userId: {}, sessionId: {}, content: {}",
 				userId, session.getId(), msgContent);
 
 		// 1. 校验消息格式（非空+JSON格式）
@@ -156,7 +157,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				break;
 			default:
 				sendErrorMessage(session, "不支持的消息类型：" + msgType);
-				log.warn("WebSocket unsupported msgType | userId: {}, msgType: {}", userId, msgType);
+				log.error("WebSocket unsupported msgType | userId: {}, msgType: {}", userId, msgType);
 		}
 	}
 
@@ -186,29 +187,29 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param userId    目标用户ID
 	 * @param messageVO 消息VO（包含消息ID、内容、发送者等信息）
 	 */
-	public void pushPrivateMessage(Long userId, MessageVO messageVO) {
+	public void pushPrivateMessage(Long userId, MessageVO messageVO, MessagePushType messagePushType) {
 		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(messageVO)) {
-			log.warn("WebSocket push message failed | userId or messageVO is null");
+			log.error("WebSocket push message failed | userId or messageVO is null");
 			return;
 		}
 
 		// 1. 获取用户在线会话
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.debug("WebSocket push message failed | user offline (userId: {})", userId);
+			log.error("WebSocket push message failed | user offline (userId: {})", userId);
 			return;
 		}
 
 		// 2. 构建推送消息（JSON格式，包含消息类型和数据）
 		Map<String, Object> pushMsg = new ConcurrentHashMap<>(2);
-		pushMsg.put("msgType", "PRIVATE_MSG"); // 消息类型：私信
+		pushMsg.put("msgType", messagePushType.getName()); // 消息类型：私信
 		pushMsg.put("data", messageVO);
 		String jsonMsg = JSON.toJSONString(pushMsg);
 
 		// 3. 发送消息（带异常处理，避免单用户推送失败影响整体）
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.debug("WebSocket push private message success | userId: {}, msgId: {}",
+			log.info("WebSocket push private message success | userId: {}, msgId: {}",
 					userId, messageVO.getId());
 		} catch (IOException e) {
 			log.error("WebSocket push private message failed | userId: {}, msgId: {}, error: {}",
@@ -233,14 +234,14 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	public void pushSystemNotify(Long userId, String notifyContent, String notifyType) {
 		if (ObjectUtil.isNull(userId) || StrUtil.isBlank(notifyContent) || StrUtil.isBlank(notifyType)) {
-			log.warn("WebSocket push notify failed | param is null (userId: {}, notifyType: {})",
+			log.error("WebSocket push notify failed | param is null (userId: {}, notifyType: {})",
 					userId, notifyType);
 			return;
 		}
 
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.debug("WebSocket push notify failed | user offline (userId: {})", userId);
+			log.info("WebSocket push notify failed | user offline (userId: {})", userId);
 			return;
 		}
 
@@ -253,7 +254,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.debug("WebSocket push system notify success | userId: {}, notifyType: {}",
+			log.info("WebSocket push system notify success | userId: {}, notifyType: {}",
 					userId, notifyType);
 		} catch (IOException e) {
 			log.error("WebSocket push system notify failed | userId: {}, notifyType: {}, error: {}",
@@ -268,7 +269,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	private void sendErrorMessage(WebSocketSession session, String errorMsg) {
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.warn("WebSocket send error message failed | session closed");
+			log.error("WebSocket send error message failed | session closed");
 			return;
 		}
 
@@ -279,7 +280,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.debug("WebSocket send error message | sessionId: {}, errorMsg: {}",
+			log.info("WebSocket send error message | sessionId: {}, errorMsg: {}",
 					session.getId(), errorMsg);
 		} catch (IOException e) {
 			log.error("WebSocket send error message failed | sessionId: {}, errorMsg: {}, ex: {}",
@@ -298,7 +299,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	private void handleHeartbeat(Long userId, WebSocketSession session) {
 		// 1. 刷新Redis在线状态（重置为30分钟过期）
 		String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
-		// redisCacheUtil.expire(onlineKey, 30, TimeUnit.MINUTES);
+		redisCacheUtil.expire(onlineKey, 30, TimeUnit.MINUTES);
 
 		// 2. 回复心跳确认（告知客户端连接正常）
 		Map<String, Object> heartbeatResp = new ConcurrentHashMap<>(2);
@@ -308,7 +309,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonResp));
-			log.debug("WebSocket handle heartbeat success | userId: {}, sessionId: {}",
+			log.info("WebSocket handle heartbeat success | userId: {}, sessionId: {}",
 					userId, session.getId());
 		} catch (IOException e) {
 			log.error("WebSocket send heartbeat resp failed | userId: {}, sessionId: {}, error: {}",
@@ -327,7 +328,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object sessionIdObj = msgMap.get("sessionId");
 		Object lastReadMsgIdObj = msgMap.get("lastReadMsgId");
 		if (ObjectUtil.isNull(sessionIdObj) || ObjectUtil.isNull(lastReadMsgIdObj)) {
-			log.warn("WebSocket handle msg read confirm failed | missing param (userId: {})", userId);
+			log.error("WebSocket handle msg read confirm failed | missing param (userId: {})", userId);
 			return;
 		}
 
@@ -343,9 +344,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		// 2. 清除Redis中该会话的未读消息数（原子操作）
 		String unreadCountKey = RedisCacheUtil.DIALOG_UNREAD_COUNT_PREFIX + userId;
-		// redisCacheUtil.hSet(unreadCountKey, sessionId.toString(), 0);
+		redisCacheUtil.hSet(unreadCountKey, sessionId.toString(), 0);
 		// 刷新未读消息数缓存过期时间（7天）
-		// redisCacheUtil.expire(unreadCountKey, 7, TimeUnit.DAYS);
+		redisCacheUtil.expire(unreadCountKey, 7, TimeUnit.DAYS);
 
 		log.info("WebSocket handle msg read confirm success | userId: {}, sessionId: {}, lastReadMsgId: {}",
 				userId, sessionId, lastReadMsgId);
@@ -373,9 +374,8 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		// 2. 内存映射无有效会话时，查Redis（防止内存数据与Redis不一致）
 		String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
-		return true;
-		// String sessionId = redisCacheUtil.get(onlineKey, String.class);
-		// return ObjectUtil.isNotNull(sessionId);
+		String sessionId = redisCacheUtil.getString(onlineKey, String.class);
+		return ObjectUtil.isNotNull(sessionId);
 	}
 
 	/**
@@ -386,25 +386,17 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		return onlineUserSessionMap.size();
 	}
 
+	/**
+	 * 推送消息状态给发送者
+	 * @param senderId 消息发送者ID
+	 * @param messagePushType 消息推送类型
+	 * @param readData 消息已读数据
+	 */
 	public void pushMessage(Long senderId, MessagePushType messagePushType, JSONObject readData) {
-
+		pushPrivateMessage(senderId, new MessageVO(Long.valueOf(readData.getString("sessionId")), senderId) , messagePushType);
+		log.info("WebSocket push message status to sender success | senderId: {}, messagePushType: {}, readData: {}",
+				senderId, messagePushType.getName(), readData);
 	}
 
-	public enum MessagePushType {
-		MSG_READ("MSG_READ", "已读消息确认");
-		private String name;
-		private String desc;
-		MessagePushType(String name, String desc) {
-			this.name = name;
-			this.desc = desc;
-		}
 
-		public String getName() {
-			return name;
-		}
-
-		public String getDesc() {
-			return desc;
-		}
-	}
 }

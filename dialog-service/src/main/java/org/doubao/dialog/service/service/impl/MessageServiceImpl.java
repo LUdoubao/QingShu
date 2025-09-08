@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.dialog.service.config.DialogWebSocketHandler;
 import org.doubao.dialog.service.dto.*;
 import org.doubao.dialog.service.entity.AssistantDialog;
 import org.doubao.dialog.service.entity.AssistantMessage;
@@ -13,6 +14,7 @@ import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.ChatModule;
 import org.doubao.dialog.service.enums.DialogStatusEnum;
+import org.doubao.dialog.service.enums.MessagePushType;
 import org.doubao.dialog.service.enums.SenderTypeEnum;
 import org.doubao.dialog.service.feign.AIServiceClient;
 import org.doubao.dialog.service.feign.NotificationFeignClient;
@@ -20,6 +22,7 @@ import org.doubao.dialog.service.feign.UserFeignClient;
 import org.doubao.dialog.service.mapper.AssistantDialogMapper;
 import org.doubao.dialog.service.mapper.AssistantMessageMapper;
 import org.doubao.dialog.service.mapper.DialogSessionMapper;
+import org.doubao.dialog.service.messaging.DialogEventPublisher;
 import org.doubao.dialog.service.req.MessageSendReq;
 import org.doubao.dialog.service.req.NotificationReq;
 import org.doubao.dialog.service.service.*;
@@ -30,6 +33,7 @@ import org.doubao.dialog.service.vo.MessageVO;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.event.DialogEvent;
 import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +49,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -70,6 +76,8 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	@Autowired
 	private MongoTemplate mongoTemplate;
 
+	@Resource
+	private DialogEventPublisher dialogEventPublisher;
 	@Autowired
 	private DialogSessionMapper sessionMapper;
 
@@ -405,7 +413,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	}
 
 
-	// ===================== 接口实现 =====================
+	// ===================== 私信接口实现 =====================
 
 	/**
 	 * 发送消息核心逻辑：
@@ -569,7 +577,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		// 3. 重置会话最后消息信息（MySQL）
 		sessionPO.setLastMsgId(null);
 		sessionPO.setLastMsgContent(null);
-		sessionPO.setLastMsgTime(null);
+		sessionPO.setLastMsgTime(LocalDateTime.now());
 		sessionPO.setUnreadCount(0); // 清空消息时同步清零未读
 		sessionPO.setUpdatedTime(LocalDateTime.now());
 		sessionMapper.updateById(sessionPO);
@@ -746,7 +754,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		messagePO.setSendTime(LocalDateTime.now());
 		messagePO.setReadTime(null); // 初始未读
 		messagePO.setIsRevoked(0); // 初始未撤回
-		messagePO.setUpdatedAt(LocalDateTime.now()); // 新增updatedAt字段（需在PO中添加）
+		messagePO.setUpdatedAt(LocalDateTime.now());
 		return messagePO;
 	}
 
@@ -821,63 +829,19 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				// 2.1 在线：WebSocket实时推送
 				webSocketHandler.pushPrivateMessage(
 						receiverId,
-						messageVO
+						messageVO,
+						MessagePushType.PRIVATE_MSG
 				);
 			} else {
 				// 2.2 离线：通过MQ发送系统通知（调用notification-service）
-				sendOfflineNotification(messageVO, receiverId, sessionPO);
+				String senderName = getSenderName(messagePO.getSenderId());
+				dialogEventPublisher.sendOfflineNotification(messageVO, receiverId, sessionPO, senderName);
 			}
 		} catch (Exception e) {
 			// 推送失败：更新消息状态为FAILED，便于后续重发
 			updateMessageStatusToFailed(messagePO.getId());
 			org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
 					.error("推送消息给接收者{}失败，消息ID：{}", receiverId, messagePO.getId(), e);
-		}
-	}
-
-	/**
-	 * 发送离线系统通知（通过MQ）
-	 * @param messageVO 消息VO
-	 * @param receiverId 接收者ID
-	 * @param sessionPO 会话PO
-	 */
-	private void sendOfflineNotification(MessageVO messageVO, Long receiverId, DialogSession sessionPO) {
-		// 1. 构建通知请求参数
-		NotificationReq notificationReq = new NotificationReq();
-		notificationReq.setTargetUserId(receiverId);
-		notificationReq.setTitle("新私信消息");
-
-		// 2. 获取发送者名称（AI/用户）
-		String senderName = getSenderName(messageVO.getSenderId());
-
-		// 3. 构建通知内容（如：“AI助手：你好！”）
-		String content = String.format("%s：%s", senderName, messageVO.getContentPreview());
-		notificationReq.setContent(content);
-
-		// 4. 设置通知跳转参数（点击通知跳转至会话页）
-		JSONObject extra = new JSONObject();
-		extra.put("sessionId", sessionPO.getId());
-		extra.put("targetId", messageVO.getSenderId());
-		notificationReq.setExtra(extra.toJSONString());
-
-		// 5. 发送MQ消息（路由键：dialog.notification.push.{receiverId}）
-		// String routingKey = MqConfig.DIALOG_NOTIFICATION_ROUTING_KEY_PREFIX + receiverId;
-		// rabbitTemplate.convertAndSend(
-		// 		MqConfig.DIALOG_NOTIFICATION_EXCHANGE,
-		// 		routingKey,
-		// 		notificationReq
-		// );
-
-		// 6. 同步调用notification-service（兜底，确保通知发送）
-		try {
-			Result<Void> notifyResult = notificationFeignClient.sendNotification(notificationReq);
-			if (!notifyResult.isSuccess()) {
-				org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
-						.warn("同步发送离线通知失败，用户ID：{}，消息ID：{}", receiverId, messageVO.getId());
-			}
-		} catch (Exception e) {
-			org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
-					.error("同步调用notification-service异常，用户ID：{}", receiverId, e);
 		}
 	}
 
@@ -902,7 +866,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		// 3. WebSocket推送已读状态
 		webSocketHandler.pushMessage(
 				senderId,
-				DialogWebSocketHandler.MessagePushType.MSG_READ,
+				MessagePushType.MSG_READ,
 				readData
 		);
 	}

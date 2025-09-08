@@ -37,15 +37,15 @@ public class MessageSendReq {
 	 * 业务规则：
 	 * 1. 文字消息（TEXT）：支持中英文、数字、符号，需过滤敏感词（后端统一处理）
 	 * 2. 表情消息（EMOJI）：传递表情编码（如“[微笑]”“[大笑]”，需符合后端表情编码规范）
-	 * 3. 内容长度限制：最大2000字符（避免消息过大导致传输延迟）
+	 * 3. 内容长度限制：最大500字符（避免消息过大导致传输延迟）
 	 */
 	@NotBlank(message = "消息内容不能为空，请输入文字或选择表情")
-	@Size(max = 2000, message = "消息内容过长，最大支持2000字符")
+	@Size(max = 500, message = "消息内容过长，最大支持500字符")
 	@ApiModelProperty(
 			value = "消息内容（文字消息直接传文本，表情消息传表情编码如[微笑]）",
 			required = true,
 			example = "你好，这是一条测试消息！",
-			notes = "文字消息支持2000字符以内，表情消息需使用后端定义的编码格式"
+			notes = "文字消息支持500字符以内，表情消息需使用后端定义的编码格式"
 	)
 	private String content;
 
@@ -88,11 +88,11 @@ public class MessageSendReq {
 		this.sessionId = sessionId;
 	}
 
-	public @NotBlank(message = "消息内容不能为空，请输入文字或选择表情") @Size(max = 2000, message = "消息内容过长，最大支持2000字符") String getContent() {
+	public @NotBlank(message = "消息内容不能为空，请输入文字或选择表情") @Size(max = 500, message = "消息内容过长，最大支持2000字符") String getContent() {
 		return content;
 	}
 
-	public void setContent(@NotBlank(message = "消息内容不能为空，请输入文字或选择表情") @Size(max = 2000, message = "消息内容过长，最大支持2000字符") String content) {
+	public void setContent(@NotBlank(message = "消息内容不能为空，请输入文字或选择表情") @Size(max = 500, message = "消息内容过长，最大支持2000字符") String content) {
 		this.content = content;
 	}
 

@@ -99,6 +99,14 @@ public class MessageVO {
      */
     private String bubbleStyle;
 
+    public MessageVO() {
+    }
+
+    public MessageVO(Long sessionId, Long senderId) {
+        this.sessionId = sessionId;
+        this.senderId = senderId;
+    }
+
     /**
      * 从消息PO转换为VO（默认值处理）
      * @param messagePO 消息PO

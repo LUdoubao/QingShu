@@ -4,6 +4,7 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.doubao.dialog.service.feign.AuthServiceClient;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,8 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 	/** Redis缓存工具类：查询Token黑名单（如用户登出后已失效的Token） */
 	@Resource
 	private RedisCacheUtil redisCacheUtil;
+	@Resource
+	private AuthServiceClient authServiceClient;
 
 
 	// ========================= 核心拦截逻辑 =========================
@@ -86,30 +89,18 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
 		// 3. 校验Token是否在黑名单（如用户登出后已失效的Token，通过Redis快速查询）
 		String blacklistKey = TOKEN_BLACKLIST_PREFIX + token;
-		// String blacklistToken = redisCacheUtil.get(blacklistKey, String.class);
-		// if (StrUtil.isNotBlank(blacklistToken)) {
-		// 	log.warn("WebSocket auth failed | token in blacklist (clientIp: {}, token: {})",
-		// 			clientIp, maskToken(token)); // Token脱敏，避免日志泄露敏感信息
-		// 	setUnauthorizedResponse(response, "WebSocket认证失败：Token已失效，请重新登录");
-		// 	return false;
-		// }
+		String blacklistToken = redisCacheUtil.getString(blacklistKey, String.class);
+		if (StrUtil.isNotBlank(blacklistToken)) {
+			log.warn("WebSocket auth failed | token in blacklist (clientIp: {}, token: {})",
+					clientIp, maskToken(token)); // Token脱敏，避免日志泄露敏感信息
+			setUnauthorizedResponse(response, "WebSocket认证失败：Token已失效，请重新登录");
+			return false;
+		}
 
 		// 4. 调用认证服务解析Token（核心校验：签名合法性、过期时间、用户有效性）
-		TokenParseResult parseResult;
+		String parseResult;
 		try {
-			// parseResult = authService.parseAndValidateToken(token);
-		} catch (TokenExpiredException e) {
-			// Token过期异常（单独捕获，返回明确的过期提示）
-			log.warn("WebSocket auth failed | token expired (clientIp: {}, token: {})",
-					clientIp, maskToken(token));
-			setUnauthorizedResponse(response, "WebSocket认证失败：Token已过期，请重新登录");
-			return false;
-		} catch (TokenInvalidException e) {
-			// Token无效异常（签名错误、格式错误等非法Token场景）
-			log.error("WebSocket auth failed | invalid token (clientIp: {}, token: {}, error: {})",
-					clientIp, maskToken(token), e.getMessage());
-			setUnauthorizedResponse(response, "WebSocket认证失败：Token无效");
-			return false;
+			parseResult = authServiceClient.webSocket(token).getData();
 		} catch (Exception e) {
 			// 其他未知异常（如认证服务调用失败、网络异常等）
 			log.error("WebSocket auth failed | unknown error (clientIp: {}, token: {}, error: {})",
@@ -119,18 +110,17 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 		}
 
 		// 5. 校验解析结果（确保用户ID非空、用户状态正常，避免无效用户建立连接）
-		// if (ObjectUtil.isNull(parseResult.getUserId()) || !parseResult.isUserActive()) {
-		// 	log.warn("WebSocket auth failed | invalid user (clientIp: {}, userId: {}, isActive: {})",
-		// 			clientIp, parseResult.getUserId(), parseResult.isUserActive());
-		// 	setUnauthorizedResponse(response, "WebSocket认证失败：用户不存在或已被禁用");
-		// 	return false;
-		// }
+		if (ObjectUtil.isNull(parseResult)) {
+			log.warn("WebSocket auth failed | invalid user (clientIp: {}, userId: {})",
+					clientIp, parseResult);
+			setUnauthorizedResponse(response, "WebSocket认证失败：用户不存在或已被禁用");
+			return false;
+		}
 
 		// 6. 认证通过：将用户ID绑定到会话属性（供后续DialogWebSocketHandler使用，传递用户身份）
-		// Long userId = parseResult.getUserId();
-		// attributes.put(SESSION_ATTR_USER_ID, userId);
-		// log.info("WebSocket auth success | clientIp: {}, userId: {}, token: {}",
-		// 		clientIp, userId, maskToken(token));
+		attributes.put(SESSION_ATTR_USER_ID, parseResult);
+		log.info("WebSocket auth success | clientIp: {}, userId: {}, token: {}",
+				clientIp, parseResult, maskToken(token));
 
 		return true;
 	}
@@ -179,7 +169,6 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 	@Override
 	public void afterHandshake(ServerHttpRequest request, ServerHttpResponse response,
 							   WebSocketHandler wsHandler, Exception exception) {
-		// 无需额外处理，连接建立后的逻辑在DialogWebSocketHandler的afterConnectionEstablished中实现
 	}
 
 
@@ -267,24 +256,4 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 			this.tokenExpireTime = tokenExpireTime;
 		}
 	}
-
-	/**
-	 * Token过期异常（AuthService解析Token时抛出）
-	 */
-	public static class TokenExpiredException extends RuntimeException {
-		public TokenExpiredException(String message) {
-			super(message);
-		}
-	}
-
-	/**
-	 * Token无效异常（AuthService解析Token时抛出，如签名错误、格式错误）
-	 */
-	public static class TokenInvalidException extends RuntimeException {
-		public TokenInvalidException(String message) {
-			super(message);
-		}
-	}
-
-
 }

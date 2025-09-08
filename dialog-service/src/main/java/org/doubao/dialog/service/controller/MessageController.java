@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 
+import java.util.ArrayList;
+
 /**
  * 消息管理控制器
  * 提供接口：发送消息、查询历史消息、重发失败消息、清空会话消息、标记消息已读
@@ -52,7 +54,7 @@ public class MessageController {
      * 分页查询会话历史消息
      * @param sessionId 会话ID
      * @param pageNum 页码（默认1，倒序：最新消息在第1页）
-     * @param pageSize 页大小（默认20）
+     * @param pageSize 页大小（默认10）
      * @return 分页消息列表
      */
     @GetMapping("/history")
@@ -60,7 +62,7 @@ public class MessageController {
     public Result<Page<MessageVO>> getMessageHistory(
             @ApiParam(value = "会话ID", required = true) @RequestParam Long sessionId,
             @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
-            @ApiParam(value = "页大小", defaultValue = "20") @RequestParam(defaultValue = "20") Integer pageSize
+            @ApiParam(value = "页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -107,7 +109,6 @@ public class MessageController {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
 
-
         // 2. 调用Service清空消息
         messageService.clearSessionMessages(clearReq.getConversationId(), userId);
 
@@ -133,7 +134,7 @@ public class MessageController {
 
         // 2. 处理空列表（避免NullPointerException）
         if (msgIds == null) {
-            msgIds = new java.util.ArrayList<>();
+            msgIds = new ArrayList<>();
         }
 
         // 3. 调用Service标记已读

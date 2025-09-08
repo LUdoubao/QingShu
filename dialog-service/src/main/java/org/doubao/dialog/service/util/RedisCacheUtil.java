@@ -3,21 +3,20 @@ package org.doubao.dialog.service.util;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Redis缓存工具类
@@ -38,8 +37,11 @@ public class RedisCacheUtil {
 	// Redis核心操作模板（Spring Data Redis提供，自动注入）
 	@Resource
 	private RedisTemplate<String, Object> redisTemplate;
-
-
+	private ZSetOperations<String, Object> zSetOperations;
+	@PostConstruct
+	public void init() {
+		this.zSetOperations = redisTemplate.opsForZSet();
+	}
 	// ========================= 基础常量定义（对话业务专用） =========================
 	/** 会话列表缓存前缀：key格式=DIALOG_SESSION_LIST:{userId} */
 	public static final String DIALOG_SESSION_LIST_PREFIX = "DIALOG_SESSION_LIST:";
@@ -102,20 +104,27 @@ public class RedisCacheUtil {
 	 * @return 未读消息数（null时返回0）
 	 */
 	public Integer getSessionUnreadCount(Long userId, Long sessionId) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis getSessionUnreadCount failed | userId or sessionId is null");
-		// 	return 0;
-		// }
-		//
-		// // 1. 构建未读消息数Hash Key
-		// String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
-		// // 2. 查询Hash中指定会话的未读数量
-		// Integer unreadCount = hGet(unreadCountHashKey, sessionId.toString(), Integer.class);
-		// // 3. 空值处理（默认返回0）
-		// int result = ObjectUtil.isNull(unreadCount) ? 0 : unreadCount;
-		// log.debug("Redis getSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
-		// 		userId, sessionId, result);
-		// return result;
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis getSessionUnreadCount failed | userId or sessionId is null");
+			return 0;
+		}
+
+		// 1. 构建未读消息数Hash Key
+		String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
+		// 2. 查询Hash中指定会话的未读数量
+		Integer unreadCount = hGet(unreadCountHashKey, sessionId.toString(), Integer.class);
+		// 3. 空值处理（默认返回0）
+		int result = ObjectUtil.isNull(unreadCount) ? 0 : unreadCount;
+		log.debug("Redis getSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
+				userId, sessionId, result);
+		return result;
+	}
+
+	private Integer hGet(String unreadCountHashKey, String string, Class<Integer> integerClass) {
+		Object object = redisTemplate.opsForHash().get(unreadCountHashKey, string);
+		if (integerClass == Integer.class && object != null) {
+			return (Integer) object;
+		}
 		return 0;
 	}
 
@@ -127,24 +136,24 @@ public class RedisCacheUtil {
 	 * @param unreadCount 未读消息数（需≥0）
 	 */
 	public void setSessionUnreadCount(Long userId, Long sessionId, int unreadCount) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis setSessionUnreadCount failed | userId or sessionId is null");
-		// 	return;
-		// }
-		// if (unreadCount < 0) {
-		// 	log.warn("Redis setSessionUnreadCount failed | unreadCount < 0 (userId: {}, sessionId: {}, count: {})",
-		// 			userId, sessionId, unreadCount);
-		// 	throw new IllegalArgumentException("未读消息数不能为负数");
-		// }
-		//
-		// // 1. 构建未读消息数Hash Key
-		// String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
-		// // 2. 覆盖设置Hash中的未读数量
-		// hSet(unreadCountHashKey, sessionId.toString(), unreadCount);
-		// // 3. 刷新Hash缓存过期时间（7天，用户长期不活跃自动清理）
-		// expire(unreadCountHashKey, 7, TimeUnit.DAYS);
-		// log.debug("Redis setSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
-		// 		userId, sessionId, unreadCount);
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis setSessionUnreadCount failed | userId or sessionId is null");
+			return;
+		}
+		if (unreadCount < 0) {
+			log.error("Redis setSessionUnreadCount failed | unreadCount < 0 (userId: {}, sessionId: {}, count: {})",
+					userId, sessionId, unreadCount);
+			throw new IllegalArgumentException("未读消息数不能为负数");
+		}
+
+		// 1. 构建未读消息数Hash Key
+		String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
+		// 2. 覆盖设置Hash中的未读数量
+		hSet(unreadCountHashKey, sessionId.toString(), unreadCount);
+		// 3. 刷新Hash缓存过期时间（7天，用户长期不活跃自动清理）
+		expire(unreadCountHashKey, 7, TimeUnit.DAYS);
+		log.info("Redis setSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
+				userId, sessionId, unreadCount);
 	}
 
 	/**
@@ -154,17 +163,20 @@ public class RedisCacheUtil {
 	 * @return 会话PO对象（缓存不存在返回null）
 	 */
 	public DialogSession getSessionCache(Long userId, Long sessionId) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis getSessionCache failed | userId or sessionId is null");
-		// 	return null;
-		// }
-		//
-		// String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
-		// DialogSession sessionPO = get(sessionSingleKey, DialogSession.class);
-		// log.debug("Redis getSessionCache | userId: {}, sessionId: {}, exists: {}",
-		// 		userId, sessionId, ObjectUtil.isNotNull(sessionPO));
-		// return sessionPO;
-		return null;
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis getSessionCache failed | userId or sessionId is null");
+			return null;
+		}
+
+		String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
+		Object object = redisTemplate.opsForValue().get(sessionSingleKey);
+		if (ObjectUtil.isNull(object)) {
+			return null;
+		}
+		DialogSession sessionPO = (DialogSession) object;
+		log.debug("Redis getSessionCache | userId: {}, sessionId: {}, exists: {}",
+				userId, sessionId, ObjectUtil.isNotNull(sessionPO));
+		return sessionPO;
 	}
 
 	/**
@@ -176,28 +188,32 @@ public class RedisCacheUtil {
 	 * @param sessionCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void setSessionCache(Long userId, Long sessionId, DialogSession sessionPO, Integer sessionCacheExpireSec) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId) || ObjectUtil.isNull(sessionPO)) {
-		// 	log.warn("Redis setSessionCache failed | userId/sessionId/sessionPO is null");
-		// 	return;
-		// }
-		// if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
-		// 	log.warn("Redis setSessionCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
-		// 			userId, sessionId, sessionCacheExpireSec);
-		// 	throw new IllegalArgumentException("会话缓存过期时间必须大于0秒");
-		// }
-		//
-		// // 1. 构建单个会话缓存Key
-		// String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
-		// // 2. 存储会话缓存（带过期时间）
-		// set(sessionSingleKey, sessionPO, sessionCacheExpireSec, TimeUnit.SECONDS);
-		// log.debug("Redis setSessionCache success | userId: {}, sessionId: {}, expireSec: {}",
-		// 		userId, sessionId, sessionCacheExpireSec);
-		//
-		// // 3. 同步更新会话列表ZSet（若会话列表存在，更新排序分数）
-		// if (ObjectUtil.isNotNull(sessionPO.getLastMsgTime())) {
-		// 	long score = sessionPO.getLastMsgTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-		// 	addSessionToListCache(userId, sessionId, score, sessionCacheExpireSec);
-		// }
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId) || ObjectUtil.isNull(sessionPO)) {
+			log.error("Redis setSessionCache failed | userId/sessionId/sessionPO is null");
+			return;
+		}
+		if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
+			log.error("Redis setSessionCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
+					userId, sessionId, sessionCacheExpireSec);
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID);
+		}
+
+		// 1. 构建单个会话缓存Key
+		String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
+		// 2. 存储会话缓存（带过期时间）
+		setSession(sessionSingleKey, sessionPO, sessionCacheExpireSec, TimeUnit.SECONDS);
+		log.info("Redis setSessionCache success | userId: {}, sessionId: {}, expireSec: {}",
+				userId, sessionId, sessionCacheExpireSec);
+
+		// 3. 同步更新会话列表ZSet（若会话列表存在，更新排序分数）
+		if (ObjectUtil.isNotNull(sessionPO.getLastMsgTime())) {
+			long score = sessionPO.getLastMsgTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
+			addSessionToListCache(userId, sessionId, score, sessionCacheExpireSec);
+		}
+	}
+
+	private void setSession(String sessionSingleKey, DialogSession sessionPO, Integer sessionCacheExpireSec, TimeUnit timeUnit) {
+		redisTemplate.opsForValue().set(sessionSingleKey, sessionPO, sessionCacheExpireSec, timeUnit);
 	}
 
 	/**
@@ -209,24 +225,24 @@ public class RedisCacheUtil {
 	 * @param sessionCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void addSessionToListCache(Long userId, Long sessionId, long score, Integer sessionCacheExpireSec) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis addSessionToListCache failed | userId or sessionId is null");
-		// 	return;
-		// }
-		// if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
-		// 	log.warn("Redis addSessionToListCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
-		// 			userId, sessionId, sessionCacheExpireSec);
-		// 	throw new IllegalArgumentException("会话列表缓存过期时间必须大于0秒");
-		// }
-		//
-		// // 1. 构建会话列表ZSet Key
-		// String sessionListZSetKey = buildSessionListZSetKey(userId);
-		// // 2. 添加/更新ZSet中的会话（score更新会自动调整排序）
-		// zSetOperations.add(sessionListZSetKey, sessionId.toString(), score);
-		// // 3. 刷新ZSet缓存过期时间
-		// expire(sessionListZSetKey, sessionCacheExpireSec, TimeUnit.SECONDS);
-		// log.debug("Redis addSessionToListCache success | userId: {}, sessionId: {}, score: {}, expireSec: {}",
-		// 		userId, sessionId, score, sessionCacheExpireSec);
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis addSessionToListCache failed | userId or sessionId is null");
+			return;
+		}
+		if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
+			log.error("Redis addSessionToListCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
+					userId, sessionId, sessionCacheExpireSec);
+			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID);
+		}
+
+		// 1. 构建会话列表ZSet Key
+		String sessionListZSetKey = buildSessionListZSetKey(userId);
+		// 2. 添加/更新ZSet中的会话（score更新会自动调整排序）
+		zSetOperations.add(sessionListZSetKey, sessionId.toString(), score);
+		// 3. 刷新ZSet缓存过期时间
+		expire(sessionListZSetKey, sessionCacheExpireSec, TimeUnit.SECONDS);
+		log.info("Redis addSessionToListCache success | userId: {}, sessionId: {}, score: {}, expireSec: {}",
+				userId, sessionId, score, sessionCacheExpireSec);
 	}
 
 
@@ -238,7 +254,7 @@ public class RedisCacheUtil {
 	 */
 	public void deleteMessageCache(Long sessionId) {
 		if (ObjectUtil.isNull(sessionId)) {
-			log.warn("Redis deleteMessageCache failed | sessionId is null");
+			log.error("Redis deleteMessageCache failed | sessionId is null");
 			return;
 		}
 
@@ -246,14 +262,14 @@ public class RedisCacheUtil {
 		String messageKeyPrefix = buildMessageSingleKeyPrefix(sessionId);
 		// 2. 模糊查询所有匹配的消息Key
 		Set<String> messageKeys = redisTemplate.keys(messageKeyPrefix + "*");
-		if (ObjectUtil.isEmpty(messageKeys)) {
-			log.debug("Redis deleteMessageCache | no message cache found (sessionId: {})", sessionId);
+		if (ObjectUtil.isEmpty(messageKeys) || messageKeys == null) {
+			log.info("Redis deleteMessageCache | no message cache found (sessionId: {})", sessionId);
 			return;
 		}
 
 		// 3. 批量删除消息缓存
 		redisTemplate.delete(messageKeys);
-		log.debug("Redis deleteMessageCache success | sessionId: {}, deletedCount: {}",
+		log.info("Redis deleteMessageCache success | sessionId: {}, deletedCount: {}",
 				sessionId, messageKeys.size());
 	}
 
@@ -263,17 +279,24 @@ public class RedisCacheUtil {
 	 * @return 消息PO对象（缓存不存在返回null）
 	 */
 	public DialogMessage getMessageCache(String msgId) {
-		// if (StrUtil.isBlank(msgId)) {
-		// 	log.warn("Redis getMessageCache failed | msgId is blank");
-		// 	return null;
-		// }
-		//
-		// String messageSingleKey = buildMessageSingleKey(msgId);
-		// DialogMessage messagePO = get(messageSingleKey, DialogMessage.class);
-		// log.debug("Redis getMessageCache | msgId: {}, exists: {}",
-		// 		msgId, ObjectUtil.isNotNull(messagePO));
-		// return messagePO;
-		return null;
+		if (StrUtil.isBlank(msgId)) {
+			log.warn("Redis getMessageCache failed | msgId is blank");
+			return null;
+		}
+
+		String messageSingleKey = buildMessageSingleKey(msgId);
+		DialogMessage messagePO = getMessage(messageSingleKey, DialogMessage.class);
+		log.debug("Redis getMessageCache | msgId: {}, exists: {}",
+				msgId, ObjectUtil.isNotNull(messagePO));
+		return messagePO;
+	}
+
+	private DialogMessage getMessage(String messageSingleKey, Class<DialogMessage> dialogMessageClass) {
+		Object object = redisTemplate.opsForValue().get(messageSingleKey);
+		if (object == null) {
+			return null;
+		}
+		return JSON.parseObject(JSON.toJSONString(object), dialogMessageClass);
 	}
 
 	/**
@@ -283,21 +306,25 @@ public class RedisCacheUtil {
 	 * @param msgCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void setMessageCache(DialogMessage messagePO, Integer msgCacheExpireSec) {
-		// if (ObjectUtil.isNull(messagePO) || StrUtil.isBlank(messagePO.getId())) {
-		// 	log.warn("Redis setMessageCache failed | messagePO or msgId is null/blank");
-		// 	return;
-		// }
-		// if (ObjectUtil.isNull(msgCacheExpireSec) || msgCacheExpireSec <= 0) {
-		// 	log.warn("Redis setMessageCache failed | invalid expire sec (msgId: {}, sec: {})",
-		// 			messagePO.getId(), msgCacheExpireSec);
-		// 	throw new IllegalArgumentException("消息缓存过期时间必须大于0秒");
-		// }
-		//
-		// String messageSingleKey = buildMessageSingleKey(messagePO.getId());
-		// // 存储消息缓存（带过期时间）
-		// set(messageSingleKey, messagePO, msgCacheExpireSec, TimeUnit.SECONDS);
-		// log.debug("Redis setMessageCache success | msgId: {}, expireSec: {}",
-		// 		messagePO.getId(), msgCacheExpireSec);
+		if (ObjectUtil.isNull(messagePO) || StrUtil.isBlank(messagePO.getId())) {
+			log.error("Redis setMessageCache failed | messagePO or msgId is null/blank");
+			return;
+		}
+		if (ObjectUtil.isNull(msgCacheExpireSec) || msgCacheExpireSec <= 0) {
+			log.error("Redis setMessageCache failed | invalid expire sec (msgId: {}, sec: {})",
+					messagePO.getId(), msgCacheExpireSec);
+			throw new IllegalArgumentException("消息缓存过期时间必须大于0秒");
+		}
+
+		String messageSingleKey = buildMessageSingleKey(messagePO.getId());
+		// 存储消息缓存（带过期时间）
+		setMessage(messageSingleKey, messagePO, msgCacheExpireSec, TimeUnit.SECONDS);
+		log.debug("Redis setMessageCache success | msgId: {}, expireSec: {}",
+				messagePO.getId(), msgCacheExpireSec);
+	}
+
+	private void setMessage(String messageSingleKey, DialogMessage messagePO, Integer msgCacheExpireSec, TimeUnit timeUnit) {
+		redisTemplate.opsForValue().set(messageSingleKey, messagePO, msgCacheExpireSec, timeUnit);
 	}
 
 
@@ -309,19 +336,23 @@ public class RedisCacheUtil {
 	 * @param sessionId 会话ID
 	 */
 	public void incrementSessionUnreadCount(Long receiverId, Long sessionId) {
-		// if (ObjectUtil.isNull(receiverId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis incrementSessionUnreadCount failed | receiverId or sessionId is null");
-		// 	return;
-		// }
-		//
-		// // 1. 构建未读消息数Hash Key
-		// String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + receiverId;
-		// // 2. 原子递增1（若Hash或hashKey不存在，自动创建并初始化为1）
-		// Long newUnreadCount = hIncrement(unreadCountHashKey, sessionId.toString(), 1);
-		// // 3. 刷新Hash缓存过期时间（7天）
-		// expire(unreadCountHashKey, 7, TimeUnit.DAYS);
-		// log.debug("Redis incrementSessionUnreadCount success | receiverId: {}, sessionId: {}, newCount: {}",
-		// 		receiverId, sessionId, newUnreadCount);
+		if (ObjectUtil.isNull(receiverId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis incrementSessionUnreadCount failed | receiverId or sessionId is null");
+			return;
+		}
+
+		// 1. 构建未读消息数Hash Key
+		String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + receiverId;
+		// 2. 原子递增1（若Hash或hashKey不存在，自动创建并初始化为1）
+		Long newUnreadCount = hIncrement(unreadCountHashKey, sessionId.toString(), 1);
+		// 3. 刷新Hash缓存过期时间（7天）
+		expire(unreadCountHashKey, 7, TimeUnit.DAYS);
+		log.info("Redis incrementSessionUnreadCount success | receiverId: {}, sessionId: {}, newCount: {}",
+				receiverId, sessionId, newUnreadCount);
+	}
+
+	private Long hIncrement(String unreadCountHashKey, String hashKey, int i) {
+		return redisTemplate.opsForHash().increment(unreadCountHashKey, hashKey, i);
 	}
 
 
@@ -364,4 +395,25 @@ public class RedisCacheUtil {
 		return StrUtil.format("{}{}:", DIALOG_MESSAGE_SINGLE_PREFIX, sessionId);
 	}
 
+	public String getString(String blacklistKey, Class<String> stringClass) {
+		if (stringClass == null) {
+			return null;
+		}
+		if (stringClass == String.class) {
+			return String.valueOf(redisTemplate.opsForValue().get(blacklistKey));
+		}
+		return JSON.toJSONString(redisTemplate.opsForValue().get(blacklistKey));
+	}
+
+	public void set(String onlineKey, String id, int i, TimeUnit timeUnit) {
+		redisTemplate.opsForValue().set(onlineKey, id, i, timeUnit);
+	}
+
+	public void expire(String onlineKey, int i, TimeUnit timeUnit) {
+		redisTemplate.expire(onlineKey, i, timeUnit);
+	}
+
+	public void hSet(String unreadCountKey, String string, int i) {
+		redisTemplate.opsForHash().put(unreadCountKey, string, i);
+	}
 }

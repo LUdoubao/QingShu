@@ -5,13 +5,11 @@ import org.doubao.mall.common.entity.UserInfo;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-@FeignClient(name = "user-service")
-public interface UserFeignClient {
-	@PostMapping("/user/listByIds")
-	Result<List<UserInfo>> getUsersByIds(Set<Long> userIds);
+// AuthServiceClient.java
+@FeignClient(name = "auth-service", path = "/auth")
+public interface AuthServiceClient {
+	@GetMapping("/token/webSocket")
+	Result<String> webSocket(@RequestBody String token);
 }
