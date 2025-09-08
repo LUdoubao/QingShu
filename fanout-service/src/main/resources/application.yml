@@ -115,6 +115,11 @@ fanout:
         - type: QUEUE
           name: notification.exchange
           routingKey: notification.user.quote
+    - message-type: NEW_MESSAGE
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.user.message
   cache:
     redis:
       fans-key-prefix: "follow:fans:"        # 粉丝列表缓存前缀
