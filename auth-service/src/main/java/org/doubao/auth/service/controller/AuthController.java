@@ -42,10 +42,32 @@ public class AuthController {
 		try {
 			LOGGER.info("进入 /auth/verify，收到 token: {}", token);
 			Claims claims = jwtUtil.getClaimsFromToken(token);
+			if (claims != null) {
+				String userId = claims.get("userId", String.class);
+				String subject = claims.getSubject();
+				LOGGER.info("subject {} 登录验证", subject);
+				LOGGER.info("用户 {} 登录验证成功", userId);
+			}
 			return ResponseEntity.ok(claims);
 		} catch (JwtException e) {
 			LOGGER.error("token验证失败",e);
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+		}
+	}
+	@GetMapping("/token/webSocket")
+	public Result<String> webSocket(@RequestParam String token) {
+		try {
+			LOGGER.info("进入 /auth/webSocket，收到 token: {}", token);
+			Claims claims = jwtUtil.getClaimsFromToken(token);
+			if (claims != null) {
+				String userId = claims.get("userId", String.class);
+				LOGGER.info("用户 {} webSocket验证成功", userId);
+				return Result.success(userId);
+			}
+			return Result.error("Token验证失败");
+		} catch (JwtException e) {
+			LOGGER.error("token验证失败",e);
+			return Result.error("Token验证失败");
 		}
 	}
 
