@@ -462,48 +462,118 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	}
 
 	/**
-	 * 查询历史消息核心逻辑：
-	 * 1. 校验会话归属（当前用户是否为会话参与者）
-	 * 2. MongoDB分页查询（按发送时间倒序）
-	 * 3. 转换为VO并补充发送者信息（头像、昵称）
-	 * 4. 返回分页结果
+	 * 修复后的查询历史消息核心逻辑：
+	 * 1. 校验当前用户与会话的关联关系
+	 * 2. 获取双方独立会话ID（当前用户的会话 + 对方用户的会话）
+	 * 3. MongoDB分页查询双方会话下的所有消息（按发送时间倒序）
+	 * 4. 转换为VO并补充发送者信息（头像、昵称）
+	 * 5. 返回分页结果
 	 */
 	@Override
 	public Page<MessageVO> getMessageHistory(Long sessionId, Long userId, Integer pageNum, Integer pageSize) {
-		// 1. 校验会话归属（当前用户是否为会话参与者）
-		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, userId);
-		if (sessionPO == null) {
+		// 1. 校验当前用户的会话合法性（获取当前用户的会话，提取聊天对方ID）
+		DialogSession currentUserSession = sessionService.getSessionByIdAndUserId(sessionId, userId);
+		if (currentUserSession == null) {
 			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
 		}
-		// 补充校验：若当前用户是targetId，需确认会话存在（因SessionService查询的是userId=当前用户的会话）
-		if (!Objects.equals(sessionPO.getUserId(), userId) && !Objects.equals(sessionPO.getTargetId(), userId)) {
+		// 确认当前用户是会话参与者（防非法访问）
+		if (!Objects.equals(currentUserSession.getUserId(), userId) && !Objects.equals(currentUserSession.getTargetId(), userId)) {
 			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_ALLOW_SEE);
 		}
 
-		// 2. 构建MongoDB分页查询条件（按发送时间倒序）
-		// 计算跳过的条数：(pageNum-1)*pageSize（MongoDB分页从0开始）
-		long skip = (long) (pageNum - 1) * pageSize;
-		Query query = Query.query(Criteria.where("sessionId").is(sessionId))
-				.with(Sort.by(Sort.Direction.DESC, "sendTime"))
+		// 2. 获取聊天对方ID（targetId），查询对方与当前用户的独立会话
+		Long targetId = Objects.equals(currentUserSession.getUserId(), userId)
+				? currentUserSession.getTargetId()
+				: currentUserSession.getUserId();
+		// 查询对方用户的会话（对方作为userId，当前用户作为targetId）
+		DialogSession targetUserSession = getTargetUserSession(targetId, userId);
+		log.info("targetUserSession: {}", JSONObject.toJSONString(targetUserSession));
+
+		// 3. 收集双方会话ID（过滤null，避免空指针）
+		List<Long> sessionIds = new ArrayList<>();
+		sessionIds.add(currentUserSession.getId());
+		if (targetUserSession != null) {
+			sessionIds.add(targetUserSession.getId());
+		}
+		log.info("sessionIds: {}", JSONObject.toJSONString(sessionIds));
+
+		// 4. 构建MongoDB分页查询条件（查询双方会话下的所有消息，按发送时间倒序）
+		long skip = (long) (pageNum - 1) * pageSize; // 计算跳过条数（MongoDB分页从0开始）
+		Criteria criteria = Criteria.where("sessionId").in(sessionIds); // 关键：查询双方会话ID
+				// .and("deleted").is(0); // 排除已删除消息
+		Query query = Query.query(criteria)
+				.with(Sort.by(Sort.Direction.DESC, "sendTime")) // 按发送时间倒序（最新消息在前）
+				// .with(Sort.by(Sort.Direction.DESC, "_id")) // 同一时间消息按ID倒序，避免乱序
 				.skip(skip)
 				.limit(pageSize);
 
-		// 3. 执行查询（总数+列表）
-		long total = mongoTemplate.count(query, DialogSession.class);
+		// 5. 执行查询（统计总数 + 查询消息列表）
+		long total = mongoTemplate.count(Query.query(criteria), DialogMessage.class); // 修正：查询消息表（DialogMessage）
+		log.info("total: {}", total);
+
 		List<DialogMessage> messagePOList = mongoTemplate.find(query, DialogMessage.class);
+		log.info("messagePOList: {}", JSONObject.toJSONString(messagePOList));
 
-		// 4. 转换为VO并补充发送者信息
+		// 6. 转换为VO并补充发送者信息（保持原有逻辑，新增消息方向判断）
 		List<MessageVO> messageVOList = messagePOList.stream()
-				.map(messagePO -> convertToMessageVO(messagePO, userId))
+				.map(messagePO -> convertToMessageVO(messagePO, userId, sessionId))
 				.collect(Collectors.toList());
+		log.info("messageVOList: {}", JSONObject.toJSONString(messageVOList));
 
-		// 5. 构建分页结果
+		// 7. 构建分页结果
 		Page<MessageVO> resultPage = new Page<>(pageNum, pageSize);
 		resultPage.setTotal(total);
 		resultPage.setRecords(messageVOList);
 
-		// 6. 返回结果
+		// 8. 标记当前用户接收的消息为已读（优化：查询后自动标已读）
+		markReceivedMessagesAsRead(sessionIds, userId, messagePOList);
+
 		return resultPage;
+	}
+	/**
+	 * 标记当前用户接收的消息为已读（批量处理）
+	 * @param sessionIds 双方会话ID列表
+	 * @param currentUserId 当前用户ID（接收者）
+	 * @param messagePOList 已查询的消息列表
+	 */
+	private void markReceivedMessagesAsRead(List<Long> sessionIds, Long currentUserId, List<DialogMessage> messagePOList) {
+		if (messagePOList.isEmpty()) {
+			return;
+		}
+		// 筛选当前用户接收的未读消息（senderId≠currentUserId + status=SENT）
+		List<String> unreadMsgIds = messagePOList.stream()
+				.filter(msg -> !Objects.equals(msg.getSenderId(), currentUserId))
+				.filter(msg -> Objects.equals(msg.getStatus(), DialogMessage.MessageStatusEnum.SENT))
+				.map(DialogMessage::getId)
+				.collect(Collectors.toList());
+		if (unreadMsgIds.isEmpty()) {
+			return;
+		}
+		// 批量标记已读（复用原有逻辑，遍历双方会话ID处理）
+		for (Long sessionId : sessionIds) {
+			try {
+				markMessagesAsRead(sessionId, currentUserId, unreadMsgIds);
+			} catch (Exception e) {
+				log.warn("标记会话[{}]消息已读失败", sessionId, e);
+				// 单个会话失败不影响整体，继续处理其他会话
+			}
+		}
+	}
+
+	/**
+	 * 查询对方用户与当前用户的独立会话
+	 * @param targetUserId 对方用户ID（会话所有者）
+	 * @param currentUserId 当前用户ID（会话目标）
+	 * @return 对方用户的会话（可能为null，如对方未创建会话）
+	 */
+	private DialogSession getTargetUserSession(Long targetUserId, Long currentUserId) {
+		LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(DialogSession::getUserId, targetUserId) // 对方是会话所有者
+				.eq(DialogSession::getTargetId, currentUserId) // 目标是当前用户
+				.eq(DialogSession::getSessionType, "USER") // 仅用户间会话（排除AI会话）
+				.eq(DialogSession::getDeleted, 0) // 未删除
+				.last("limit 1"); // 确保只返回一条（唯一索引保障）
+		return sessionMapper.selectOne(queryWrapper);
 	}
 
 	/**
@@ -624,7 +694,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		Query query = Query.query(criteria);
 
 		// 3. 统计未读消息数量（用于后续同步未读计数）
-		long unreadCount = mongoTemplate.count(query, DialogSession.class);
+		long unreadCount = mongoTemplate.count(query, DialogMessage.class);
 		if (unreadCount == 0) {
 			return; // 无未读消息，无需操作
 		}
@@ -634,7 +704,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		update.set("status", DialogMessage.MessageStatusEnum.READ.getValue())
 				.set("readTime", LocalDateTime.now())
 				.set("updatedAt", LocalDateTime.now());
-		mongoTemplate.updateMulti(query, update, DialogSession.class);
+		mongoTemplate.updateMulti(query, update, DialogMessage.class);
 
 		// 5. 同步未读计数（清零）
 		sessionService.clearSessionUnread(receiverId, sessionId);
@@ -821,11 +891,14 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	@Async // 异步处理，避免阻塞消息发送主流程
 	protected void pushMessageToReceiver(DialogMessage messagePO, Long receiverId, DialogSession sessionPO) {
 		try {
+			DialogSession targetUserSession = getTargetUserSession(receiverId, sessionPO.getUserId());
+
 			// 1. 转换消息PO为VO（用于推送）
-			MessageVO messageVO = convertToMessageVO(messagePO, receiverId);
+			MessageVO messageVO = convertToMessageVO(messagePO, receiverId, targetUserSession != null ? targetUserSession.getId() : null);
 
 			// 2. 检查接收者是否在线（WebSocket会话是否存在）
 			if (webSocketHandler.isUserOnline(receiverId)) {
+				log.info("在线推送消息给接收者{}，消息ID：{}", receiverId, messagePO.getId());
 				// 2.1 在线：WebSocket实时推送
 				webSocketHandler.pushPrivateMessage(
 						receiverId,
@@ -919,10 +992,13 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * @param currentUserId 当前用户ID（用于判断消息方向：自己发送/对方发送）
 	 * @return 消息VO
 	 */
-	private MessageVO convertToMessageVO(DialogMessage messagePO, Long currentUserId) {
+	private MessageVO convertToMessageVO(DialogMessage messagePO, Long currentUserId, Long sessionId) {
 		MessageVO messageVO = new MessageVO();
 		BeanUtils.copyProperties(messagePO, messageVO);
+		messageVO.setStatus(messagePO.getStatus().getValue());
+		messageVO.setContentType(messagePO.getContentType().getValue());
 
+		messageVO.setShowSessionId(sessionId);
 		// 1. 补充消息方向（自己发送/对方发送）
 		messageVO.setSelfSend(Objects.equals(messagePO.getSenderId(), currentUserId));
 

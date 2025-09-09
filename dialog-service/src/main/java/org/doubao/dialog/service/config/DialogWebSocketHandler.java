@@ -54,7 +54,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 		// 1. 从会话属性中获取用户ID（Token解析逻辑在WebSocketInterceptor中完成）
-		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
+		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
+		log.info("afterConnectionEstablished-WebSocket receive message | userId: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object)) ;
 		if (ObjectUtil.isNull(userId)) {
 			log.error("WebSocket connection failed | userId is null (sessionId: {})", session.getId());
 			session.close(CloseStatus.POLICY_VIOLATION.withReason("用户身份验证失败"));
@@ -89,7 +91,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
 		// 1. 从会话属性中获取用户ID
-		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
+		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
+		log.info("afterConnectionClosed-WebSocket receive message | userId: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object)) ;
 		if (ObjectUtil.isNull(userId)) {
 			log.error("WebSocket connection closed | userId is null (sessionId: {})", session.getId());
 			return;
@@ -120,7 +124,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
+		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
+		log.info("handleTextMessage-WebSocket receive message | userId: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object)) ;
 		String msgContent = message.getPayload();
 		log.info("WebSocket receive message | userId: {}, sessionId: {}, content: {}",
 				userId, session.getId(), msgContent);
@@ -194,6 +200,8 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 
 		// 1. 获取用户在线会话
+		log.info("WebSocket push private message onlineUserSessionMap {}",
+				JSON.toJSONString(onlineUserSessionMap));
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
 			log.error("WebSocket push message failed | user offline (userId: {})", userId);

@@ -50,6 +50,12 @@ public class DialogSession extends BaseDel {
     private String lastMsgContent;
 
     /**
+     * 最后一条消息是否是自己发送的
+     * 枚举：0（对方发送）、1（自己发送）
+     */
+    private Integer isLastMsgOwner = 1;
+
+    /**
      * 最后一条消息时间
      * 说明：用于会话列表排序（倒序）
      */
@@ -96,6 +102,14 @@ public class DialogSession extends BaseDel {
             }
             throw new IllegalArgumentException("无效的会话类型：" + value);
         }
+    }
+
+    public Integer getIsLastMsgOwner() {
+        return isLastMsgOwner;
+    }
+
+    public void setIsLastMsgOwner(Integer isLastMsgOwner) {
+        this.isLastMsgOwner = isLastMsgOwner;
     }
 
     public Long getId() {

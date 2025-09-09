@@ -71,6 +71,8 @@ public class SessionVO {
      */
     private Integer isTop;
 
+    private Integer isLastMsgOwner = 1;
+
     /**
      * 会话创建时间
      */
@@ -113,6 +115,14 @@ public class SessionVO {
         sessionVO.setHasUnread(sessionPO.getUnreadCount() > 0);
 
         return sessionVO;
+    }
+
+    public Integer getIsLastMsgOwner() {
+        return isLastMsgOwner;
+    }
+
+    public void setIsLastMsgOwner(Integer isLastMsgOwner) {
+        this.isLastMsgOwner = isLastMsgOwner;
     }
 
     public Long getId() {

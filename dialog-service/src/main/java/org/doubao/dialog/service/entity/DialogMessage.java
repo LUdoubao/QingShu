@@ -81,6 +81,8 @@ public class DialogMessage {
      */
     private LocalDateTime updatedAt;
 
+    private Integer deleted = 0;
+
     /**
      * 消息类型枚举
      */
@@ -135,6 +137,14 @@ public class DialogMessage {
             }
             throw new IllegalArgumentException("无效的消息状态：" + value);
         }
+    }
+
+    public Integer getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Integer deleted) {
+        this.deleted = deleted;
     }
 
     public String getId() {

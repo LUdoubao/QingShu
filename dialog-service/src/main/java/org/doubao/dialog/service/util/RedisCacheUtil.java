@@ -400,7 +400,11 @@ public class RedisCacheUtil {
 			return null;
 		}
 		if (stringClass == String.class) {
-			return String.valueOf(redisTemplate.opsForValue().get(blacklistKey));
+			Object object = redisTemplate.opsForValue().get(blacklistKey);
+			if (object == null) {
+				return null;
+			}
+			return object.toString();
 		}
 		return JSON.toJSONString(redisTemplate.opsForValue().get(blacklistKey));
 	}

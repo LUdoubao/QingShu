@@ -22,6 +22,11 @@ public class MessageVO {
     private Long sessionId;
 
     /**
+     * 可显示的会话ID(场景会话B显示会话A给自己发送的消息)
+     */
+    private Long showSessionId;
+
+    /**
      * 发送者ID
      */
     private Long senderId;
@@ -143,6 +148,14 @@ public class MessageVO {
 
     public String getId() {
         return id;
+    }
+
+    public Long getShowSessionId() {
+        return showSessionId;
+    }
+
+    public void setShowSessionId(Long showSessionId) {
+        this.showSessionId = showSessionId;
     }
 
     public void setId(String id) {
