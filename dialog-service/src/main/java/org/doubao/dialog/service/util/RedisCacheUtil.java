@@ -32,6 +32,8 @@ public class RedisCacheUtil {
 	public static final String DIALOG_SESSION_LIST_ZSET_PREFIX = "DIALOG_SESSION_LIST_ZSET:";
 	/** 单条消息缓存前缀：key格式=DIALOG_MESSAGE:{msgId} */
 	public static final String DIALOG_MESSAGE_SINGLE_PREFIX = "DIALOG_MESSAGE:";
+	/** 输入中状态缓存前缀：key格式=DIALOG_TYPING_STATUS:{userId} */
+	public static final String DIALOG_TYPING_STATUS_PREFIX = "DIALOG_TYPING_STATUS:";
 
 	private static final Logger log = LoggerFactory.getLogger(RedisCacheUtil.class);
 	// Redis核心操作模板（Spring Data Redis提供，自动注入）
@@ -60,23 +62,27 @@ public class RedisCacheUtil {
 	 * @param sessionId 会话ID
 	 */
 	public void deleteSessionCache(Long userId, Long sessionId) {
-		// if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
-		// 	log.warn("Redis deleteSessionCache failed | userId or sessionId is null");
-		// 	return;
-		// }
-		//
-		// // 1. 构建单个会话缓存Key
-		// String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
-		// // 2. 删除单个会话缓存
-		// delete(sessionSingleKey);
-		// log.debug("Redis deleteSessionCache success | userId: {}, sessionId: {}, key: {}",
-		// 		userId, sessionId, sessionSingleKey);
-		//
-		// // 3. 从会话列表ZSet中移除该会话（同步清理列表缓存）
-		// String sessionListZSetKey = buildSessionListZSetKey(userId);
-		// zSetOperations.remove(sessionListZSetKey, sessionId.toString());
-		// log.debug("Redis remove session from list ZSet | userId: {}, sessionId: {}, key: {}",
-		// 		userId, sessionId, sessionListZSetKey);
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+			log.error("Redis deleteSessionCache failed | userId or sessionId is null");
+			return;
+		}
+
+		// 1. 构建单个会话缓存Key
+		String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
+		// 2. 删除单个会话缓存
+		delete(sessionSingleKey);
+		log.info("Redis deleteSessionCache success | userId: {}, sessionId: {}, key: {}",
+				userId, sessionId, sessionSingleKey);
+
+		// 3. 从会话列表ZSet中移除该会话（同步清理列表缓存）
+		String sessionListZSetKey = buildSessionListZSetKey(userId);
+		zSetOperations.remove(sessionListZSetKey, sessionId.toString());
+		log.info("Redis remove session from list ZSet | userId: {}, sessionId: {}, key: {}",
+				userId, sessionId, sessionListZSetKey);
+	}
+
+	public void delete(String sessionSingleKey) {
+		redisTemplate.delete(sessionSingleKey);
 	}
 
 	/**
@@ -409,8 +415,8 @@ public class RedisCacheUtil {
 		return JSON.toJSONString(redisTemplate.opsForValue().get(blacklistKey));
 	}
 
-	public void set(String onlineKey, String id, int i, TimeUnit timeUnit) {
-		redisTemplate.opsForValue().set(onlineKey, id, i, timeUnit);
+	public void set(String onlineKey, String value, int i, TimeUnit timeUnit) {
+		redisTemplate.opsForValue().set(onlineKey, value, i, timeUnit);
 	}
 
 	public void expire(String onlineKey, int i, TimeUnit timeUnit) {
