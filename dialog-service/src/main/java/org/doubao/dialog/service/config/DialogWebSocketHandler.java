@@ -161,10 +161,57 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			case "MSG_READ_CONFIRM":
 				handleMsgReadConfirm(userId, msgMap); // 处理消息已读确认
 				break;
+			case "CONVERSATION_ENTER":
+				handleConversationEnter(userId, msgMap);
+				break;
+			case "CONVERSATION_LEAVE":
+				handleConversationLeave(userId, msgMap);
+				break;
+			case "TYPING_STATUS":
+				handleTypingStatus(userId, msgMap);
 			default:
 				sendErrorMessage(session, "不支持的消息类型：" + msgType);
 				log.error("WebSocket unsupported msgType | userId: {}, msgType: {}", userId, msgType);
 		}
+	}
+
+	private void handleTypingStatus(Long userId, Map<String, Object> msgMap) {
+		Object sessionIdObj = msgMap.get("sessionId");
+		Object isTypingObj = msgMap.get("isTyping");
+		if (ObjectUtil.isNull(sessionIdObj)) {
+			log.error("WebSocket handle typing status failed | missing param (userId: {})", userId);
+			return;
+		}
+		if (ObjectUtil.isNull(isTypingObj)) {
+			log.error("WebSocket handle typing status failed | missing param (userId: {})", userId);
+			return;
+		}
+		long sessionId = Long.parseLong(sessionIdObj.toString());
+		redisCacheUtil.set(RedisCacheUtil.DIALOG_TYPING_STATUS_PREFIX + sessionId + ":" +userId.toString(),
+				isTypingObj.toString(),10, TimeUnit.SECONDS);
+		// 推送给对方用户 TODO
+
+	}
+
+	private void handleConversationLeave(Long userId, Map<String, Object> msgMap) {
+		Object sessionIdObj = msgMap.get("sessionId");
+		if (ObjectUtil.isNull(sessionIdObj)) {
+			log.error("WebSocket handle conversation leave failed | missing param (userId: {})", userId);
+			return;
+		}
+		Long sessionId = Long.valueOf(sessionIdObj.toString());
+		redisCacheUtil.deleteSessionCache(userId, sessionId);
+	}
+
+	private void handleConversationEnter(Long userId, Map<String, Object> msgMap) {
+
+		Object sessionIdObj = msgMap.get("sessionId");
+		if (ObjectUtil.isNull(sessionIdObj)) {
+			log.warn("WebSocket handle conversation enter failed | missing param (userId: {})", userId);
+			return;
+		}
+		Long sessionId = Long.valueOf(sessionIdObj.toString());
+		redisCacheUtil.addSessionToListCache(userId, sessionId, 0, 30 * 60);
 	}
 
 	/**
