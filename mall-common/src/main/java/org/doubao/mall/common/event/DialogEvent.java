@@ -1,7 +1,7 @@
 package org.doubao.mall.common.event;
 
 /**
- *  私信事件
+ *  私信事件(用于APP通知等)
  */
 public class DialogEvent extends SystemEvent {
 	private String extra;
