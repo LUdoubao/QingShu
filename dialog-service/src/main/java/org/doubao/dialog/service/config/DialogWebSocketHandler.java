@@ -5,8 +5,11 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.doubao.dialog.service.entity.DialogMessage;
+import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.MessagePushType;
+import org.doubao.dialog.service.mapper.DialogSessionMapper;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.MessageVO;
 import org.slf4j.Logger;
@@ -54,6 +57,8 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	private RedisCacheUtil redisCacheUtil;
 	@Autowired
 	private MongoTemplate mongoTemplate;
+	@Autowired
+	private DialogSessionMapper sessionMapper;
 	private static final Logger log = LoggerFactory.getLogger(DialogWebSocketHandler.class);
 
 	// ========================= 连接生命周期管理 =========================
@@ -91,6 +96,18 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		// 4. 日志记录连接成功
 		log.info("WebSocket连接建立成功 | 用户ID: {}, 会话ID: {}, 当前在线用户数: {}",
 				userId, session.getId(), onlineUserSessionMap.size());
+
+		// 5. 推送用户上线消息
+		// 获取该用户的所有为targetId对话
+		List<DialogSession> sessions = sessionMapper.selectList(
+				new LambdaQueryWrapper<>(DialogSession.class).eq(DialogSession::getTargetId, userId)
+		);
+		for (DialogSession dialogSession : sessions) {
+			JSONObject data = new JSONObject();
+			data.put("sessionId", dialogSession.getId());
+			data.put("sessionType", dialogSession.getSessionType().getValue());
+			pushMessage(dialogSession.getUserId(), MessagePushType.USER_ONLINE, data);
+		}
 	}
 
 	/**
@@ -123,6 +140,17 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		// 4. 日志记录连接关闭
 		log.info("WebSocket连接已关闭 | 用户ID: {}, 会话ID: {}, 关闭状态: {}, 当前在线用户数: {}",
 				userId, session.getId(), status, onlineUserSessionMap.size());
+		// 推送用户下线消息
+		// 获取该用户的所有为targetId对话
+		List<DialogSession> sessions = sessionMapper.selectList(
+				new LambdaQueryWrapper<>(DialogSession.class).eq(DialogSession::getTargetId, userId)
+		);
+		for (DialogSession dialogSession : sessions) {
+			JSONObject data = new JSONObject();
+			data.put("sessionId", dialogSession.getId());
+			data.put("sessionType", dialogSession.getSessionType().getValue());
+			pushMessage(dialogSession.getUserId(), MessagePushType.USER_OFFLINE, data);
+		}
 	}
 
 	// ========================= 客户端消息处理 =========================
@@ -384,14 +412,33 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		heartbeatResp.put("msgType", "HEARTBEAT_RESP");
 		heartbeatResp.put("timestamp", System.currentTimeMillis());
 		String jsonResp = JSON.toJSONString(heartbeatResp);
-
+		// 获取该用户的所有为targetId对话
+		List<DialogSession> sessions = sessionMapper.selectList(
+				new LambdaQueryWrapper<>(DialogSession.class).eq(DialogSession::getTargetId, userId)
+		);
 		try {
 			session.sendMessage(new TextMessage(jsonResp));
+			for (DialogSession dialogSession : sessions) {
+				JSONObject data = new JSONObject();
+				data.put("sessionId", dialogSession.getId());
+				data.put("sessionType", dialogSession.getSessionType().getValue());
+				pushMessage(dialogSession.getUserId(), MessagePushType.USER_ONLINE, data);
+			}
+			log.info("用户上线消息已推送 | 用户ID: {}", userId);
 			log.info("心跳处理成功 | 用户ID: {}, 会话ID: {}", userId, session.getId());
 		} catch (IOException e) {
+			for (DialogSession dialogSession : sessions) {
+				JSONObject data = new JSONObject();
+				data.put("sessionId", dialogSession.getId());
+				data.put("sessionType", dialogSession.getSessionType().getValue());
+				pushMessage(dialogSession.getUserId(), MessagePushType.USER_OFFLINE, data);
+			}
+			log.info("用户下线消息已推送 | 用户ID: {}", userId);
 			log.error("心跳响应发送失败 | 用户ID: {}, 会话ID: {}, 错误信息: {}",
 					userId, session.getId(), e.getMessage(), e);
 		}
+
+
 	}
 
 	/**

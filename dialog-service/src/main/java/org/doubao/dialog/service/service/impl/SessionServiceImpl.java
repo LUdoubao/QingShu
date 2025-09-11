@@ -1,6 +1,6 @@
 package org.doubao.dialog.service.service.impl;
 
-import io.vavr.collection.Set;
+import org.doubao.dialog.service.config.DialogWebSocketHandler;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.feign.UserFeignClient;
 import org.doubao.dialog.service.mapper.DialogSessionMapper;
@@ -45,6 +45,8 @@ public class SessionServiceImpl implements SessionService {
     // ===================== 依赖注入 =====================
     @Autowired
     private DialogSessionMapper sessionMapper;
+    @Autowired
+    private DialogWebSocketHandler dialogWebSocketHandler;
 
     @Autowired
     private UserFeignClient userFeignClient;
@@ -157,12 +159,30 @@ public class SessionServiceImpl implements SessionService {
                 .map(sessionPO -> convertToSessionVO(sessionPO, userId))
                 .collect(Collectors.toList());
 
+        // 获取目标用户在线状态
+        Map<Long, Boolean> onlineStatusMap = getTargetUserOnlineStatus(pagedSessions);
+        sessionVOList.forEach(sessionVO -> {
+            sessionVO.setTargetUserIsOnline(onlineStatusMap.getOrDefault(sessionVO.getTargetId(),  false));
+        });
         // 8. 构建分页结果（总数为自己创建的会话数）
         Page<SessionVO> resultPage = new Page<>(pageNum, pageSize);
         resultPage.setTotal(ownSessions.size());
         resultPage.setRecords(sessionVOList);
 
         return resultPage;
+    }
+
+    private Map<Long, Boolean> getTargetUserOnlineStatus(List<DialogSession> pagedSessions) {
+        Map<Long, Boolean> onlineStatusMap = new HashMap<>();
+        Set<Long> collect = pagedSessions.stream().map(DialogSession::getTargetId).collect(Collectors.toSet());
+        for (Long targetId : collect) {
+            if (dialogWebSocketHandler.isUserOnline(targetId)) {
+                onlineStatusMap.put(targetId, true);
+            } else {
+                onlineStatusMap.put(targetId, false);
+            }
+        }
+        return onlineStatusMap;
     }
     // ===================== 新增辅助方法 =====================
     /**
