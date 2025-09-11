@@ -5,11 +5,17 @@ import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
+import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.enums.MessagePushType;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.MessageVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -46,7 +52,8 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	/** Redis缓存工具类（用于在线状态、会话信息） */
 	@Resource
 	private RedisCacheUtil redisCacheUtil;
-
+	@Autowired
+	private MongoTemplate mongoTemplate;
 	private static final Logger log = LoggerFactory.getLogger(DialogWebSocketHandler.class);
 
 	// ========================= 连接生命周期管理 =========================
@@ -431,9 +438,30 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				MessagePushType.MSG_READ,
 				readData
 		);
-		// TODO: 此处可扩展逻辑：更新数据库中消息的已读状态（批量标记该会话中小于lastReadMsgId的消息为已读）
-	}
 
+		// 4、更新数据库中消息的已读状态
+		readConfirmMarkMessages(sessionId, userId, msgIds);
+	}
+	public void readConfirmMarkMessages(Long sessionId, Long receiverId, List<String> msgIds) {
+		log.info("readConfirmMarkMessages Mark messages as read | sessionId: {}, receiverId: {}, msgIds: {}", sessionId, receiverId, msgIds);
+		Criteria criteria = Criteria.where("sessionId").is(sessionId)
+				.and("receiverId").is(receiverId)
+				.and("status").is(DialogMessage.MessageStatusEnum.SENT.getValue()); // 仅SENT状态可标记为READ
+
+		// 若msgIds不为空，添加消息ID条件
+		if (!msgIds.isEmpty()) {
+			criteria.and("_id").in(msgIds);
+		}
+
+		Query query = Query.query(criteria);
+
+		Update update = new Update();
+		update.set("status", DialogMessage.MessageStatusEnum.READ.getValue())
+				.set("readTime", LocalDateTime.now())
+				.set("updatedAt", LocalDateTime.now());
+		mongoTemplate.updateMulti(query, update, DialogMessage.class);
+		log.info("readConfirmMarkMessages Mark messages as read success | sessionId: {}, receiverId: {}, msgIds: {}", sessionId, receiverId, msgIds);
+	}
 
 	// ========================= 在线状态查询工具方法 =========================
 	/**
