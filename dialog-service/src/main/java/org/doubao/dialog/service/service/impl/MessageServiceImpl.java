@@ -52,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -499,11 +500,11 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 		// 4. 构建MongoDB分页查询条件（查询双方会话下的所有消息，按发送时间倒序）
 		long skip = (long) (pageNum - 1) * pageSize; // 计算跳过条数（MongoDB分页从0开始）
-		Criteria criteria = Criteria.where("sessionId").in(sessionIds); // 关键：查询双方会话ID
-				// .and("deleted").is(0); // 排除已删除消息
+		Criteria criteria = Criteria.where("sessionId").in(sessionIds) // 关键：查询双方会话ID
+				.and("deleted").is(0); // 排除已删除消息
 		Query query = Query.query(criteria)
 				.with(Sort.by(Sort.Direction.DESC, "sendTime")) // 按发送时间倒序（最新消息在前）
-				// .with(Sort.by(Sort.Direction.DESC, "_id")) // 同一时间消息按ID倒序，避免乱序
+				.with(Sort.by(Sort.Direction.DESC, "_id")) // 同一时间消息按ID倒序，避免乱序
 				.skip(skip)
 				.limit(pageSize);
 
@@ -540,12 +541,12 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		if (messagePOList.isEmpty()) {
 			return;
 		}
-		// 筛选当前用户接收的未读消息（senderId≠currentUserId + status=SENT）
 		List<String> unreadMsgIds = messagePOList.stream()
-				.filter(msg -> !Objects.equals(msg.getSenderId(), currentUserId))
+				.filter(msg -> Objects.equals(msg.getReceiverId(), currentUserId))
 				.filter(msg -> Objects.equals(msg.getStatus(), DialogMessage.MessageStatusEnum.SENT))
 				.map(DialogMessage::getId)
 				.collect(Collectors.toList());
+		log.info("-----------------------unreadMsgIds: {}", JSONObject.toJSONString(unreadMsgIds));
 		if (unreadMsgIds.isEmpty()) {
 			return;
 		}
@@ -555,7 +556,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				markMessagesAsRead(sessionId, currentUserId, unreadMsgIds);
 			} catch (Exception e) {
 				log.warn("标记会话[{}]消息已读失败", sessionId, e);
-				// 单个会话失败不影响整体，继续处理其他会话
 			}
 		}
 	}
@@ -672,15 +672,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	@Transactional(rollbackFor = Exception.class)
 	public void markMessagesAsRead(Long sessionId, Long receiverId, List<String> msgIds) {
 		// 1. 校验会话归属（当前用户是否为接收者）
-		DialogSession sessionPO = sessionService.getSessionByIdAndUserId(sessionId, receiverId);
+		DialogSession sessionPO = sessionService.getSessionByIdAndReceiverId(sessionId, receiverId);
 		if (sessionPO == null) {
+			log.warn("会话不存在1");
 			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
 		}
-		// 补充校验：当前用户必须是会话接收者
-		if (!Objects.equals(sessionPO.getUserId(), receiverId) && !Objects.equals(sessionPO.getTargetId(), receiverId)) {
-			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_NOT_ALLOW_MARK_READ);
+		DialogSession mySession = getTargetUserSession(receiverId, sessionPO.getUserId());
+		if (mySession == null) {
+			log.warn("会话不存在2");
+			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
 		}
-
 		// 2. 构建MongoDB查询条件
 		Criteria criteria = Criteria.where("sessionId").is(sessionId)
 				.and("receiverId").is(receiverId)
@@ -707,7 +708,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		mongoTemplate.updateMulti(query, update, DialogMessage.class);
 
 		// 5. 同步未读计数（清零）
-		sessionService.clearSessionUnread(receiverId, sessionId);
+		sessionService.clearSessionUnread(receiverId, mySession.getId());
 
 		// 6. 推送已读状态给发送者（获取发送者ID并推送）
 		Long senderId = Objects.equals(sessionPO.getUserId(), receiverId)
@@ -934,7 +935,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		JSONObject readData = new JSONObject();
 		readData.put("sessionId", sessionId);
 		readData.put("msgIds", msgIds.isEmpty() ? "all" : msgIds); // 空列表表示所有消息已读
-		readData.put("readTime", LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+		readData.put("readTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
 		// 3. WebSocket推送已读状态
 		webSocketHandler.pushMessage(
