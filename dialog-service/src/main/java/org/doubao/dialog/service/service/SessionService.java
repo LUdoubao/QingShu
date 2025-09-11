@@ -59,5 +59,6 @@ public interface SessionService {
      * @return 会话PO（不存在则返回null）
      */
     DialogSession getSessionByIdAndUserId(Long sessionId, Long userId);
+    DialogSession getSessionByIdAndReceiverId(Long sessionId, Long receiverId);
 }
   
