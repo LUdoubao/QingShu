@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class DialogWebSocketHandler extends TextWebSocketHandler {
 
-	// ========================= 常量常量与状态管理 =========================
+	// ========================= 常量与状态管理 =========================
 	/** WebSocket会话属性：用户ID（从Token解析后存入） */
 	private static final String SESSION_ATTR_USER_ID = "userId";
 	/** 在线用户WebSocket会话映射（线程安全，key=用户ID，value=WebSocketSession） */
@@ -67,10 +67,10 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	public void afterConnectionEstablished(WebSocketSession session) throws Exception {
 		// 1. 从会话属性中获取用户ID（Token解析逻辑在WebSocketInterceptor中完成）
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
-		log.info("afterConnectionEstablished-WebSocket receive message | userId: {}", object);
-		Long userId = Long.valueOf(String.valueOf(object)) ;
+		log.info("WebSocket连接建立-接收消息 | 用户ID: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object));
 		if (ObjectUtil.isNull(userId)) {
-			log.error("WebSocket connection failed | userId is null (sessionId: {})", session.getId());
+			log.error("WebSocket连接失败 | 用户ID为空 (会话ID: {})", session.getId());
 			session.close(CloseStatus.POLICY_VIOLATION.withReason("用户身份验证失败"));
 			return;
 		}
@@ -80,7 +80,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		if (ObjectUtil.isNotNull(oldSession) && oldSession.isOpen()) {
 			// 关闭旧连接（确保同一用户仅保持一个有效连接）
 			oldSession.close(CloseStatus.NORMAL.withReason("账号在其他设备登录，当前连接已断开"));
-			log.error("WebSocket old session closed | userId: {}, oldSessionId: {}, newSessionId: {}",
+			log.warn("WebSocket旧会话已关闭 | 用户ID: {}, 旧会话ID: {}, 新会话ID: {}",
 					userId, oldSession.getId(), session.getId());
 		}
 
@@ -89,7 +89,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		redisCacheUtil.set(onlineKey, session.getId(), 30, TimeUnit.MINUTES);
 
 		// 4. 日志记录连接成功
-		log.info("WebSocket connection established | userId: {}, sessionId: {}, onlineUserCount: {}",
+		log.info("WebSocket连接建立成功 | 用户ID: {}, 会话ID: {}, 当前在线用户数: {}",
 				userId, session.getId(), onlineUserSessionMap.size());
 	}
 
@@ -104,10 +104,10 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
 		// 1. 从会话属性中获取用户ID
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
-		log.info("afterConnectionClosed-WebSocket receive message | userId: {}", object);
-		Long userId = Long.valueOf(String.valueOf(object)) ;
+		log.info("WebSocket连接关闭-接收消息 | 用户ID: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object));
 		if (ObjectUtil.isNull(userId)) {
-			log.error("WebSocket connection closed | userId is null (sessionId: {})", session.getId());
+			log.error("WebSocket连接关闭 | 用户ID为空 (会话ID: {})", session.getId());
 			return;
 		}
 
@@ -121,10 +121,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 
 		// 4. 日志记录连接关闭
-		log.info("WebSocket connection closed | userId: {}, sessionId: {}, status: {}, onlineUserCount: {}",
+		log.info("WebSocket连接已关闭 | 用户ID: {}, 会话ID: {}, 关闭状态: {}, 当前在线用户数: {}",
 				userId, session.getId(), status, onlineUserSessionMap.size());
 	}
-
 
 	// ========================= 客户端消息处理 =========================
 	/**
@@ -137,10 +136,10 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
-		log.info("handleTextMessage-WebSocket receive message | userId: {}", object);
-		Long userId = Long.valueOf(String.valueOf(object)) ;
+		log.info("处理文本消息-WebSocket接收消息 | 用户ID: {}", object);
+		Long userId = Long.valueOf(String.valueOf(object));
 		String msgContent = message.getPayload();
-		log.info("WebSocket receive message | userId: {}, sessionId: {}, content: {}",
+		log.info("WebSocket接收消息 | 用户ID: {}, 会话ID: {}, 消息内容: {}",
 				userId, session.getId(), msgContent);
 
 		// 1. 校验消息格式（非空+JSON格式）
@@ -153,7 +152,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			msgMap = JSON.parseObject(msgContent, new TypeReference<Map<String, Object>>() {});
 		} catch (Exception e) {
 			sendErrorMessage(session, "消息格式错误，必须为JSON字符串");
-			log.error("WebSocket parse message failed | userId: {}, content: {}, error: {}",
+			log.error("WebSocket解析消息失败 | 用户ID: {}, 消息内容: {}, 错误信息: {}",
 					userId, msgContent, e.getMessage(), e);
 			return;
 		}
@@ -174,58 +173,72 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				handleMsgReadConfirm(userId, msgMap); // 处理消息已读确认
 				break;
 			case "CONVERSATION_ENTER":
-				handleConversationEnter(userId, msgMap);
+				handleConversationEnter(userId, msgMap); // 处理进入会话
 				break;
 			case "CONVERSATION_LEAVE":
-				handleConversationLeave(userId, msgMap);
+				handleConversationLeave(userId, msgMap); // 处理离开会话
 				break;
 			case "TYPING_STATUS":
-				handleTypingStatus(userId, msgMap);
+				handleTypingStatus(userId, msgMap); // 处理输入状态更新
 				break;
 			default:
 				sendErrorMessage(session, "不支持的消息类型：" + msgType);
-				log.error("WebSocket unsupported msgType | userId: {}, msgType: {}", userId, msgType);
+				log.error("WebSocket不支持的消息类型 | 用户ID: {}, 消息类型: {}", userId, msgType);
 		}
 	}
 
+	/**
+	 * 处理用户输入状态更新
+	 * @param userId 用户ID
+	 * @param msgMap 消息数据
+	 */
 	private void handleTypingStatus(Long userId, Map<String, Object> msgMap) {
 		Object data = msgMap.getOrDefault("data", new HashMap<>());
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
 		Object isTypingObj = jsonData.get("isTyping");
 		if (ObjectUtil.isNull(sessionIdObj)) {
-			log.error("WebSocket handle typing status failed | missing param (userId: {})", userId);
+			log.error("处理输入状态失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
 		if (ObjectUtil.isNull(isTypingObj)) {
-			log.error("WebSocket handle typing status failed | missing param (userId: {})", userId);
+			log.error("处理输入状态失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
 		long sessionId = Long.parseLong(sessionIdObj.toString());
-		redisCacheUtil.set(RedisCacheUtil.DIALOG_TYPING_STATUS_PREFIX + sessionId + ":" +userId.toString(),
-				isTypingObj.toString(),10, TimeUnit.SECONDS);
-		// 推送给对方用户 TODO
-
+		redisCacheUtil.set(RedisCacheUtil.DIALOG_TYPING_STATUS_PREFIX + sessionId + ":" + userId,
+				isTypingObj.toString(), 10, TimeUnit.SECONDS);
+		// TODO 推送给对方用户
 	}
 
+	/**
+	 * 处理离开会话事件
+	 * @param userId 用户ID
+	 * @param msgMap 消息数据
+	 */
 	private void handleConversationLeave(Long userId, Map<String, Object> msgMap) {
 		Object data = msgMap.getOrDefault("data", new HashMap<>());
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
 		if (ObjectUtil.isNull(sessionIdObj)) {
-			log.error("WebSocket handle conversation leave failed | missing param (userId: {})", userId);
+			log.error("处理离开会话失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
 		Long sessionId = Long.valueOf(sessionIdObj.toString());
 		redisCacheUtil.deleteSessionCache(userId, sessionId);
 	}
 
+	/**
+	 * 处理进入会话事件
+	 * @param userId 用户ID
+	 * @param msgMap 消息数据
+	 */
 	private void handleConversationEnter(Long userId, Map<String, Object> msgMap) {
 		Object data = msgMap.getOrDefault("data", new HashMap<>());
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
 		if (ObjectUtil.isNull(sessionIdObj)) {
-			log.warn("WebSocket handle conversation enter failed | missing param (userId: {})", userId);
+			log.warn("处理进入会话失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
 		Long sessionId = Long.valueOf(sessionIdObj.toString());
@@ -241,7 +254,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
 		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
-		log.error("WebSocket transport error | userId: {}, sessionId: {}, error: {}",
+		log.error("WebSocket传输错误 | 用户ID: {}, 会话ID: {}, 错误信息: {}",
 				userId, session.getId(), exception.getMessage(), exception);
 
 		// 异常时关闭会话（触发afterConnectionClosed回调，清理在线状态）
@@ -250,50 +263,46 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 	}
 
-
 	// ========================= 消息发送工具方法 =========================
 	/**
 	 * 向指定用户推送私信消息（实时对话核心方法）
-	 *
 	 * @param userId    目标用户ID
 	 * @param messageVO 消息VO（包含消息ID、内容、发送者等信息）
+	 * @param messagePushType 消息推送类型
 	 */
 	public void pushPrivateMessage(Long userId, MessageVO messageVO, MessagePushType messagePushType) {
 		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(messageVO)) {
-			log.error("WebSocket push message failed | userId or messageVO is null");
+			log.error("推送私信失败 | 用户ID或消息内容为空");
 			return;
 		}
 
 		// 1. 获取用户在线会话
-		log.info("WebSocket push private message onlineUserSessionMap {}",
-				JSON.toJSONString(onlineUserSessionMap.keySet()));
+		log.info("推送私信-在线用户会话映射: {}", JSON.toJSONString(onlineUserSessionMap.keySet()));
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.error("WebSocket push message failed | user offline (userId: {})", userId);
+			log.info("推送私信失败 | 用户已离线 (用户ID: {})", userId);
 			return;
 		}
 
 		// 2. 构建推送消息（JSON格式，包含消息类型和数据）
 		Map<String, Object> pushMsg = new ConcurrentHashMap<>(2);
-		pushMsg.put("msgType", messagePushType.getName()); // 消息类型：私信
+		pushMsg.put("msgType", messagePushType.getName());
 		pushMsg.put("data", messageVO);
 		String jsonMsg = JSON.toJSONString(pushMsg);
 
-		// 3. 发送消息（带异常处理，避免单用户推送失败影响整体）
+		// 3. 发送消息（带异常处理）
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.info("WebSocket push private message success | userId: {}, msgId: {}",
-					userId, messageVO.getId());
+			log.info("私信推送成功 | 用户ID: {}, 消息ID: {}", userId, messageVO.getId());
 		} catch (IOException e) {
-			log.error("WebSocket push private message failed | userId: {}, msgId: {}, error: {}",
+			log.error("私信推送失败 | 用户ID: {}, 消息ID: {}, 错误信息: {}",
 					userId, messageVO.getId(), e.getMessage(), e);
 			// 推送失败时关闭会话（后续消息走离线推送）
 			if (session.isOpen()) {
 				try {
 					session.close(CloseStatus.SERVER_ERROR.withReason("消息推送失败，连接已断开"));
 				} catch (IOException ex) {
-					log.error("WebSocket close session failed | userId: {}, sessionId: {}",
-							userId, session.getId(), ex);
+					log.error("关闭会话失败 | 用户ID: {}, 会话ID: {}", userId, session.getId(), ex);
 				}
 			}
 		}
@@ -307,30 +316,28 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	public void pushSystemNotify(Long userId, String notifyContent, String notifyType) {
 		if (ObjectUtil.isNull(userId) || StrUtil.isBlank(notifyContent) || StrUtil.isBlank(notifyType)) {
-			log.error("WebSocket push notify failed | param is null (userId: {}, notifyType: {})",
-					userId, notifyType);
+			log.error("推送系统通知失败 | 参数缺失 (用户ID: {}, 通知类型: {})", userId, notifyType);
 			return;
 		}
 
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.info("WebSocket push notify failed | user offline (userId: {})", userId);
+			log.info("推送系统通知失败 | 用户已离线 (用户ID: {})", userId);
 			return;
 		}
 
 		// 构建系统通知消息格式
 		Map<String, Object> notifyMsg = new ConcurrentHashMap<>(3);
-		notifyMsg.put("msgType", "SYSTEM_NOTIFY"); // 消息类型：系统通知
-		notifyMsg.put("notifyType", notifyType);   // 通知子类型
-		notifyMsg.put("content", notifyContent);   // 通知内容
+		notifyMsg.put("msgType", "SYSTEM_NOTIFY");
+		notifyMsg.put("notifyType", notifyType);
+		notifyMsg.put("content", notifyContent);
 		String jsonMsg = JSON.toJSONString(notifyMsg);
 
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.info("WebSocket push system notify success | userId: {}, notifyType: {}",
-					userId, notifyType);
+			log.info("系统通知推送成功 | 用户ID: {}, 通知类型: {}", userId, notifyType);
 		} catch (IOException e) {
-			log.error("WebSocket push system notify failed | userId: {}, notifyType: {}, error: {}",
+			log.error("系统通知推送失败 | 用户ID: {}, 通知类型: {}, 错误信息: {}",
 					userId, notifyType, e.getMessage(), e);
 		}
 	}
@@ -342,7 +349,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	private void sendErrorMessage(WebSocketSession session, String errorMsg) {
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.error("WebSocket send error message failed | session closed");
+			log.error("发送错误消息失败 | 会话已关闭");
 			return;
 		}
 
@@ -353,14 +360,12 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.info("WebSocket send error message | sessionId: {}, errorMsg: {}",
-					session.getId(), errorMsg);
+			log.info("错误消息已发送 | 会话ID: {}, 错误内容: {}", session.getId(), errorMsg);
 		} catch (IOException e) {
-			log.error("WebSocket send error message failed | sessionId: {}, errorMsg: {}, ex: {}",
+			log.error("发送错误消息失败 | 会话ID: {}, 错误内容: {}, 异常信息: {}",
 					session.getId(), errorMsg, e.getMessage(), e);
 		}
 	}
-
 
 	// ========================= 具体消息类型处理 =========================
 	/**
@@ -382,10 +387,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonResp));
-			log.info("WebSocket handle heartbeat success | userId: {}, sessionId: {}",
-					userId, session.getId());
+			log.info("心跳处理成功 | 用户ID: {}, 会话ID: {}", userId, session.getId());
 		} catch (IOException e) {
-			log.error("WebSocket send heartbeat resp failed | userId: {}, sessionId: {}, error: {}",
+			log.error("心跳响应发送失败 | 用户ID: {}, 会话ID: {}, 错误信息: {}",
 					userId, session.getId(), e.getMessage(), e);
 		}
 	}
@@ -403,8 +407,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object sessionIdObj = jsonData.get("sessionId");
 		Object sendIdObj = jsonData.get("sendId");
 		Object msgId = jsonData.get("msgId");
-		log.info("WebSocket handle msg read confirm | sendIdObj: {}, sessionId: {}, msgId: {}",
-				sendIdObj, sessionIdObj, msgId);
+		log.info("处理消息已读确认 | 发送方ID: {}, 会话ID: {}, 消息ID: {}", sendIdObj, sessionIdObj, msgId);
 
 		Long sessionId = null;
 		Long sendId = null;
@@ -412,8 +415,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			sessionId = Long.parseLong(sessionIdObj.toString());
 			sendId = Long.parseLong(sendIdObj.toString());
 		} catch (NumberFormatException e) {
-			log.error("WebSocket handle msg read confirm failed | sessionId is not number (userId: {}, sessionId: {})",
-					userId, sessionIdObj, e);
+			log.error("处理消息已读确认失败 | 会话ID格式错误 (用户ID: {}, 会话ID: {})", userId, sessionIdObj, e);
 			return;
 		}
 
@@ -423,8 +425,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		// 刷新未读消息数缓存过期时间（7天）
 		redisCacheUtil.expire(unreadCountKey, 7, TimeUnit.DAYS);
 
-		log.info("WebSocket handle msg read confirm success | userId: {}, sessionId: {}, lastReadMsgId: {}",
-				userId, sessionId, msgId);
+		log.info("消息已读确认处理成功 | 用户ID: {}, 会话ID: {}, 最后已读消息ID: {}", userId, sessionId, msgId);
 		JSONObject readData = new JSONObject();
 		List<String> msgIds = new ArrayList<>();
 		msgIds.add(msgId.toString());
@@ -433,20 +434,23 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		readData.put("readTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
 
 		// 3. WebSocket推送已读状态
-		pushMessage(
-				sendId,
-				MessagePushType.MSG_READ,
-				readData
-		);
+		pushMessage(sendId, MessagePushType.MSG_READ, readData);
 
-		// 4、更新数据库中消息的已读状态
+		// 4. 更新数据库中消息的已读状态
 		readConfirmMarkMessages(sessionId, userId, msgIds);
 	}
+
+	/**
+	 * 标记消息为已读状态（MongoDB操作）
+	 * @param sessionId 会话ID
+	 * @param receiverId 接收者ID
+	 * @param msgIds 消息ID列表
+	 */
 	public void readConfirmMarkMessages(Long sessionId, Long receiverId, List<String> msgIds) {
-		log.info("readConfirmMarkMessages Mark messages as read | sessionId: {}, receiverId: {}, msgIds: {}", sessionId, receiverId, msgIds);
+		log.info("标记消息为已读 | 会话ID: {}, 接收者ID: {}, 消息ID列表: {}", sessionId, receiverId, msgIds);
 		Criteria criteria = Criteria.where("sessionId").is(sessionId)
 				.and("receiverId").is(receiverId)
-				.and("status").is(DialogMessage.MessageStatusEnum.SENT.getValue()); // 仅SENT状态可标记为READ
+				.and("status").is(DialogMessage.MessageStatusEnum.SENT.getValue());
 
 		// 若msgIds不为空，添加消息ID条件
 		if (!msgIds.isEmpty()) {
@@ -454,13 +458,12 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 
 		Query query = Query.query(criteria);
-
 		Update update = new Update();
 		update.set("status", DialogMessage.MessageStatusEnum.READ.getValue())
 				.set("readTime", LocalDateTime.now())
 				.set("updatedAt", LocalDateTime.now());
 		mongoTemplate.updateMulti(query, update, DialogMessage.class);
-		log.info("readConfirmMarkMessages Mark messages as read success | sessionId: {}, receiverId: {}, msgIds: {}", sessionId, receiverId, msgIds);
+		log.info("消息标记为已读成功 | 会话ID: {}, 接收者ID: {}, 消息ID列表: {}", sessionId, receiverId, msgIds);
 	}
 
 	// ========================= 在线状态查询工具方法 =========================
@@ -474,7 +477,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			return false;
 		}
 
-		// 1. 先查内存映射（性能优先，避免Redis交互）
+		// 1. 先查内存映射（性能优先）
 		WebSocketSession session = onlineUserSessionMap.get(userId);
 		if (ObjectUtil.isNotNull(session) && session.isOpen()) {
 			return true;
@@ -502,37 +505,34 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	public void pushMessage(Long senderId, MessagePushType messagePushType, JSONObject readData) {
 		if (ObjectUtil.isNull(senderId) || ObjectUtil.isNull(readData)) {
-			log.error("WebSocket push message failed | missing param (senderId: {})", senderId);
+			log.error("推送消息失败 | 参数缺失 (发送者ID: {})", senderId);
 			return;
 		}
 
 		WebSocketSession session = onlineUserSessionMap.get(senderId);
 		if (ObjectUtil.isNull(session) || !session.isOpen()) {
-			log.debug("WebSocket push message failed | user offline (userId: {})", senderId);
+			log.debug("推送消息失败 | 用户已离线 (用户ID: {})", senderId);
 			return;
 		}
 
-		// 2. 构建推送消息（JSON格式，包含消息类型和数据）
+		// 构建推送消息（JSON格式）
 		Map<String, Object> pushMsg = new ConcurrentHashMap<>(2);
-		pushMsg.put("msgType", messagePushType.getName()); // 消息类型：私信
+		pushMsg.put("msgType", messagePushType.getName());
 		pushMsg.put("data", readData);
 		String jsonMsg = JSON.toJSONString(pushMsg);
 
-		// 3. 发送消息（带异常处理，避免单用户推送失败影响整体）
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.info("WebSocket push message to sender success | senderId: {}, messagePushType: {}, readData: {}",
+			log.info("消息状态推送成功 | 发送者ID: {}, 消息类型: {}, 已读数据: {}",
 					senderId, messagePushType.getName(), readData);
 		} catch (IOException e) {
-			log.error("WebSocket push message to sender failed | senderId: {}, messagePushType: {}, readData: {}, error: {}",
+			log.error("消息状态推送失败 | 发送者ID: {}, 消息类型: {}, 已读数据: {}, 错误信息: {}",
 					senderId, messagePushType.getName(), readData, e.getMessage(), e);
-			// 推送失败时关闭会话（后续消息走离线推送）
 			if (session.isOpen()) {
 				try {
 					session.close(CloseStatus.SERVER_ERROR.withReason("消息推送失败，连接已断开"));
 				} catch (IOException ex) {
-					log.error("WebSocket close session failed | userId: {}, sessionId: {}",
-							senderId, session.getId(), ex);
+					log.error("关闭会话失败 | 用户ID: {}, 会话ID: {}", senderId, session.getId(), ex);
 				}
 			}
 		}
