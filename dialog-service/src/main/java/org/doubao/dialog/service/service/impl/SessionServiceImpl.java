@@ -435,6 +435,18 @@ public class SessionServiceImpl implements SessionService {
         return sessionPO;
     }
 
+    @Override
+    public DialogSession getSessionByIdAndReceiverId(Long sessionId, Long receiverId) {
+
+        // 2. 缓存不存在，从DB查询
+        LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DialogSession::getId, sessionId)
+                .eq(DialogSession::getTargetId, receiverId)
+                .eq(DialogSession::getDeleted, 0);
+
+		return sessionMapper.selectOne(queryWrapper);
+    }
+
     // ===================== 辅助方法 =====================
 
     /**
