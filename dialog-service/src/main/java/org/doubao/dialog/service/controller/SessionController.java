@@ -88,7 +88,7 @@ public class SessionController {
      * @param topReq 置顶请求参数（sessionId：会话ID，isTop：1=置顶，0=取消）
      * @return 操作结果
      */
-    @PutMapping("/top")
+    @PostMapping("/top")
     @ApiOperation(value = "会话置顶/取消置顶", notes = "isTop=1置顶，isTop=0取消，置顶会话会排在列表最前")
     public Result<Void> updateSessionTop(
             @ApiParam(value = "置顶参数", required = true) @RequestBody SessionTopReq topReq
@@ -109,7 +109,7 @@ public class SessionController {
      * @param sessionId 会话ID
      * @return 操作结果
      */
-    @DeleteMapping("/{sessionId}")
+    @GetMapping("/{sessionId}")
     @ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
     public Result<Void> deleteSession(
             @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
@@ -130,9 +130,9 @@ public class SessionController {
      * @param sessionId 会话ID
      * @return 清零前的未读计数
      */
-    @PutMapping("/unread/clear/{sessionId}")
+    @PostMapping("/unread/clear/{sessionId}")
     @ApiOperation(value = "会话未读清零", notes = "进入会话后调用，将该会话未读消息数置为0")
-    public Result<Integer> clearSessionUnread(
+    public Result<Void> clearSessionUnread(
             @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
     ) {
         // 1. 解析用户ID
@@ -140,10 +140,35 @@ public class SessionController {
 
 
         // 2. 调用Service未读清零
-        Integer unreadCountBeforeClear = sessionService.clearSessionUnread(userId, sessionId);
+        sessionService.clearSessionUnread(userId, sessionId);
 
         // 3. 返回结果
-        return Result.success(unreadCountBeforeClear);
+        return Result.success();
+    }
+
+    @PostMapping("/unread/clearAll")
+    public Result<Void> clearAllUnread() {
+        // 1. 解析用户ID
+        Long userId = UserContext.getUserId();
+
+        // 2. 调用Service未读清零
+        sessionService.clearAllSessionUnread(userId);
+
+        // 3. 返回结果
+        return Result.success();
+    }
+
+    @GetMapping("/unreadCount/get")
+    @ApiOperation(value = "会话未读总数")
+    public Result<Integer> getUnreadCount() {
+        // 1. 解析用户ID
+        Long userId = UserContext.getUserId();
+
+        // 2. 调用Service未读清零
+        Integer unreadCount = sessionService.getUnreadCount(userId);
+
+        // 3. 返回结果
+        return Result.success(unreadCount);
     }
 }
   

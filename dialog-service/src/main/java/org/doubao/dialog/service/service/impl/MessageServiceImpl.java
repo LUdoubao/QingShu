@@ -24,7 +24,6 @@ import org.doubao.dialog.service.mapper.AssistantMessageMapper;
 import org.doubao.dialog.service.mapper.DialogSessionMapper;
 import org.doubao.dialog.service.messaging.DialogEventPublisher;
 import org.doubao.dialog.service.req.MessageSendReq;
-import org.doubao.dialog.service.req.NotificationReq;
 import org.doubao.dialog.service.service.*;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.DialogQuery;
@@ -33,7 +32,6 @@ import org.doubao.dialog.service.vo.MessageVO;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
-import org.doubao.mall.common.event.DialogEvent;
 import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -907,15 +905,29 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 						MessagePushType.PRIVATE_MSG
 				);
 			} else {
+				log.info("离线推送消息给接收者{}，消息ID：{}", receiverId, messagePO.getId());
 				// 2.2 离线：通过MQ发送系统通知（调用notification-service）
-				String senderName = getSenderName(messagePO.getSenderId());
-				dialogEventPublisher.sendOfflineNotification(messageVO, receiverId, sessionPO, senderName);
+				String senderName = webSocketHandler.getSenderName(messagePO.getSenderId());
+				dialogEventPublisher.sendOfflineNotification(messageVO, receiverId, senderName);
+			}
+			// 自动增加对方会话未读数
+			LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.eq(DialogSession::getUserId, receiverId)
+					.eq(DialogSession::getTargetId, messageVO.getSenderId())
+					.eq(DialogSession::getSessionType, "USER");
+			DialogSession dialogSession = sessionMapper.selectOne(queryWrapper);
+			if (dialogSession != null) {
+				// 更新数据库会话未读数
+				dialogSession.setUnreadCount(dialogSession.getUnreadCount() + 1);
+				sessionMapper.updateById(dialogSession);
+				// 更新redis缓存
+				redisCacheUtil.setSessionUnreadCount(receiverId, dialogSession.getId(), dialogSession.getUnreadCount());
 			}
 		} catch (Exception e) {
 			// 推送失败：更新消息状态为FAILED，便于后续重发
 			updateMessageStatusToFailed(messagePO.getId());
-			org.slf4j.LoggerFactory.getLogger(MessageServiceImpl.class)
-					.error("推送消息给接收者{}失败，消息ID：{}", receiverId, messagePO.getId(), e);
+			log.error("推送消息给接收者失败 | messageId: {}, receiverId: {}, senderId: {}, sessionId: {}",
+					messagePO.getId(), receiverId, messagePO.getSenderId(), sessionPO.getId(), e);
 		}
 	}
 
@@ -966,26 +978,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		}
 	}
 
-	/**
-	 * 获取发送者名称（AI/用户）
-	 * @param senderId 发送者ID
-	 * @return 发送者名称（AI助手/用户昵称）
-	 */
-	private String getSenderName(Long senderId) {
-		// AI助手固定名称
-		if (Objects.equals(senderId, AI_SENDER_ID)) {
-			return "AI助手";
-		}
-
-		// 用户名称：调用user-service查询
-		Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(senderId));
-		if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
-			UserInfo userInfo = userResult.getData().get(0);
-			return userInfo.getNickname();
-		} else {
-			return "未知用户";
-		}
-	}
 
 	/**
 	 * 将消息PO转换为VO（补充发送者信息、内容预览、时间格式化）

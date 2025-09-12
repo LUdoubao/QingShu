@@ -91,15 +91,15 @@ public class RedisCacheUtil {
 	 * @param userId 用户ID
 	 */
 	public void deleteSessionListCache(Long userId) {
-		// if (ObjectUtil.isNull(userId)) {
-		// 	log.warn("Redis deleteSessionListCache failed | userId is null");
-		// 	return;
-		// }
-		//
-		// String sessionListZSetKey = buildSessionListZSetKey(userId);
-		// delete(sessionListZSetKey);
-		// log.debug("Redis deleteSessionListCache success | userId: {}, key: {}",
-		// 		userId, sessionListZSetKey);
+		if (ObjectUtil.isNull(userId)) {
+			log.warn("Redis deleteSessionListCache failed | userId is null");
+			return;
+		}
+
+		String sessionListZSetKey = buildSessionListZSetKey(userId);
+		delete(sessionListZSetKey);
+		log.debug("Redis deleteSessionListCache success | userId: {}, key: {}",
+				userId, sessionListZSetKey);
 	}
 
 	/**

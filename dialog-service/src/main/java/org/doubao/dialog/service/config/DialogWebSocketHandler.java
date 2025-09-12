@@ -6,12 +6,17 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.MessagePushType;
+import org.doubao.dialog.service.feign.UserFeignClient;
 import org.doubao.dialog.service.mapper.DialogSessionMapper;
+import org.doubao.dialog.service.messaging.DialogEventPublisher;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.MessageVO;
+import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.entity.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,10 +34,7 @@ import javax.annotation.Resource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -48,6 +50,8 @@ import java.util.concurrent.TimeUnit;
 public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	// ========================= 常量与状态管理 =========================
+	/** AI助手固定ID */
+	private static final Long AI_SENDER_ID = 10000L;
 	/** WebSocket会话属性：用户ID（从Token解析后存入） */
 	private static final String SESSION_ATTR_USER_ID = "userId";
 	/** 在线用户WebSocket会话映射（线程安全，key=用户ID，value=WebSocketSession） */
@@ -59,6 +63,10 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	private MongoTemplate mongoTemplate;
 	@Autowired
 	private DialogSessionMapper sessionMapper;
+	@Autowired
+	private UserFeignClient userFeignClient;
+	@Resource
+	private DialogEventPublisher dialogEventPublisher;
 	private static final Logger log = LoggerFactory.getLogger(DialogWebSocketHandler.class);
 
 	// ========================= 连接生命周期管理 =========================
@@ -209,10 +217,30 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			case "TYPING_STATUS":
 				handleTypingStatus(userId, msgMap); // 处理输入状态更新
 				break;
+			case "UNREAD_COUNT_CHANGE":
+				Object data = msgMap.getOrDefault("data", new HashMap<>());
+				JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
+				Object sessionIdObj = jsonData.get("sessionId");
+				Object unreadCountObj = jsonData.get("unreadCount");
+				handleUnreadCountChange(userId, sessionIdObj, unreadCountObj);
+				break;
 			default:
 				sendErrorMessage(session, "不支持的消息类型：" + msgType);
 				log.error("WebSocket不支持的消息类型 | 用户ID: {}, 消息类型: {}", userId, msgType);
 		}
+	}
+
+	public void handleUnreadCountChange(Long userId, Object sessionIdObj, Object unreadCountObj) {
+		if (ObjectUtil.isNull(sessionIdObj) || ObjectUtil.isNull(unreadCountObj)) {
+			log.error("处理未读数变更失败 | 缺少必要参数 (用户ID: {})", userId);
+			return;
+		}
+		redisCacheUtil.setSessionUnreadCount(userId, Long.parseLong(sessionIdObj.toString()), Integer.parseInt(unreadCountObj.toString()));
+		// 同步更新数据库会话未读数
+		DialogSession dialogSession = new DialogSession();
+		dialogSession.setId(Long.parseLong(sessionIdObj.toString()));
+		dialogSession.setUnreadCount(Integer.parseInt(unreadCountObj.toString()));
+		sessionMapper.updateById(dialogSession);
 	}
 
 	/**
@@ -307,8 +335,11 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		// 1. 获取用户在线会话
 		log.info("推送私信-在线用户会话映射: {}", JSON.toJSONString(onlineUserSessionMap.keySet()));
 		WebSocketSession session = onlineUserSessionMap.get(userId);
-		if (ObjectUtil.isNull(session) || !session.isOpen()) {
+		if (!isUserOnline(userId)) {
 			log.info("推送私信失败 | 用户已离线 (用户ID: {})", userId);
+			// 离线：通过MQ发送系统通知（调用notification-service）
+			String senderName = getSenderName(messageVO.getSenderId());
+			dialogEventPublisher.sendOfflineNotification(messageVO, userId, senderName);
 			return;
 		}
 
@@ -333,6 +364,26 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 					log.error("关闭会话失败 | 用户ID: {}, 会话ID: {}", userId, session.getId(), ex);
 				}
 			}
+		}
+	}
+	/**
+	 * 获取发送者名称（AI/用户）
+	 * @param senderId 发送者ID
+	 * @return 发送者名称（AI助手/用户昵称）
+	 */
+	public String getSenderName(Long senderId) {
+		// AI助手固定名称
+		if (Objects.equals(senderId, AI_SENDER_ID)) {
+			return "AI助手";
+		}
+
+		// 用户名称：调用user-service查询
+		Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(senderId));
+		if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
+			UserInfo userInfo = userResult.getData().get(0);
+			return userInfo.getNickname();
+		} else {
+			return "未知用户";
 		}
 	}
 

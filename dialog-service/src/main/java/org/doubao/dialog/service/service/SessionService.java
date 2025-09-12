@@ -6,6 +6,8 @@ import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.req.SessionCreateReq;
 import org.doubao.dialog.service.vo.SessionVO;
 
+import java.util.List;
+
 /**
  * 会话管理服务接口
  * 定义功能：创建会话、查询会话列表、置顶/取消置顶、删除会话、未读清零
@@ -48,9 +50,12 @@ public interface SessionService {
      * 会话未读清零
      * @param userId 当前用户ID（校验会话归属，接收方身份）
      * @param sessionId 会话ID
-     * @return 清零前的未读计数
      */
-    Integer clearSessionUnread(Long userId, Long sessionId);
+    void clearSessionUnread(Long userId, Long sessionId);
+
+    void clearAllSessionUnread(Long userId);
+
+    Integer getUnreadCount(Long userId);
 
     /**
      * 根据会话ID和用户ID查询会话（内部调用，用于校验会话归属）
@@ -60,5 +65,6 @@ public interface SessionService {
      */
     DialogSession getSessionByIdAndUserId(Long sessionId, Long userId);
     DialogSession getSessionByIdAndReceiverId(Long sessionId, Long receiverId);
+    List<DialogSession> queryOwnUserSessions(Long userId);
 }
   

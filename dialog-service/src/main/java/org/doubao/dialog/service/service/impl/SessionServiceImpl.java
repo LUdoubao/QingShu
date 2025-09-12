@@ -162,7 +162,7 @@ public class SessionServiceImpl implements SessionService {
         // 获取目标用户在线状态
         Map<Long, Boolean> onlineStatusMap = getTargetUserOnlineStatus(pagedSessions);
         sessionVOList.forEach(sessionVO -> {
-            sessionVO.setTargetUserIsOnline(onlineStatusMap.getOrDefault(sessionVO.getTargetId(),  false));
+            sessionVO.setOnline(onlineStatusMap.getOrDefault(sessionVO.getTargetId(),  false));
         });
         // 8. 构建分页结果（总数为自己创建的会话数）
         Page<SessionVO> resultPage = new Page<>(pageNum, pageSize);
@@ -190,7 +190,8 @@ public class SessionServiceImpl implements SessionService {
      * @param userId 当前用户ID
      * @return 自己创建的会话列表
      */
-    private List<DialogSession> queryOwnUserSessions(Long userId) {
+    @Override
+    public List<DialogSession> queryOwnUserSessions(Long userId) {
         LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DialogSession::getUserId, userId) // 仅自己创建的会话
                 .eq(DialogSession::getDeleted, 0)
@@ -392,39 +393,41 @@ public class SessionServiceImpl implements SessionService {
     /**
      * 未读清零核心逻辑：
      * 1. 校验会话归属（当前用户必须是会话接收方）
-     * 2. 获取当前未读计数（DB+缓存）
      * 3. 更新DB未读计数为0，同步缓存
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Integer clearSessionUnread(Long userId, Long sessionId) {
+    public void clearSessionUnread(Long userId, Long sessionId) {
         // 1. 查询会话并校验归属（当前用户必须是会话接收方）
         DialogSession sessionPO = getSessionByIdAndUserId(sessionId, userId);
         if (sessionPO == null) {
             throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
         } else {
-            // 2. 获取清零前的未读计数（以缓存为准，缓存不存在则取DB）
-            Integer unreadCountBeforeClear = redisCacheUtil.getSessionUnreadCount(userId, sessionId);
-            if (unreadCountBeforeClear == null) {
-                unreadCountBeforeClear = sessionPO.getUnreadCount();
-            }
-
-            // 3. 未读计数已为0，无需操作
-            if (unreadCountBeforeClear == 0) {
-                return 0;
-            }
-
-            // 4. 更新DB未读计数为0
-            sessionPO.setUnreadCount(0);
-            sessionPO.setUpdatedTime(LocalDateTime.now());
-            sessionMapper.updateById(sessionPO);
-
-            // 5. 同步缓存未读计数为0
-            redisCacheUtil.setSessionUnreadCount(userId, sessionId, 0);
-
-            // 6. 返回清零前的未读计数
-            return unreadCountBeforeClear;
+            dialogWebSocketHandler.handleUnreadCountChange(userId, sessionId, 0);
         }
+    }
+
+    @Override
+    public void clearAllSessionUnread(Long userId) {
+        // 获取所有当前用户会话列表
+        List<DialogSession> sessions = queryOwnUserSessions(userId);
+        if (sessions.isEmpty()) {
+            return;
+        }
+        sessions.forEach(session -> {
+            dialogWebSocketHandler.handleUnreadCountChange(userId, session.getId(), 0);
+        });
+    }
+
+    @Override
+    public Integer getUnreadCount(Long userId) {
+        // 获取所有当前用户会话列表
+        List<DialogSession> sessions = queryOwnUserSessions(userId);
+        if (sessions.isEmpty()) {
+            return 0;
+        }
+        // 求和会话未读数
+        return sessions.stream().mapToInt(DialogSession::getUnreadCount).sum();
     }
 
     /**

@@ -89,7 +89,7 @@ public class SessionVO {
      */
     private Boolean hasUnread;
 
-    private Boolean targetUserIsOnline = false;
+    private Boolean online = false;
     /**
      * 从会话PO转换为VO（默认值处理）
      * @param sessionPO 会话PO
@@ -118,12 +118,12 @@ public class SessionVO {
         return sessionVO;
     }
 
-    public Boolean getTargetUserIsOnline() {
-        return targetUserIsOnline;
+    public Boolean getOnline() {
+        return online;
     }
 
-    public void setTargetUserIsOnline(Boolean targetUserIsOnline) {
-        this.targetUserIsOnline = targetUserIsOnline;
+    public void setOnline(Boolean online) {
+        this.online = online;
     }
 
     public Integer getIsLastMsgOwner() {
