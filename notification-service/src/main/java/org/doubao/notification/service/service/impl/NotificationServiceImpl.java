@@ -6,7 +6,6 @@ import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
-import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
 import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;
@@ -177,6 +176,7 @@ public class NotificationServiceImpl implements NotificationService {
 		int systemCount = notificationMapper.selectCount(query);
 		unreadCountDTO.setSystemCount(systemCount);
 
+		unreadCountDTO.setUnreadCount(likeCount + commentCount + systemCount);
 		return unreadCountDTO;
 	}
 

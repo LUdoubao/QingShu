@@ -1,7 +1,6 @@
 package org.doubao.notification.service.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
 import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;

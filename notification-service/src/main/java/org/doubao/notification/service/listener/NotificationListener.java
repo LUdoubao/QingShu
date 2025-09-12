@@ -123,9 +123,6 @@ public class NotificationListener {
 						VerifyQuoteEvent verifyQuoteEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), VerifyQuoteEvent.class, FIXED_CONFIG );
 						notification = formatter.formatSystemNotification(verifyQuoteEvent);
 						break;
-					case "NEW_MESSAGE":
-						DialogEvent newMessageEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), DialogEvent.class, FIXED_CONFIG );
-						notification = formatter.formatNewMessageNotification(newMessageEvent);
 					default:
 						LOG.error("Unsupported notification action: {}",action);
 						throw new IllegalArgumentException("Unsupported event action: " +action);
@@ -138,6 +135,10 @@ public class NotificationListener {
 			case "COMMENT":
 				CommentEvent commentEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), CommentEvent.class, FIXED_CONFIG );
 				notification = formatter.formatCommentNotification(commentEvent);
+				break;
+			case "CHAT":
+				DialogEvent newMessageEvent =  JSON.parseObject(JSON.toJSONString(notificationEvent), DialogEvent.class, FIXED_CONFIG );
+				notification = formatter.formatNewMessageNotification(newMessageEvent);
 				break;
 			default:
 				LOG.error("Unsupported notification type: {}", type);

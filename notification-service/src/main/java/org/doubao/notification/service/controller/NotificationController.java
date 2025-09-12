@@ -3,12 +3,10 @@ package org.doubao.notification.service.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.notification.service.UnReadCountVo;
 import org.doubao.notification.service.dto.NotificationDTO;
 import org.doubao.notification.service.dto.NotificationQueryDto;
 import org.doubao.notification.service.dto.UnreadCountDTO;
 import org.doubao.notification.service.service.NotificationService;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;

@@ -3,6 +3,7 @@ package org.doubao.notification.service.enums;
 public enum NotificationType {
 	SYSTEM("SYSTEM", "系统"),
 	COMMENT("COMMENT", "评论"),
+	CHAT("CHAT", "聊天"),
 	LIKE("LIKE", "点赞");
 	private  final String value;
 	private  final String label;

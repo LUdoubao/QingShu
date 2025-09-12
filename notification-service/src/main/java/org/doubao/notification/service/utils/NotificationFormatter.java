@@ -88,20 +88,24 @@ public class NotificationFormatter {
 		return notification;
 	}
 
-	public Notification formatNewMessageNotification(DialogEvent newMessageEvent) {
+	public Notification formatNewMessageNotification(DialogEvent event) {
 		Notification notification = new Notification();
-		notification.setUserId(newMessageEvent.getUserId());
-		notification.setType(newMessageEvent.getType());
-		notification.setAction(newMessageEvent.getAction());
+		notification.setUserId(event.getUserId());
+		notification.setType(event.getType());
+		notification.setAction(event.getAction());
+		notification.setTitle(event.getTitle());
 		Map<String, Object> content = new HashMap<>();
-		content.put("dialogContent", newMessageEvent.getDialogContent());
-		String extra = newMessageEvent.getExtra();
+		content.put("content", event.getContent());
+		content.put("operatorUserId", event.getOperatorUserId());
+		content.put("operatorUserName", event.getOperatorUserName());
+		content.put("operatorUserAvatar", event.getOperatorUserAvatar());
+		String extra = event.getExtra();
 		if (extra != null && !extra.isEmpty()) {
 			content.put("extra", JSON.parseObject(extra));
 		}
 		notification.setContent(JSON.toJSONString(content));
-		notification.setSourceId(newMessageEvent.getTargetId());
-		notification.setSourceType(newMessageEvent.getTarget());
+		notification.setSourceId(event.getTargetId());
+		notification.setSourceType(event.getTarget());
 		return notification;
 	}
 }
