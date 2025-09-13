@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.quote.service.dto.TagCountVo;
 import org.doubao.quote.service.dto.TagQuery;
 import org.doubao.quote.service.entity.Tag;
@@ -52,5 +54,18 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
 			}
 		}
 		return Result.success(tagCountVos);
+	}
+
+	@Override
+	public Result<Tag> add(Tag tag) {
+		String name = tag.getName();
+		if (name == null || name.isEmpty()) {
+			throw new BusinessException(ErrorCode.TAG_NAME_EMPTY);
+		}
+		// 校验标签名称唯一性
+		if (this.count(new QueryWrapper<Tag>().eq("name", name)) > 0) {
+			throw new BusinessException(ErrorCode.TAG_NAME_EXIST);
+		}
+		return Result.success(this.save(tag) ? tag : null);
 	}
 }

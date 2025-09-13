@@ -15,4 +15,6 @@ import java.util.List;
 
 public interface TagService extends IService<Tag> {
 	Result<List<TagCountVo>> listQuery(TagQuery tagQuery);
+
+	Result<Tag> add(Tag tag);
 }
