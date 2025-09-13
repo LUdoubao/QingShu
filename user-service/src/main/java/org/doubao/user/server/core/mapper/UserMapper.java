@@ -20,4 +20,6 @@ public interface UserMapper extends BaseMapper<User> {
 	void updateUserBg(@Param("userId") Long userId,
 					  @Param("fileKey") String fileKey,
 					  @Param("storageType") String storageType);
+
+	boolean existsByNickname(@Param("nickname") String nickname);
 }

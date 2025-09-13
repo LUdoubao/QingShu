@@ -18,6 +18,7 @@ import org.doubao.user.server.core.feign.OssServiceClient;
 import org.doubao.user.server.core.mapper.UserMapper;
 import org.doubao.user.server.core.messaging.UserEventPublisher;
 import org.doubao.user.server.core.service.UserService;
+import org.doubao.user.server.core.utils.UserUtil;
 import org.doubao.user.server.core.vo.PageUserVo;
 import org.doubao.user.server.core.vo.UserVo;
 import org.slf4j.Logger;
@@ -172,6 +173,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		user.setUsername(userDto.getUsername());
 		user.setPassword(passwordEncoder.encode(userDto.getPassword()));
 		user.setEmail(userDto.getEmail());
+
+		// 生成昵称
+		String nickname = UserUtil.generateArtisticNickname();
+		// 校验昵称是否已存在
+		if (userMapper.existsByNickname(nickname)) {
+			// 生成随机数昵称
+			nickname = nickname + new Random().nextInt(1000);
+		}
+		// 设置昵称
+		user.setNickname(nickname);
 		userMapper.insert(user);
 
 		// 清理验证码
@@ -214,6 +225,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public void updateProfile(UserUpdateDto dto) {
 		User user = new User();
+		if (dto.getNickname() != null && !dto.getNickname().isEmpty()) {
+			// 昵称校验
+			if (userMapper.existsByNickname(dto.getNickname())) {
+				throw new BusinessException(ErrorCode.USER_NICKNAME_EXISTS);
+			}
+		}
 		user.setId(dto.getUserId());
 		BeanUtils.copyProperties(dto, user);
 		user.setRole(null);

@@ -31,4 +31,9 @@
     <select id="existsByIdAndStatus" resultType="int">
         SELECT COUNT(*) FROM user WHERE id = #{userId} AND status = #{status}
     </select>
+
+    <!-- boolean existsByNickname(String nickname); -->
+    <select id="existsByNickname" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM user WHERE nickname = #{nickname})
+    </select>
 </mapper>
