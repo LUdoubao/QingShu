@@ -6,6 +6,7 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.TagCountVo;
+import org.doubao.quote.service.dto.TagQuery;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.entity.Tag;
 import org.doubao.quote.service.vo.QuoteVo;
@@ -13,5 +14,5 @@ import org.doubao.quote.service.vo.QuoteVo;
 import java.util.List;
 
 public interface TagService extends IService<Tag> {
-	Result<List<TagCountVo>> listByTagName(String tagName);
+	Result<List<TagCountVo>> listQuery(TagQuery tagQuery);
 }
