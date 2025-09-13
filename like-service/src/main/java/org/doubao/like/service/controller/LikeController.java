@@ -36,7 +36,7 @@ public class LikeController {
 
 	@GetMapping("/hot")
 	public Result<List<HotContentResponse>> getHotContents(
-			@RequestParam(value = "limit", defaultValue = "10") int limit) {
+			@RequestParam(value = "limit", defaultValue = "30") int limit) {
 		return Result.success(likeService.getHotContents(limit));
 	}
 	@GetMapping("/list")
