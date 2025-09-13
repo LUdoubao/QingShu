@@ -21,6 +21,9 @@ public enum ErrorCode {
 	CONTENT_LIMIT_REACHED("CONTENT_003", "内容创建达上限"),
 	CONTENT_EXISTS("CONTENT_001", "本站该引文已存在, 请检查"),
 
+	TAG_NAME_EMPTY("TAG_001", "标签名称不能为空"),
+	TAG_NAME_EXIST( "TAG_002", "标签名称已存在"),
+
 	EMAIL_EXISTS("USER_001", "邮箱已被注册"),
 	INVALID_VERIFY_CODE("USER_002", "验证码无效或已过期"),
 	USER_DISABLED("USER_004", "用户已被禁用"),
