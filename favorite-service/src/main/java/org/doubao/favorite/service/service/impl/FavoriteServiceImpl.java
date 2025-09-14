@@ -78,10 +78,11 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 	@Transactional
 	public void removeFavorite(Long userId, Long quoteId) {
 		// 查找用户收藏记录
-		LambdaQueryWrapper<FavoriteContent> queryWrapper = new LambdaQueryWrapper<>();
-		queryWrapper.eq(FavoriteContent::getUserId, userId)
-				.eq(FavoriteContent::getQuoteId, quoteId);
-		this.removeById(queryWrapper);
+		FavoriteContent favorite = favoriteMapper.selectByUserAndQuote(userId, quoteId);
+		if (favorite != null) {
+			// 软删除
+			this.removeById(favorite.getId());
+		}
 	}
 
 	@Override
