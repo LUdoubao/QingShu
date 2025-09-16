@@ -8,9 +8,9 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
-@MapperScan("com.example.search.mapper")
+@MapperScan("org.doubao.search.service.db.mapper")
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "com.example.search.service.remote")
+@EnableFeignClients(basePackages = "org.doubao.search.service.db.feign")
 @EnableAsync
 public class SearchServiceApplication {
 
