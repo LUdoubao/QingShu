@@ -17,7 +17,18 @@ public class FavoriteFolder extends BaseDel {
 	private String name;
 	private int isDefault = 0;
 	private Integer orderNum = 0;
+	/**
+	 * 0:文案收藏夹
+	 */
+	private Integer type = 0;
 
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
 
 	public Long getId() {
 		return id;

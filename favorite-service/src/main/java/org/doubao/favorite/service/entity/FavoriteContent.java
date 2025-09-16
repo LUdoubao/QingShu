@@ -15,7 +15,15 @@ public class FavoriteContent extends BaseDel {
 	private Long userId;
 	private Long quoteId;
 	private Long folderId;
+	private Integer type;
 
+	public Integer getType() {
+		return type;
+	}
+
+	public void setType(Integer type) {
+		this.type = type;
+	}
 
 	public Long getId() {
 		return id;

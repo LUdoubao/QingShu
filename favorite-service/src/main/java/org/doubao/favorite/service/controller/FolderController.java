@@ -31,8 +31,9 @@ public class FolderController {
 
 	// 获取用户收藏夹列表
 	@GetMapping("/list")
-	public Result<List<FavoriteFolder>> getUserFolders(@RequestParam Long userId) {
-		List<FavoriteFolder> folders = folderService.getUserFolders(userId);
+	public Result<List<FavoriteFolder>> getUserFolders(@RequestParam("userId") Long userId,
+													   @RequestParam("type") Integer type) {
+		List<FavoriteFolder> folders = folderService.getUserFolders(userId, type);
 		return Result.success(folders);
 	}
 

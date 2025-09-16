@@ -15,6 +15,9 @@
         WHERE user_id = #{userId}
         AND quote_id = #{quoteId}
         AND deleted = 0
+        <if test="folderId != null">
+            AND folder_id = #{folderId}
+        </if>
         LIMIT 1
     </select>
 
@@ -55,15 +58,18 @@
     <!-- 批量查询指定quote的收藏数量 -->
     <select id="countQuotes" resultType="org.doubao.favorite.service.dto.QuoteCountDTO">
         SELECT
-        quote_id AS quoteId,
+        fc.quote_id AS quoteId,
         COUNT(*) AS count
-        FROM favorite_content
-        WHERE quote_id IN
+        FROM favorite_content fc
+        INNER JOIN favorite_folder ff ON fc.folder_id = ff.id
+        WHERE fc.quote_id IN
         <foreach item="id" collection="quoteIds" open="(" separator="," close=")">
             #{id}
         </foreach>
-        AND deleted = 0
-        GROUP BY quote_id
+        AND fc.deleted = 0
+        AND ff.deleted = 0        <!-- 确保收藏夹未删除 -->
+        AND ff.is_default = 1     <!-- 仅统计默认收藏夹 -->
+        GROUP BY fc.quote_id
     </select>
     <select id="removeByFolderId" resultType="int">
         UPDATE favorite_content

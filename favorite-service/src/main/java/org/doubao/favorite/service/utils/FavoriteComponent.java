@@ -18,9 +18,9 @@ public class FavoriteComponent {
 	private FavoriteContentMapper favoriteContentMapper;
 	@Autowired
 	private FavoriteFolderMapper folderMapper;
-	public FavoriteFolder getUserDefaultFolder(Long userId) {
+	public FavoriteFolder getUserDefaultFolder(Long userId, Integer type) {
 		// 如果存在则返回，不存在则创建
-		List<FavoriteFolder> userFolders = folderMapper.selectUserFolders(userId);
+		List<FavoriteFolder> userFolders = folderMapper.selectUserFolders(userId, type);
 
 		for (FavoriteFolder folder : userFolders) {
 			if (folder.getIsDefault() == 1) {
@@ -31,7 +31,8 @@ public class FavoriteComponent {
 		// 创建默认收藏夹
 		FavoriteFolder defaultFolder = new FavoriteFolder();
 		defaultFolder.setUserId(userId);
-		defaultFolder.setName("默认");
+		defaultFolder.setType(type);
+		defaultFolder.setName(type == 0 ? "文案" : "其他");
 		defaultFolder.setIsDefault(1);
 		defaultFolder.setCreatedTime(LocalDateTime.now());
 		defaultFolder.setUpdatedTime(LocalDateTime.now());

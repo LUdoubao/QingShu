@@ -15,7 +15,7 @@ import java.util.Set;
 @Mapper
 public interface FavoriteContentMapper extends BaseMapper<FavoriteContent> {
 	List<FavoriteContent> selectByFolderId(@Param("folderId") Long folderId);
-	FavoriteContent selectByUserAndQuote(@Param("userId") Long userId, @Param("quoteId") Long quoteId);
+	FavoriteContent selectByUserAndQuote(@Param("userId") Long userId, @Param("quoteId") Long quoteId, @Param("folderId") Long folderId);
 	int countByFolderId(@Param("folderId") Long folderId);
 	int countByUser(@Param("userId") Long userId);
 

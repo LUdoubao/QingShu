@@ -27,9 +27,10 @@ public class FavoriteController {
 	public Result<FavoriteContent> addFavorite(
 			@RequestParam Long userId,
 			@RequestParam Long quoteId,
-			@RequestParam(required = false) Long folderId
+			@RequestParam(required = false) Long folderId,
+			@RequestParam(required = false) Integer type
 	) {
-		FavoriteContent favorite = favoriteService.addFavorite(userId, quoteId, folderId);
+		FavoriteContent favorite = favoriteService.addFavorite(userId, quoteId, folderId, type);
 		return Result.success(favorite);
 	}
 
@@ -51,15 +52,6 @@ public class FavoriteController {
 		return Result.success();
 	}
 
-	// 移动收藏
-	@PostMapping("/move")
-	public Result<Void> moveFavorite(
-			@RequestParam Long favoriteId,
-			@RequestParam Long newFolderId
-	) {
-		favoriteService.moveFavorite(favoriteId, newFolderId);
-		return Result.success();
-	}
 
 	// 获取用户收藏总数
 	@GetMapping("/count")

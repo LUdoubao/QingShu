@@ -8,8 +8,8 @@
         FROM favorite_folder
         WHERE user_id = #{userId}
         AND deleted = 0
-        AND is_default != 1
-        ORDER BY is_default DESC, order_num DESC, updated_time DESC
+        AND type = #{type}
+        ORDER BY  updated_time DESC
     </select>
     <!-- Long selectFavoriteCount(Long folderId); -->
     <select id="selectFavoriteCount" resultType="java.lang.Long">

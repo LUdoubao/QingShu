@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface FavoriteService extends IService<FavoriteContent> {
-	FavoriteContent addFavorite(Long userId, Long quoteId, Long folderId);
+	FavoriteContent addFavorite(Long userId, Long quoteId, Long folderId, Integer type);
 	void removeFavorite(Long userId, Long quoteId);
 	void moveFavorite(Long favoriteId, Long newFolderId);
 	int countUserFavorites(Long userId);

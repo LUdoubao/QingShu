@@ -4,6 +4,7 @@ package org.doubao.favorite.service.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.favorite.service.dto.BatchDelDto;
@@ -46,11 +47,11 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 
 	@Override
 	@Transactional
-	public FavoriteContent addFavorite(Long userId, Long quoteId, Long folderId) {
+	public FavoriteContent addFavorite(Long userId, Long quoteId, Long folderId, Integer type) {
 		FavoriteFolder folder;
 		if (folderId == null) {
-			// 默认存入默认收藏夹
-			folder = favoriteComponent.getUserDefaultFolder(userId);
+			// 存入默认类型
+			folder = favoriteComponent.getUserDefaultFolder(userId,  type);
 			if (folder == null) {
 				throw new BusinessException(ErrorCode.FAVORITE_FOLDER_NOT_EXIST);
 			}
@@ -58,7 +59,7 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 		}
 
 		// 检查是否已收藏
-		FavoriteContent existing = favoriteMapper.selectByUserAndQuote(userId, quoteId);
+		FavoriteContent existing = favoriteMapper.selectByUserAndQuote(userId, quoteId, folderId);
 		if (existing != null) {
 			throw new BusinessException(ErrorCode.FAVORITE_EXIST);
 		}
@@ -68,6 +69,7 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 		favorite.setUserId(userId);
 		favorite.setQuoteId(quoteId);
 		favorite.setFolderId(folderId);
+		favorite.setType(type);
 		favorite.setCreatedTime(LocalDateTime.now());
 
 		favoriteMapper.insert(favorite);
@@ -78,10 +80,14 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 	@Transactional
 	public void removeFavorite(Long userId, Long quoteId) {
 		// 查找用户收藏记录
-		FavoriteContent favorite = favoriteMapper.selectByUserAndQuote(userId, quoteId);
+		FavoriteContent favorite = favoriteMapper.selectByUserAndQuote(userId, quoteId, null);
 		if (favorite != null) {
 			// 软删除
-			this.removeById(favorite.getId());
+			LambdaUpdateWrapper<FavoriteContent> updateWrapper = new LambdaUpdateWrapper<>();
+			updateWrapper.eq(FavoriteContent::getQuoteId, quoteId);
+			updateWrapper.eq(FavoriteContent::getUserId, userId);
+			updateWrapper.set(FavoriteContent::getDeleted, 1);
+			this.update(updateWrapper);
 		}
 	}
 

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Mapper
 public interface FavoriteFolderMapper extends BaseMapper<FavoriteFolder> {
-	List<FavoriteFolder> selectUserFolders(@Param("userId") Long userId);
+	List<FavoriteFolder> selectUserFolders(@Param("userId") Long userId, @Param("type") Integer type);
 
 	Long selectFavoriteCount(@Param("folderId") Long folderId);
 }

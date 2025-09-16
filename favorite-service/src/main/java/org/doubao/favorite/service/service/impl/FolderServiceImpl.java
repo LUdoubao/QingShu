@@ -19,6 +19,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class FolderServiceImpl extends ServiceImpl<FavoriteFolderMapper, FavoriteFolder> implements FolderService {
@@ -74,10 +75,18 @@ public class FolderServiceImpl extends ServiceImpl<FavoriteFolderMapper, Favorit
 	}
 
 	@Override
-	public List<FavoriteFolder> getUserFolders(Long userId) {
-		List<FavoriteFolder> favoriteFolders = folderMapper.selectUserFolders(userId);
+	public List<FavoriteFolder> getUserFolders(Long userId, Integer type) {
+		List<FavoriteFolder> favoriteFolders = folderMapper.selectUserFolders(userId, type);
 		if (favoriteFolders.isEmpty()) {
-			return Collections.emptyList();
+			// 创建默认收藏夹
+			favoriteFolders.add(favoriteComponent.getUserDefaultFolder(userId, type));
+			return favoriteFolders;
+		} else {
+			Optional<FavoriteFolder> folder = favoriteFolders.stream().filter(favoriteFolder -> favoriteFolder.getIsDefault() == 1).findFirst();
+			if (!folder.isPresent()) {
+				// 创建默认收藏夹
+				favoriteFolders.add(favoriteComponent.getUserDefaultFolder(userId, type));
+			}
 		}
  		return favoriteFolders;
 	}

@@ -11,7 +11,7 @@ public interface FolderService extends IService<FavoriteFolder> {
 	FavoriteFolder createFolder(Long userId, String folderName);
 	void deleteFolder(Long folderId);
 	void renameFolder(Long folderId, String newName);
-	List<FavoriteFolder> getUserFolders(Long userId);
+	List<FavoriteFolder> getUserFolders(Long userId, Integer type);
 
 	FavoriteFolderVo getDetailById(Long folderId);
 }
