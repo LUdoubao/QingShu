@@ -22,17 +22,17 @@ public class SearchHistoryServiceImpl implements SearchHistoryService {
 
     @Override
     @Transactional
-    public boolean saveSearchHistory(Long userId, String keyword) {
+    public void saveSearchHistory(Long userId, String keyword) {
         if (userId == null || keyword == null || keyword.trim().isEmpty()) {
-            return false;
+            return;
         }
         
         SearchHistory history = new SearchHistory();
         history.setUserId(userId);
         history.setKeyword(keyword.trim());
         history.setCreatedTime(LocalDateTime.now());
-        
-        return searchHistoryMapper.insert(history) > 0;
+
+        searchHistoryMapper.insert(history);
     }
 
     @Override

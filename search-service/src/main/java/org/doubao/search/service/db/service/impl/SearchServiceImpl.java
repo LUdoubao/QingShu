@@ -68,11 +68,11 @@ public class SearchServiceImpl implements SearchService {
     }
 
     @Override
-    public Page<SearchResultDTO> search(String keyword, int page, int size, String type) {
+    public Page<SearchResultDTO> search(String keyword, int page, int size, String type, Long currentUserId) {
         switch(type) {
             case "quote":
             case "tag":
-                Map<String, Object>  data = quoteClient.searchQuotes(keyword, page, size, type).getData();
+                Map<String, Object>  data = quoteClient.searchQuotes(keyword, page, size, currentUserId, type).getData();
                 if (data == null) {
                     return new Page<>();
                 }

@@ -10,7 +10,7 @@ import java.util.List;
 @Mapper
 public interface SearchHistoryMapper extends BaseMapper<SearchHistory> {
     /**
-     * 获取用户的搜索历史
+     * 获取用户的搜索历史（去重）
      */
     List<SearchHistory> getUserSearchHistory(
             @Param("userId") Long userId, 

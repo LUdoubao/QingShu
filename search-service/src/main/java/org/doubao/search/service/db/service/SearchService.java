@@ -13,5 +13,5 @@ public interface SearchService {
     /**
      * 执行搜索
      */
-    Page<SearchResultDTO> search(String keyword, int page, int size, String type);
+    Page<SearchResultDTO> search(String keyword, int page, int size, String type, Long userId);
 }

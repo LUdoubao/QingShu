@@ -7,7 +7,7 @@ public interface SearchHistoryService {
     /**
      * 保存搜索历史
      */
-    boolean saveSearchHistory(Long userId, String keyword);
+    void saveSearchHistory(Long userId, String keyword);
     
     /**
      * 获取用户搜索历史

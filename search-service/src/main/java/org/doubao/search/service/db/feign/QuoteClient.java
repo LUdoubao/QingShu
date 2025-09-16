@@ -15,5 +15,6 @@ public interface QuoteClient {
 	@GetMapping("/search/type")
 	Result<Map<String, Object>> searchQuotes(@RequestParam("keyword") String keyword,
 								@RequestParam("page") int page, @RequestParam("size") int size,
+								@RequestParam("currentUserId") Long currentUserId,
 								@RequestParam("type") String type);
 }

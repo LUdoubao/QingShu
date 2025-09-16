@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/search")
-public class SearchController {
+public class SearchDBController {
 
     @Autowired
     private SearchService searchService;
@@ -50,7 +50,7 @@ public class SearchController {
             // 保存搜索历史
             searchHistoryService.saveSearchHistory(userId, keyword);
 
-            Page<SearchResultDTO> results = searchService.search(keyword, page, size, type);
+            Page<SearchResultDTO> results = searchService.search(keyword, page, size, type, userId);
             return Result.success(results);
         } catch (Exception e) {
             return Result.error("搜索失败: " + e.getMessage());

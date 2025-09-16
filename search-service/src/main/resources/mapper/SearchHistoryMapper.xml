@@ -3,16 +3,24 @@
 <mapper namespace="org.doubao.search.service.db.mapper.SearchHistoryMapper">
 
     <select id="getUserSearchHistory" resultType="org.doubao.search.service.db.entity.SearchHistory">
-        SELECT 
-            id, 
-            user_id, 
-            keyword, 
-            created_time 
-        FROM search_history 
-        WHERE user_id = #{userId}
-        AND deleted = 0
-        ORDER BY created_time DESC
-        LIMIT #{limit}
+        SELECT
+            id,
+            user_id,
+            keyword,
+            created_time
+        FROM search_history
+            WHERE id IN (
+                SELECT MAX(id) AS id
+                FROM search_history
+                WHERE user_id = #{userId}
+                AND deleted = 0
+                GROUP BY keyword
+            )
+            ORDER BY
+            (SELECT COUNT(*) FROM search_history s
+            WHERE user_id = #{userId} AND keyword = s.keyword AND deleted = 0) DESC,
+            created_time DESC
+            LIMIT #{limit}
     </select>
 
 </mapper>

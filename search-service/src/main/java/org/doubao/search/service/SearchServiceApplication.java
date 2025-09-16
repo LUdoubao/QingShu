@@ -5,6 +5,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
@@ -12,6 +14,13 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = "org.doubao.search.service.db.feign")
 @EnableAsync
+@ComponentScan(
+        basePackages = "org.doubao.search.service",
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.REGEX,
+                pattern = "org\\.doubao\\.search\\.service\\.es\\..*"
+        )
+)
 public class SearchServiceApplication {
 
     public static void main(String[] args) {
