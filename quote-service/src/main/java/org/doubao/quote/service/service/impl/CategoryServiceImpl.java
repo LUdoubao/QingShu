@@ -9,6 +9,7 @@ import org.doubao.quote.service.mapper.CategoryMapper;
 import org.doubao.quote.service.service.CategoryService;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -18,4 +19,6 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
 	public Result<List<Category>> listByCategoryName(String categoryName) {
 		return Result.success(this.list(new LambdaQueryWrapper<Category>().like(Category::getName, categoryName == null ? "" : categoryName)));
 	}
+
+
 }

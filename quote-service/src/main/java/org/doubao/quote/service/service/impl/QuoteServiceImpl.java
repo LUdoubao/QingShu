@@ -22,7 +22,10 @@ import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
 import org.doubao.quote.service.service.*;
+import org.doubao.quote.service.vo.CategoryCountVO;
 import org.doubao.quote.service.vo.QuoteVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +38,7 @@ import java.util.stream.Collectors;
 @Service
 public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements QuoteService {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(QuoteServiceImpl.class);
 	@Resource
 	private QuoteEventPublisher quoteEventPublisher;
 	@Resource
@@ -474,6 +478,71 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return page(pageDto);
 	}
 
+	@Override
+	public Result<Map<String, String>> getSearchSuggestions(String keyword) {
+		// 获取搜索建议
+		Map<String, String> stringStringMap = new HashMap<>();
+		// 筛选被引文绑定最多的三个标签
+		List<Tag> tags = tagService.listTopTagsByQuoteCount(keyword, 3);
+		if (!tags.isEmpty()) {
+			// 获取id列表
+			stringStringMap.put("tags", tags.stream().map(Tag::getName).collect(Collectors.joining(",")));
+		}
+		// 筛选被引文绑定最多的三个分类
+		// List<CategoryCountVO> topCategoriesByKeyword = getTopCategoriesByKeyword(keyword);
+		// if (!topCategoriesByKeyword.isEmpty()) {
+		// 	stringStringMap.put("categories", topCategoriesByKeyword.stream().map(CategoryCountVO::getCategoryName).collect(Collectors.joining(",")));
+		// }
+		int quoteCount = 9 - tags.size();
+
+		// 查询 quoteCount条随机的quote
+		List<Quote> quotes = quoteMapper.selectRandomQuotes(keyword, quoteCount);
+
+		if (!quotes.isEmpty()) {
+			stringStringMap.put("quotes", quotes.stream().map(Quote::getContent).collect(Collectors.joining(",")));
+		}
+
+		return Result.success(stringStringMap);
+	}
+
+	@Override
+	public Result<Map<String, Object>> search(String keyword, int page, int size, String type) {
+		PageDto pageDto = new PageDto();
+		pageDto.setPage(page);
+		pageDto.setSize(size);
+		Page<QuoteVo> quoteVoPage = new Page<>();
+		switch(type) {
+			case "quote":
+				pageDto.setQuoteKeyword(keyword);
+				quoteVoPage = page(pageDto).getData();
+				break;
+			case "tag":
+				// 根据keyword获取标签id
+				List<Long> tagIds = tagService.listTagIdsByName(keyword);
+				pageDto.setTagIds(tagIds);
+				quoteVoPage = page(pageDto).getData();
+				break;
+			default:
+				LOGGER.error("Invalid search type: {}", type);
+				break;
+		}
+		// 转换为Map<String, Object>
+		if (quoteVoPage != null && !quoteVoPage.getRecords().isEmpty()) {
+			Map<String, Object> map = new HashMap<>();
+			map.put("total", quoteVoPage.getTotal());
+			map.put("records", quoteVoPage.getRecords());
+			return Result.success(map);
+		}
+		LOGGER.info("No quotes found for keyword: {}", keyword);
+		return Result.success();
+	}
+
+	public List<CategoryCountVO> getTopCategoriesByKeyword(String keyword) {
+		if (StringUtils.isBlank(keyword)) {
+			return Collections.emptyList();
+		}
+		return quoteMapper.selectTopCategoriesByKeyword(keyword);
+	}
 	@SuppressWarnings("unchecked")
 	private Result<Page<QuoteVo>> queryVerify(PageDto pageDto) {
 		LambdaQueryWrapper<QuoteVerify> queryWrapper = new LambdaQueryWrapper<QuoteVerify>()

@@ -17,4 +17,8 @@ public interface TagService extends IService<Tag> {
 	Result<List<TagCountVo>> listQuery(TagQuery tagQuery);
 
 	Result<Tag> add(Tag tag);
+
+	List<Tag> listTopTagsByQuoteCount(String keyword, int limit);
+
+	List<Long> listTagIdsByName(String keyword);
 }

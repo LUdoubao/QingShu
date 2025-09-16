@@ -18,5 +18,18 @@
         quoteCount DESC
         LIMIT #{limit}
     </select>
+    <select id="selectTagWithQuoteCount" resultType="org.doubao.quote.service.dto.TagCountDTO">
+        SELECT
+        t.id AS tagId,
+        t.name AS tagName,
+        COUNT(qt.quote_id) AS quoteCount
+        FROM tag t
+        LEFT JOIN quote_tag qt ON t.id = qt.tag_id
+        WHERE t.name LIKE CONCAT('%', #{keyword}, '%')
+        GROUP BY t.id, t.name
+    </select>
 
+    <select id="listTagIdsByName" resultType="java.lang.Long">
+        SELECT id FROM tag WHERE name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
 </mapper>

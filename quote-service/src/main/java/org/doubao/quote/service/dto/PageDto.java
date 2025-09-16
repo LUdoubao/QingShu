@@ -9,6 +9,15 @@ public class PageDto {
 	private List<Long> tagIds;
 	private Long userId;
 	private Integer original;
+	private String quoteKeyword;
+
+	public String getQuoteKeyword() {
+		return quoteKeyword;
+	}
+
+	public void setQuoteKeyword(String quoteKeyword) {
+		this.quoteKeyword = quoteKeyword;
+	}
 
 	public Integer getOriginal() {
 		return original;

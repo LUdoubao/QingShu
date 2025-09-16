@@ -41,4 +41,8 @@ public interface QuoteService extends IService<Quote> {
 	boolean checkQuoteExists(Map<String, String> request);
 
 	Result<Page<QuoteVo>> originalPage(PageDto pageDto);
+
+	Result<Map<String, String>> getSearchSuggestions(String keyword);
+
+	Result<Map<String, Object>> search(String keyword, int page, int size, String type);
 }

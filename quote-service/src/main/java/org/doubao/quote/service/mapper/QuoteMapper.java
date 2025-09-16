@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.doubao.quote.service.entity.Quote;
+import org.doubao.quote.service.vo.CategoryCountVO;
 
 import java.util.List;
 import java.util.Map;
@@ -31,4 +32,8 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 	int getQuoteType(@Param("quoteId") String quoteId);
 
 	boolean checkQuoteExists(@Param("quoteId") String quoteId);
+
+	List<CategoryCountVO> selectTopCategoriesByKeyword(@Param("keyword")  String keyword);
+
+	List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount);
 }

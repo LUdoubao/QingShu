@@ -84,5 +84,17 @@ public class QuoteController {
 	public boolean checkQuoteExists(@RequestBody Map<String, String> request) {
 		return quoteService.checkQuoteExists(request);
 	}
+
+	@GetMapping("/search/suggestion")
+	public Result<Map<String, String>> getSearchSuggestions(@RequestParam("keyword") String keyword) {
+		return quoteService.getSearchSuggestions(keyword);
+	}
+
+	@GetMapping("/search/type")
+	Result<Map<String, Object>> searchQuotes(@RequestParam("keyword") String keyword,
+								@RequestParam("page") int page, @RequestParam("size") int size,
+								@RequestParam("type") String type) {
+		return quoteService.search(keyword, page, size, type);
+	}
 }
 

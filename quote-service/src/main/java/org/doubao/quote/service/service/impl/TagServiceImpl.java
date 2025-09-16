@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.quote.service.dto.TagCountDTO;
 import org.doubao.quote.service.dto.TagCountVo;
 import org.doubao.quote.service.dto.TagQuery;
 import org.doubao.quote.service.entity.Tag;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -67,5 +69,33 @@ public class TagServiceImpl extends ServiceImpl<TagMapper, Tag> implements TagSe
 			throw new BusinessException(ErrorCode.TAG_NAME_EXIST);
 		}
 		return Result.success(this.save(tag) ? tag : null);
+	}
+
+	@Override
+	public List<Tag> listTopTagsByQuoteCount(String keyword, int limit) {
+		// 1. 查询符合条件的标签并统计引用次数
+		List<TagCountDTO> tagCounts = tagMapper.selectTagWithQuoteCount(keyword);
+
+		// 2. 按引用次数降序排序
+		tagCounts.sort((t1, t2) -> t2.getQuoteCount() - t1.getQuoteCount());
+
+		// 3. 取前limit个标签ID
+		List<Long> topTagIds = tagCounts.stream()
+				.limit(limit)
+				.map(TagCountDTO::getTagId)
+				.collect(Collectors.toList());
+
+		// 4. 查询完整的标签对象
+		if (topTagIds.isEmpty()) return Collections.emptyList();
+		List<Tag> tags = tagMapper.selectBatchIds(topTagIds);
+		return tags.isEmpty() ? Collections.emptyList() : tags;
+	}
+
+	@Override
+	public List<Long> listTagIdsByName(String keyword) {
+		if (keyword != null && !keyword.isEmpty()) {
+			return tagMapper.selectTagIdsByName(keyword);
+		}
+		return Collections.emptyList();
 	}
 }
