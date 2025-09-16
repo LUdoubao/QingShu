@@ -74,6 +74,9 @@ public enum ErrorCode {
 	AI_LIMIT_EXCEEDED_SYSTEM("ai_002", "系统调用已达今日上限，请明天再试"),
 
 
+	SEARCH_TYPE_NOT_SUPPORT("search_001", "不支持的搜索类型"),
+
+
 	DIALOG_SESSION_SELF_CREATE("dialog_001", "不能与自己创建会话"),
 	DIALOG_SESSION_NOT_EXIST("dialog_002", "会话不存在或已删除"),
 	DIALOG_SESSION_NOT_ALLOW_DELETE("dialog_004", "AI助手会话不允许删除"),
@@ -90,6 +93,7 @@ public enum ErrorCode {
 	DIALOG_MESSAGE_CONTENT_TOO_LONG( "dialog_014", "文字消息长度不能超过500字"),
 	DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID( "dialog_016", "会话缓存过期时间必须大于0秒"),
 	DIALOG_MESSAGE_CONTENT_INVALID( "dialog_015", "表情消息格式错误（需符合[表情名]格式，如[微笑]）");
+
 
 
 
