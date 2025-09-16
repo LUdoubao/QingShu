@@ -29,7 +29,7 @@
         GROUP BY t.id, t.name
     </select>
 
-    <select id="listTagIdsByName" resultType="java.lang.Long">
+    <select id="selectTagIdsByName" resultType="java.lang.Long">
         SELECT id FROM tag WHERE name LIKE CONCAT('%', #{keyword}, '%')
     </select>
 </mapper>

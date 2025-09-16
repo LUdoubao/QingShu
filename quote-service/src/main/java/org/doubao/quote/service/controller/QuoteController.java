@@ -93,8 +93,9 @@ public class QuoteController {
 	@GetMapping("/search/type")
 	Result<Map<String, Object>> searchQuotes(@RequestParam("keyword") String keyword,
 								@RequestParam("page") int page, @RequestParam("size") int size,
+								@RequestParam("currentUserId") Long currentUserId,
 								@RequestParam("type") String type) {
-		return quoteService.search(keyword, page, size, type);
+		return quoteService.search(keyword, page, size, type, currentUserId);
 	}
 }
 

@@ -220,16 +220,17 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	private Result<Page<QuoteVo>> query(PageDto pageDto) {
-		Long currentUserId = UserContext.getUserId();
+		Long currentUserId = UserContext.getUser() == null ? pageDto.getCurrentUserId() : Long.valueOf(UserContext.getUser().getId());
 		int page = pageDto.getPage();
 		int size = pageDto.getSize();
 		Long categoryId = pageDto.getCategoryId();
 		List<Long> tagIds = pageDto.getTagIds();
 		Long userId = pageDto.getUserId();
 		Integer original = pageDto.getOriginal();
+		String quoteKeyword = pageDto.getQuoteKeyword();
 
 		// 1. 查询总数
-		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(), userId, original);
+		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(), userId, original,quoteKeyword);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
@@ -239,7 +240,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				size,
 				(page - 1) * size,
 				userId,
-				original
+				original,
+				quoteKeyword
 		);
 
 		Page<QuoteVo> pageVo = new Page<>(page, size, total);
@@ -506,10 +508,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public Result<Map<String, Object>> search(String keyword, int page, int size, String type) {
+	public Result<Map<String, Object>> search(String keyword, int page, int size, String type,  Long currentUserId) {
 		PageDto pageDto = new PageDto();
 		pageDto.setPage(page);
 		pageDto.setSize(size);
+		pageDto.setCurrentUserId(currentUserId);
 		Page<QuoteVo> quoteVoPage = new Page<>();
 		switch(type) {
 			case "quote":

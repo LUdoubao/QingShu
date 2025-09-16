@@ -9,7 +9,17 @@ public class PageDto {
 	private List<Long> tagIds;
 	private Long userId;
 	private Integer original;
-	private String quoteKeyword;
+	private String quoteKeyword = null;
+
+	private Long currentUserId;
+
+	public Long getCurrentUserId() {
+		return currentUserId;
+	}
+
+	public void setCurrentUserId(Long currentUserId) {
+		this.currentUserId = currentUserId;
+	}
 
 	public String getQuoteKeyword() {
 		return quoteKeyword;
