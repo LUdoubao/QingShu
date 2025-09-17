@@ -25,7 +25,7 @@ public class RelationController {
 	 * 关注用户
 	 */
 	@PostMapping("/follow")
-	@UserRateLimiter(key = "follow", count = 10, period = 60) // 限流：1分钟最多10次
+	@UserRateLimiter(key = "follow") // 限流：1分钟最多10次
 	public Result<Void> follow(
 			@RequestParam Long targetUserId
 	) {
@@ -37,7 +37,7 @@ public class RelationController {
 	 * 取消关注
 	 */
 	@PostMapping("/unfollow")
-	@UserRateLimiter(key = "unfollow", count = 10, period = 60)
+	@UserRateLimiter(key = "unfollow")
 	public Result<Void> unfollow(
 			@RequestParam Long targetUserId
 	) {

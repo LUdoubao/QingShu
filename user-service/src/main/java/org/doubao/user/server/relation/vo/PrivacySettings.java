@@ -5,6 +5,15 @@ public class PrivacySettings {
 	private Integer followingVisibility;
 	private Integer profileVisibility;
 	private Integer workVisibility;
+	private Integer chatVisibility;
+
+	public Integer getChatVisibility() {
+		return chatVisibility;
+	}
+
+	public void setChatVisibility(Integer chatVisibility) {
+		this.chatVisibility = chatVisibility;
+	}
 
 	public Integer getWorkVisibility() {
 		return workVisibility;
@@ -43,5 +52,6 @@ public class PrivacySettings {
 		public static final int FOLLOWING = 2;
 		public static final int PROFILE = 3;
 		public static final int WORK = 4;
+		public static final int CHAT = 5;
 	}
 }

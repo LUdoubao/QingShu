@@ -4,7 +4,7 @@
 
     <!-- 根据用户ID查询隐私设置 -->
     <select id="selectByUserId" resultType="org.doubao.user.server.relation.entity.UserPrivacy">
-        SELECT id, user_id, follower_visibility, following_visibility, profile_visibility, work_visibility, created_time, updated_time
+        SELECT id, user_id, follower_visibility, following_visibility, profile_visibility, work_visibility, chat_visibility, created_time, updated_time
         FROM user_privacy
         WHERE user_id = #{userId}
     </select>

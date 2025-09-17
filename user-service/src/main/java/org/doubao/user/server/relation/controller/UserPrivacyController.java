@@ -20,7 +20,7 @@ public class UserPrivacyController {
 
 	/**
 	 * 获取当前用户可见性设置
-	 * @return 可见性值（1=公开，2=仅互关，3=私密）
+	 * @return 可见性值（1=公开，2=仅互关，3=私密, 4=仅关注）
 	 */
 	@GetMapping("/settings")
 	public Result<PrivacySettings> getSettings() {
@@ -48,6 +48,11 @@ public class UserPrivacyController {
 	public Result<Boolean> checkQuoteQueryPermission(@RequestParam ("targetUserId") Long targetUserId,
 													 @RequestParam("currentUserId") Long currentUserId) {
 		return Result.success(privacyService.checkSeePermission(targetUserId, currentUserId, PrivacySettings.SeeAccessType.WORK));
+	}
+	@GetMapping("/chat")
+	public Result<Boolean> checkChatPermission(@RequestParam ("targetUserId") Long targetUserId,
+													 @RequestParam("currentUserId") Long currentUserId) {
+		return Result.success(privacyService.checkSeePermission(targetUserId, currentUserId, PrivacySettings.SeeAccessType.CHAT));
 	}
 
 }
