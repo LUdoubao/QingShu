@@ -74,6 +74,11 @@ public class DialogSession extends BaseDel {
     private Integer isTop;
 
     /**
+     * 会话是否隐藏
+     * 枚举：0（不隐藏）、1（隐藏）
+     */
+    private Integer hidden;
+    /**
      * 会话类型枚举
      * 与数据库字段值映射（枚举值=数据库存储值）
      */
@@ -110,6 +115,14 @@ public class DialogSession extends BaseDel {
 
     public void setIsLastMsgOwner(Integer isLastMsgOwner) {
         this.isLastMsgOwner = isLastMsgOwner;
+    }
+
+    public Integer getHidden() {
+        return hidden;
+    }
+
+    public void setHidden(Integer hidden) {
+        this.hidden = hidden;
     }
 
     public Long getId() {

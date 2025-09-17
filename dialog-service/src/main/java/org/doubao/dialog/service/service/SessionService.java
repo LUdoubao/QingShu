@@ -45,6 +45,12 @@ public interface SessionService {
      * @param sessionId 会话ID
      */
     void deleteSession(Long userId, Long sessionId);
+    /**
+     * 隐藏会话
+     * @param userId 当前用户ID（校验会话归属）
+     * @param sessionId 会话ID
+     */
+    void hiddenSession(Long userId, Long sessionId);
 
     /**
      * 会话未读清零
@@ -64,7 +70,11 @@ public interface SessionService {
      * @return 会话PO（不存在则返回null）
      */
     DialogSession getSessionByIdAndUserId(Long sessionId, Long userId);
+
     DialogSession getSessionByIdAndReceiverId(Long sessionId, Long receiverId);
+
     List<DialogSession> queryOwnUserSessions(Long userId);
+
+    List<DialogSession> queryAllOwnUserSessions(Long userId);
 }
   

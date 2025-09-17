@@ -83,25 +83,31 @@ public class SessionServiceImpl implements SessionService {
             if (!userResult.isSuccess() || userResult.getData() == null || userResult.getData().isEmpty()) {
                 throw new BusinessException(ErrorCode.USER_DISABLED_OR_NOT_EXISTS);
             }
+
             // 校验：不能与自己创建会话
             if (Objects.equals(userId, targetId)) {
                 throw new BusinessException(ErrorCode.DIALOG_SESSION_SELF_CREATE);
             }
+
+            Boolean check = userFeignClient.checkChatPermission(targetId, userId).getData();
+            if (!check) {
+                throw new BusinessException(ErrorCode.USER_CHAT_PRIVACY_NOT_OPEN);
+            }
         }
 
-        // 4. 检查会话是否已存在（唯一索引：userId+sessionType+targetId）
+        // 4. 检查会话是否已存在（唯一索引：userId+sessionType+targetId）含逻辑删除的会话TODO
         LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DialogSession::getUserId, userId)
                 .eq(DialogSession::getSessionType, sessionType)
                 .eq(DialogSession::getTargetId, targetId)
-                .eq(DialogSession::getDeleted, 0); // 排除已删除的会话
+                .eq(DialogSession::getHidden, 0);
         DialogSession existSession = sessionMapper.selectOne(queryWrapper);
 
         // 5. 处理已存在的会话（若已删除则恢复）
         if (existSession != null) {
-            // 若会话被逻辑删除，恢复为正常状态
-            if (existSession.getDeleted() == 1) {
-                existSession.setDeleted(0);
+            // 若会话被隐藏，恢复为正常状态
+            if (existSession.getHidden() == 1) {
+                existSession.setHidden(0);
                 existSession.setUpdatedTime(LocalDateTime.now());
                 sessionMapper.updateById(existSession);
                 // 同步缓存（恢复后的会话信息）
@@ -195,9 +201,21 @@ public class SessionServiceImpl implements SessionService {
         LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DialogSession::getUserId, userId) // 仅自己创建的会话
                 .eq(DialogSession::getDeleted, 0)
+                .eq(DialogSession::getSessionType, "USER")
+                .eq(DialogSession::getHidden, 0);
+        return sessionMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<DialogSession> queryAllOwnUserSessions(Long userId) {
+        LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(DialogSession::getUserId, userId) // 仅自己创建的会话
+                .eq(DialogSession::getDeleted, 0)
                 .eq(DialogSession::getSessionType, "USER");
         return sessionMapper.selectList(queryWrapper);
     }
+
+
     /**
      * 查询对方创建的、以当前用户为目标的会话，构建“聊天对象ID→对方会话”的映射
      * @param userId 当前用户ID（对方会话的targetId）
@@ -380,8 +398,27 @@ public class SessionServiceImpl implements SessionService {
             throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_ALLOW_DELETE);
         }
 
-        // 3. 逻辑删除（标记isDeleted=1）
-        sessionPO.setDeleted(1);
+        // 3. 逻辑删除
+        sessionMapper.deleteById(sessionPO.getId());
+
+        // 4. 删除Redis缓存（避免缓存脏数据）
+        redisCacheUtil.deleteSessionCache(userId, sessionId);
+        redisCacheUtil.deleteSessionListCache(userId);
+    }
+
+    @Override
+    public void hiddenSession(Long userId, Long sessionId) {
+        DialogSession sessionPO = getSessionByIdAndUserId(sessionId, userId);
+        if (sessionPO == null) {
+            throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+        }
+
+        // 2. AI会话特殊限制：不允许隐藏
+        if (sessionPO.getSessionType() == DialogSession.SessionTypeEnum.AI) {
+            throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_ALLOW_DELETE);
+        }
+
+        sessionPO.setHidden(1);
         sessionPO.setUpdatedTime(LocalDateTime.now());
         sessionMapper.updateById(sessionPO);
 
@@ -410,7 +447,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void clearAllSessionUnread(Long userId) {
         // 获取所有当前用户会话列表
-        List<DialogSession> sessions = queryOwnUserSessions(userId);
+        List<DialogSession> sessions = queryAllOwnUserSessions(userId);
         if (sessions.isEmpty()) {
             return;
         }

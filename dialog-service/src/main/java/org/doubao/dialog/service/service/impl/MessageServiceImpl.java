@@ -437,7 +437,11 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		Long receiverId = Objects.equals(sessionPO.getUserId(), senderId)
 				? sessionPO.getTargetId()
 				: sessionPO.getUserId();
-
+		// 3.1 校验接收方隐私权限
+		Boolean check = userFeignClient.checkChatPermission(receiverId, senderId).getData();
+		if (!check) {
+			throw new BusinessException(ErrorCode.USER_CHAT_PRIVACY_NOT_OPEN);
+		}
 		// 4. 校验消息内容（非空、长度限制）
 		validateMessageContent(content, contentType);
 
@@ -571,7 +575,20 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				.eq(DialogSession::getSessionType, "USER") // 仅用户间会话（排除AI会话）
 				.eq(DialogSession::getDeleted, 0) // 未删除
 				.last("limit 1"); // 确保只返回一条（唯一索引保障）
-		return sessionMapper.selectOne(queryWrapper);
+		DialogSession dialogSession = sessionMapper.selectOne(queryWrapper);
+		if (dialogSession == null) {
+			log.info("对方未创建会话");
+			dialogSession = new DialogSession();
+			dialogSession.setUserId(targetUserId);
+			dialogSession.setTargetId(currentUserId);
+			dialogSession.setSessionType(DialogSession.SessionTypeEnum.USER);
+			dialogSession.setCreatedId(currentUserId);
+			dialogSession.setUpdatedId(currentUserId);
+			sessionMapper.insert(dialogSession);
+			redisCacheUtil.deleteSessionCache(targetUserId, dialogSession.getId());
+			redisCacheUtil.deleteSessionListCache(targetUserId);
+		}
+		return dialogSession;
 	}
 
 	/**
@@ -672,14 +689,10 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		// 1. 校验会话归属（当前用户是否为接收者）
 		DialogSession sessionPO = sessionService.getSessionByIdAndReceiverId(sessionId, receiverId);
 		if (sessionPO == null) {
-			log.warn("会话不存在1");
+			log.warn("会话不存在");
 			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
 		}
 		DialogSession mySession = getTargetUserSession(receiverId, sessionPO.getUserId());
-		if (mySession == null) {
-			log.warn("会话不存在2");
-			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
-		}
 		// 2. 构建MongoDB查询条件
 		Criteria criteria = Criteria.where("sessionId").is(sessionId)
 				.and("receiverId").is(receiverId)
@@ -892,8 +905,12 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		try {
 			DialogSession targetUserSession = getTargetUserSession(receiverId, sessionPO.getUserId());
 
+			if (targetUserSession.getHidden() == 1) {
+				targetUserSession.setHidden(0);
+				sessionMapper.updateById(targetUserSession);
+			}
 			// 1. 转换消息PO为VO（用于推送）
-			MessageVO messageVO = convertToMessageVO(messagePO, receiverId, targetUserSession != null ? targetUserSession.getId() : null);
+			MessageVO messageVO = convertToMessageVO(messagePO, receiverId, targetUserSession.getId());
 
 			// 2. 检查接收者是否在线（WebSocket会话是否存在）
 			if (webSocketHandler.isUserOnline(receiverId)) {
@@ -911,18 +928,10 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				dialogEventPublisher.sendOfflineNotification(messageVO, receiverId, senderName);
 			}
 			// 自动增加对方会话未读数
-			LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
-			queryWrapper.eq(DialogSession::getUserId, receiverId)
-					.eq(DialogSession::getTargetId, messageVO.getSenderId())
-					.eq(DialogSession::getSessionType, "USER");
-			DialogSession dialogSession = sessionMapper.selectOne(queryWrapper);
-			if (dialogSession != null) {
-				// 更新数据库会话未读数
-				dialogSession.setUnreadCount(dialogSession.getUnreadCount() + 1);
-				sessionMapper.updateById(dialogSession);
-				// 更新redis缓存
-				redisCacheUtil.setSessionUnreadCount(receiverId, dialogSession.getId(), dialogSession.getUnreadCount());
-			}
+			targetUserSession.setUnreadCount(targetUserSession.getUnreadCount() + 1);
+			sessionMapper.updateById(targetUserSession);
+			// 更新redis缓存
+			redisCacheUtil.setSessionUnreadCount(receiverId, targetUserSession.getId(), targetUserSession.getUnreadCount());
 		} catch (Exception e) {
 			// 推送失败：更新消息状态为FAILED，便于后续重发
 			updateMessageStatusToFailed(messagePO.getId());

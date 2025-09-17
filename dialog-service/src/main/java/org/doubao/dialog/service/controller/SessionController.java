@@ -109,7 +109,7 @@ public class SessionController {
      * @param sessionId 会话ID
      * @return 操作结果
      */
-    @GetMapping("/{sessionId}")
+    @GetMapping("/delete/{sessionId}")
     @ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
     public Result<Void> deleteSession(
             @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
@@ -120,6 +120,26 @@ public class SessionController {
 
         // 2. 调用Service删除会话
         sessionService.deleteSession(userId, sessionId);
+
+        // 3. 返回结果
+        return Result.success();
+    }
+    /**
+     * 隐藏会话
+     * @param sessionId 会话ID
+     * @return 操作结果
+     */
+    @GetMapping("/hidden/{sessionId}")
+    @ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
+    public Result<Void> hiddenSession(
+            @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
+    ) {
+        // 1. 解析用户ID
+        Long userId = UserContext.getUserId();
+
+
+        // 2. 调用Service删除会话
+        sessionService.hiddenSession(userId, sessionId);
 
         // 3. 返回结果
         return Result.success();
