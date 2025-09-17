@@ -5,6 +5,8 @@ import io.jsonwebtoken.Claims;
 import org.doubao.auth.service.utils.JwtUtil;
 import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.util.UserContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -27,6 +29,7 @@ import java.util.Map;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 	@Autowired
 	private JwtUtil jwtUtil;
 	@Resource
@@ -37,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 									HttpServletResponse response,
 									FilterChain filterChain)
 			throws ServletException, IOException {
+		logger.info("开始执行JwtAuthenticationFilter.doFilterInternal方法");
 		String userId = request.getHeader("X-User-Id");
 		String username = request.getHeader("X-User-Name");
 		if (userId != null && username != null) {
@@ -46,21 +50,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			UserContext.setUser(user);
 		}
 
-		// 1. 从请求头中获取Authorization字段值
-		String authHeader = request.getHeader("Authorization");
-		// 2. 检查Authorization头是否符合JWT标准格式（以"Bearer "开头）
-		if (authHeader != null && authHeader.startsWith("Bearer ")) {
-			// 3. 提取纯Token字符串（去掉"Bearer "前缀）
-			String token = authHeader.substring(7);
-
+		logger.info("请求参数:{}", request.getQueryString());
+		String token = request.getParameter("token");
+		logger.info("Authorization:{}", token);
+		if (token != null && !token.isEmpty()) {
+			logger.info("解析token:{}", token);
 
 			if (isTokenExpired(token)) {
+				logger.info("token已过期:{}", token);
 				handleTokenExpired(response, request);
 				return;
 			}
 
 			// 检查token是否在黑名单中
 			if (isTokenBlacklisted(token)) {
+				logger.info("token黑名单:{}", token);
 				handleTokenInvalid(response, request);
 				return;
 			}
