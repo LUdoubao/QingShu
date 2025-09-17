@@ -44,9 +44,10 @@ public enum ErrorCode {
 	USER_PRIVACY_FOLLOWER_LIST_NOT_OPEN("USER_017", "该用户的粉丝列表未公开"),
 	USER_PRIVACY_FOLLOWING_LIST_NOT_OPEN("USER_018", "该用户的关注列表未公开"),
 	USER_PRIVACY_QUOTE_LIST_NOT_OPEN("USER_019", "该用户的作品列表未公开"),
-	USER_INVALID_VISIBILITY("USER_020", "无效的可见性设置（仅支持1-3）"),
+	USER_INVALID_VISIBILITY("USER_020", "无效的可见性设置"),
 	USER_INVALID_NEW_PASSWORD("USER_021", "新密码需包含字母和数字，且至少8位,最多20位"),
 	USER_NICKNAME_EXISTS("USER_022",  "昵称已被注册"),
+	USER_CHAT_PRIVACY_NOT_OPEN("USER_023",  "由于对方隐私设置, 您无权发起聊天"),
 
 
 
