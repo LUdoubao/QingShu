@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.support.ServiceUnavailableException;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -90,10 +91,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 				})
 				.onErrorResume(e -> {       // 处理所有验证异常
 					// 记录详细错误日志
-					LOG.error("JWT 解析失败：{}", e.getMessage());
-
-					// 设置401未授权响应状态
-					exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					LOG.error("JWT 解析失败", e);
+					Throwable rootCause = e.getCause();
+					if (rootCause instanceof ServiceUnavailableException) {
+						// 服务不可用
+						exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+					} else {
+						// 认证错误
+						exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					}
 
 					// 立即结束响应
 					return exchange.getResponse().setComplete();
