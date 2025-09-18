@@ -99,8 +99,7 @@ public class SessionServiceImpl implements SessionService {
         LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DialogSession::getUserId, userId)
                 .eq(DialogSession::getSessionType, sessionType)
-                .eq(DialogSession::getTargetId, targetId)
-                .eq(DialogSession::getHidden, 0);
+                .eq(DialogSession::getTargetId, targetId);
         DialogSession existSession = sessionMapper.selectOne(queryWrapper);
 
         // 5. 处理已存在的会话（若已删除则恢复）
@@ -160,9 +159,11 @@ public class SessionServiceImpl implements SessionService {
         // 6. 分页（基于自己的会话列表，合并消息后分页）
         List<DialogSession> pagedSessions = doManualPagination(sortedSessions, pageNum, pageSize);
 
+        List<Long> collect = pagedSessions.stream().map(DialogSession::getTargetId).collect(Collectors.toList());
+        Map<Long, Boolean> booleanMap = userFeignClient.checkBatch(userId, collect).getData();
         // 7. 转换为VO并补充信息（目标用户信息、实时未读计数）
         List<SessionVO> sessionVOList = pagedSessions.stream()
-                .map(sessionPO -> convertToSessionVO(sessionPO, userId))
+                .map(sessionPO -> convertToSessionVO(sessionPO, userId, booleanMap))
                 .collect(Collectors.toList());
 
         // 获取目标用户在线状态
@@ -541,7 +542,7 @@ public class SessionServiceImpl implements SessionService {
      * @param userId    当前用户ID（用于获取未读计数）
      * @return 会话VO
      */
-    private SessionVO convertToSessionVO(DialogSession sessionPO, Long userId) {
+    private SessionVO convertToSessionVO(DialogSession sessionPO, Long userId, Map<Long, Boolean> blockMap) {
         SessionVO sessionVO = new SessionVO();
         BeanUtils.copyProperties(sessionPO, sessionVO);
 
@@ -555,9 +556,11 @@ public class SessionServiceImpl implements SessionService {
         Integer unreadCount = redisCacheUtil.getSessionUnreadCount(userId, sessionPO.getId());
         sessionVO.setUnreadCount(Optional.ofNullable(unreadCount).orElse(0));
 
-
         // 3. 格式化最后消息时间（如：10分钟前、15:30、06-12）
         sessionVO.setLastMsgTimeStr(formatLastMsgTime(sessionPO.getLastMsgTime()));
+
+        // 补充是否拉黑了该会话
+        sessionVO.setBlocked(blockMap.getOrDefault(sessionPO.getTargetId(), false));
 
         return sessionVO;
     }

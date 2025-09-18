@@ -90,32 +90,15 @@ public class SessionVO {
     private Boolean hasUnread;
 
     private Boolean online = false;
-    /**
-     * 从会话PO转换为VO（默认值处理）
-     * @param sessionPO 会话PO
-     * @return 会话VO
-     */
-    public static SessionVO fromPO(DialogSession sessionPO) {
-        SessionVO sessionVO = new SessionVO();
-        // 基础字段复制
-        sessionVO.setId(sessionPO.getId());
-        sessionVO.setSessionType(sessionPO.getSessionType().getValue());
-        sessionVO.setTargetId(sessionPO.getTargetId());
-        sessionVO.setLastMsgId(sessionPO.getLastMsgId());
-        sessionVO.setLastMsgContent(sessionPO.getLastMsgContent());
-        sessionVO.setLastMsgTime(sessionPO.getLastMsgTime());
-        sessionVO.setUnreadCount(sessionPO.getUnreadCount());
-        sessionVO.setIsTop(sessionPO.getIsTop());
-        sessionVO.setCreatedAt(sessionPO.getCreatedTime());
-        sessionVO.setUpdatedAt(sessionPO.getUpdatedTime());
 
-        // 补充字段默认值
-        sessionVO.setTargetNickname("未知用户");
-        sessionVO.setTargetAvatarUrl("https://picsum.photos/id/1005/40/40"); // 默认头像
-        sessionVO.setLastMsgTimeStr("");
-        sessionVO.setHasUnread(sessionPO.getUnreadCount() > 0);
+    private Boolean isBlocked = false;
 
-        return sessionVO;
+    public Boolean getBlocked() {
+        return isBlocked;
+    }
+
+    public void setBlocked(Boolean blocked) {
+        isBlocked = blocked;
     }
 
     public Boolean getOnline() {
