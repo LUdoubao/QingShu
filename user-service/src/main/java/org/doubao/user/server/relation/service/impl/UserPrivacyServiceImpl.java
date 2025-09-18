@@ -6,8 +6,10 @@ import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.user.server.relation.entity.UserPrivacy;
 import org.doubao.user.server.relation.enums.RelationType;
+import org.doubao.user.server.relation.mapper.UserBlockMapper;
 import org.doubao.user.server.relation.mapper.UserPrivacyMapper;
 import org.doubao.user.server.relation.mapper.UserRelationMapper;
+import org.doubao.user.server.relation.service.UserBlockService;
 import org.doubao.user.server.relation.service.UserPrivacyService;
 import org.doubao.user.server.relation.util.UserValidator;
 import org.doubao.user.server.relation.vo.PrivacySettings;
@@ -34,8 +36,15 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 	@Resource
 	private UserValidator userValidator;
 
+	@Resource
+	private UserBlockMapper userBlockMapper;
 	@Override
 	public boolean checkSeePermission(Long targetUserId, Long currentUserId, int seeAccessType) {
+		// 检查是否被拉黑
+		Integer count = userBlockMapper.checkBlockRelation(targetUserId, currentUserId);
+		if (count != null && count > 0) {
+			return false;
+		}
 		// 1. 获取目标用户的隐私设置（默认公开）
 		PrivacySettings settings = getSettings(targetUserId);
 		LOGGER.info("=============getSettings settings: {} " , JSON.toJSONString(settings));

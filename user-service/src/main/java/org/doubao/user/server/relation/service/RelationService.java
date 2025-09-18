@@ -78,4 +78,7 @@ public interface RelationService extends IService<UserRelation> {
 	Map<Long, Boolean> isFollow(Long currentUserId, Set<Long> userIds);
 
 	boolean existsFollowRelation(Long targetUserId);
+
+
+	void  blockFollowRelation(Long userIdOne, Long userIdTwo);
 }

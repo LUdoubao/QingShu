@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.user.server.relation.mapper.UserBlockMapper">
+
+    <!-- 检查是否存在拉黑关系 -->
+    <select id="checkBlockRelation" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM user_block
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </select>
+
+    <!-- 获取黑名单用户列表 -->
+    <select id="selectBlockedUserList" resultType="org.doubao.user.server.relation.vo.BlockedUserVO">
+        SELECT
+        u.id,
+        u.nickname,
+        u.avatar_key AS avatarUrl,
+        u.storage_type AS storageType,
+        b.created_time AS blockTime
+        FROM user_block b
+        LEFT JOIN user u ON b.blocked_user_id = u.id
+        WHERE b.user_id = #{userId}
+        ORDER BY b.created_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- Integer getBlockCount(@Param("userId") Long userId); -->
+    <select id="getBlockCount" resultType="java.lang.Integer">
+        SELECT COUNT(1)
+        FROM user_block
+        WHERE user_id = #{userId}
+    </select>
+</mapper>

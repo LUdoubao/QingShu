@@ -155,7 +155,10 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	public void unfollow(Long targetUserId) {
 		//  获取当前用户ID
 		Long userId = UserContext.getUserId();
+		unfollow(targetUserId, userId);
+	}
 
+	void unfollow(Long targetUserId, Long userId) {
 		// 1. 校验用户状态
 		userValidator.validateActiveUser(userId);
 		userValidator.validateActiveUser(targetUserId);
@@ -197,7 +200,6 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 
 		log.info("用户 {} 取消关注了用户 {}", userId, targetUserId);
 	}
-
 	/**
 	 * 批量关注
 	 */
@@ -506,6 +508,20 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	public boolean existsFollowRelation(Long targetUserId) {
 		Long userId = UserContext.getUserId();
 		return userRelationMapper.existsRelation(userId, targetUserId, RelationType.FOLLOW.getValue()) > 0;
+	}
+
+	@Override
+	public void blockFollowRelation(Long userIdOne, Long userIdTwo) {
+		try {
+			unfollow(userIdOne, userIdTwo);
+		} catch (Exception e) {
+			log.error("用户 {} 删除关注关系失败", userIdOne);
+		}
+		try {
+			unfollow(userIdTwo, userIdOne);
+		} catch (Exception e) {
+			log.error("用户 {} 删除关注关系失败1", userIdTwo);
+		}
 	}
 
 	/**
