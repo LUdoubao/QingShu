@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -16,7 +17,7 @@ import java.util.function.Function;
 public class JwtUtil {
 	private static final String SECRET = "doubao";
 
-	public String generateToken(UserInfo user) {
+	public String generateToken(UserLoginVo user) {
 		Map<String, Object> claims = new HashMap<>();
 		claims.put("username", user.getUsername());
 		claims.put("userId", user.getId());

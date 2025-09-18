@@ -3,8 +3,6 @@ package org.doubao.auth.service.filter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import org.doubao.auth.service.utils.JwtUtil;
-import org.doubao.mall.common.entity.UserInfo;
-import org.doubao.mall.common.util.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +11,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.HandlerInterceptor;
 
 import javax.annotation.Resource;
 import javax.servlet.FilterChain;
@@ -40,22 +37,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 									HttpServletResponse response,
 									FilterChain filterChain)
 			throws ServletException, IOException {
-		logger.info("开始执行JwtAuthenticationFilter.doFilterInternal方法");
-		String userId = request.getHeader("X-User-Id");
-		String username = request.getHeader("X-User-Name");
-		if (userId != null && username != null) {
-			UserInfo user = new UserInfo();
-			user.setId(userId);
-			user.setUsername(username);
-			UserContext.setUser(user);
-		}
-
-		logger.info("请求参数:{}", request.getQueryString());
 		String token = request.getParameter("token");
-		logger.info("Authorization:{}", token);
 		if (token != null && !token.isEmpty()) {
-			logger.info("解析token:{}", token);
-
 			if (isTokenExpired(token)) {
 				logger.info("token已过期:{}", token);
 				handleTokenExpired(response, request);
@@ -81,7 +64,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 			}
 		}
 		// 8. 无论是否处理认证，都必须继续过滤器链执行
-		//    让后续过滤器或控制器可以处理请求
 		filterChain.doFilter(request, response);
 	}
 

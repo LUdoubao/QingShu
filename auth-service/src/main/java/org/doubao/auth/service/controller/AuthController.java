@@ -3,9 +3,9 @@ package org.doubao.auth.service.controller;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.doubao.auth.service.utils.JwtUtil;
-import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,11 +31,10 @@ public class AuthController {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthController.class);
 
 	@PostMapping("/login")
-	public Result<UserInfo> login(@RequestBody UserInfo userInfo) {
-		LOGGER.info("用户 {} 登录成功", userInfo.getUsername());
-		String token = jwtUtil.generateToken(userInfo);
-		userInfo.setToken(token);
-		return Result.success(userInfo);
+	public Result<UserLoginVo> login(@RequestBody UserLoginVo userLoginVo) {
+		String token = jwtUtil.generateToken(userLoginVo);
+		userLoginVo.setToken(token);
+		return Result.success(userLoginVo);
 	}
 	@GetMapping("/verify")
 	public ResponseEntity<Map<String, Object>> verify(@RequestParam String token) {
