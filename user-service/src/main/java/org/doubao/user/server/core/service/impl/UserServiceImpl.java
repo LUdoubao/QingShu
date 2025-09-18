@@ -8,6 +8,7 @@ import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.server.core.dto.PasswordChangeDto;
 import org.doubao.user.server.core.dto.UpdateEmailDto;
 import org.doubao.user.server.core.dto.UserDto;
@@ -201,10 +202,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		if (user.getStatus() == 1) {
 			throw new BusinessException(ErrorCode.USER_DISABLED);
 		}
-		UserInfo userInfo = new UserInfo();
-		userInfo.setId(user.getId().toString());
+		UserLoginVo userInfo = new UserLoginVo();
+		userInfo.setId(user.getId());
 		userInfo.setUsername(user.getUsername());
-		UserInfo data = authServiceClient.login(userInfo).getData();
+		UserLoginVo data = authServiceClient.login(userInfo).getData();
 		UserVo userVo = UserVo.from(user);
 		// 动态生成头像URL
 		userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
@@ -216,9 +217,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 				user.getStorageType()
 		).getData());
 		userVo.setToken(data.getToken());
-		String cacheKey = "USER:" + user.getId();
-		redisTemplate.opsForValue().set(cacheKey, userVo,
-				Duration.ofMinutes(30 + new Random().nextInt(10)));
+
+		// String cacheKey = "USER:" + user.getId();
+		// redisTemplate.opsForValue().set(cacheKey, userVo,
+		// 		Duration.ofMinutes(30 + new Random().nextInt(10)));
 		return userVo;
 	}
 
