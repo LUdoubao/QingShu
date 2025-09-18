@@ -30,4 +30,19 @@
         FROM user_block
         WHERE user_id = #{userId}
     </select>
+    <!-- List<BlockCheckVo> checkBatch(@Param("userId")  Long userId, @Param("targetUserIds") List<Long> targetUserIds); -->
+    <select id="checkBatch" resultType="org.doubao.user.server.relation.vo.BlockCheckVo">
+        SELECT
+        target_ids.target_user_id AS targetUserId,
+        CASE WHEN ub.blocked_user_id IS NOT NULL THEN true ELSE false END AS isBlocked
+        FROM (
+        <foreach collection="targetUserIds" item="id" separator=" UNION ALL ">
+            SELECT #{id} AS target_user_id
+        </foreach>
+        ) AS target_ids
+        LEFT JOIN user_block ub
+        ON ub.blocked_user_id = target_ids.target_user_id
+        AND ub.user_id = #{userId}
+    </select>
+
 </mapper>

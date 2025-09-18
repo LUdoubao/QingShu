@@ -66,7 +66,7 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 				visibility = settings.getChatVisibility();
 			    break;
 			default:
-				throw new BusinessException(ErrorCode.USER_INVALID_VISIBILITY);
+				return true;
 		}
 
 		// 2. 权限判断逻辑

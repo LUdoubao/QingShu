@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 黑名单控制器
@@ -77,5 +78,12 @@ public class UserBlockController {
 		Long userId = UserContext.getUserId();
 		boolean isBlocked = userBlockService.checkIsBlocked(userId, targetUserId);
 		return Result.success(isBlocked);
+	}
+
+	@PostMapping("/checkBatch")
+	@ApiOperation("批量检查是否拉黑目标用户")
+	public Result<Map<Long, Boolean>> checkBatch(@RequestParam Long userId, @RequestBody List<Long> targetUserIds) {
+		Map<Long, Boolean> map = userBlockService.checkBatch(userId, targetUserIds);
+		return Result.success(map);
 	}
 }

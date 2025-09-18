@@ -11,6 +11,7 @@ import org.doubao.user.server.relation.entity.UserBlock;
 import org.doubao.user.server.relation.mapper.UserBlockMapper;
 import org.doubao.user.server.relation.service.RelationService;
 import org.doubao.user.server.relation.service.UserBlockService;
+import org.doubao.user.server.relation.vo.BlockCheckVo;
 import org.doubao.user.server.relation.vo.BlockedUserVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +20,10 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 黑名单服务实现类
@@ -100,5 +104,17 @@ public class UserBlockServiceImpl extends ServiceImpl<UserBlockMapper, UserBlock
 	public boolean checkIsBlocked(Long userId, Long targetUserId) {
 		Integer count = userBlockMapper.checkBlockRelation(userId, targetUserId);
 		return count != null && count > 0;
+	}
+
+	@Override
+	public Map<Long, Boolean> checkBatch(Long userId, List<Long> targetUserIds) {
+		// 批量检查是否拉黑目标用户
+		if (targetUserIds == null || targetUserIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		List<BlockCheckVo> blockCheckVos = userBlockMapper.checkBatch(userId, targetUserIds);
+		return blockCheckVos.stream().collect(
+				Collectors.toMap(BlockCheckVo::getTargetUserId, BlockCheckVo::isBlocked)
+		);
 	}
 }

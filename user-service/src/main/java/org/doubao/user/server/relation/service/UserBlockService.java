@@ -6,6 +6,7 @@ import org.doubao.user.server.relation.entity.UserBlock;
 import org.doubao.user.server.relation.vo.BlockedUserVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 黑名单服务接口
@@ -41,4 +42,6 @@ public interface UserBlockService extends IService<UserBlock> {
 	 * @return 是否被拉黑
 	 */
 	boolean checkIsBlocked(Long userId, Long targetUserId);
+
+	Map<Long, Boolean> checkBatch(Long userId, List<Long> targetUserIds);
 }
