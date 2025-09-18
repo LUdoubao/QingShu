@@ -48,6 +48,9 @@ public enum ErrorCode {
 	USER_INVALID_NEW_PASSWORD("USER_021", "新密码需包含字母和数字，且至少8位,最多20位"),
 	USER_NICKNAME_EXISTS("USER_022",  "昵称已被注册"),
 	USER_CHAT_PRIVACY_NOT_OPEN("USER_023",  "由于对方隐私设置, 您无权发起聊天"),
+	USER_BLOCK_SELF("USER_024",  "不能拉黑自己"),
+	USER_BLOCK_EXISTS("USER_024",  "该用户已在黑名单中"),
+	USER_BLOCK_NOT_EXISTS("USER_025",  "该用户不在黑名单中"),
 
 
 
