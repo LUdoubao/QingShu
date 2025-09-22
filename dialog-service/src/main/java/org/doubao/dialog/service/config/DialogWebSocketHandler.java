@@ -6,7 +6,6 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.MessagePushType;
@@ -16,7 +15,7 @@ import org.doubao.dialog.service.messaging.DialogEventPublisher;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.MessageVO;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -378,9 +377,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 
 		// 用户名称：调用user-service查询
-		Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(senderId));
+		Result<List<UserInfoDes>> userResult = userFeignClient.getUsersByIds(Collections.singleton(senderId));
 		if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
-			UserInfo userInfo = userResult.getData().get(0);
+			UserInfoDes userInfo = userResult.getData().get(0);
 			return userInfo.getNickname();
 		} else {
 			return "未知用户";

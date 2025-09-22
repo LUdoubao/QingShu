@@ -8,10 +8,10 @@ import org.doubao.dialog.service.req.SessionTopReq;
 import org.doubao.dialog.service.service.SessionService;
 import org.doubao.dialog.service.vo.SessionVO;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +42,7 @@ public class SessionController {
     ) {
         // 1. 解析用户ID
         Long reqUserId;
-        UserInfo user = UserContext.getUser();
+        UserLoginVo user = UserContext.getUser();
 
         if (user == null) {
             reqUserId = createReq.getUserId();
@@ -50,7 +50,7 @@ public class SessionController {
                 throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
             }
         } else {
-            reqUserId = Long.valueOf(user.getId());
+            reqUserId = user.getId();
         }
 
         // 2. 调用Service创建会话

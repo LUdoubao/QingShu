@@ -9,7 +9,7 @@ import org.doubao.dialog.service.service.SessionService;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.doubao.dialog.service.vo.SessionVO;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.springframework.beans.BeanUtils;
@@ -79,7 +79,7 @@ public class SessionServiceImpl implements SessionService {
         // 3. 用户会话校验：目标用户必须存在（调用user-service）
         if (sessionType == DialogSession.SessionTypeEnum.USER) {
             // 校验目标用户是否存在
-            Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(targetId));
+            Result<List<UserInfoDes>> userResult = userFeignClient.getUsersByIds(Collections.singleton(targetId));
             if (!userResult.isSuccess() || userResult.getData() == null || userResult.getData().isEmpty()) {
                 throw new BusinessException(ErrorCode.USER_DISABLED_OR_NOT_EXISTS);
             }
@@ -571,10 +571,9 @@ public class SessionServiceImpl implements SessionService {
                 sessionVO.setTargetAvatarUrl(""); // AI默认头像
                 return;
             }
-            // 调用用户服务查询目标用户信息（假设Feign返回Result<List<UserInfo>>）
-            Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(targetUserId));
+            Result<List<UserInfoDes>> userResult = userFeignClient.getUsersByIds(Collections.singleton(targetUserId));
             if (userResult.isSuccess() && !CollectionUtils.isEmpty(userResult.getData())) {
-                UserInfo targetUser = userResult.getData().get(0);
+                UserInfoDes targetUser = userResult.getData().get(0);
                 sessionVO.setTargetNickname(targetUser.getNickname());
                 sessionVO.setTargetAvatarUrl(targetUser.getAvatarUrl());
             } else {

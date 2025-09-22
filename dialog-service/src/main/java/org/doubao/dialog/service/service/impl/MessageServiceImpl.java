@@ -30,7 +30,7 @@ import org.doubao.dialog.service.vo.DialogQuery;
 import org.doubao.dialog.service.vo.DialogVO;
 import org.doubao.dialog.service.vo.MessageVO;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.slf4j.Logger;
@@ -1009,9 +1009,9 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 			messageVO.setSenderNickname("AI助手");
 			messageVO.setSenderAvatarUrl(""); // AI默认头像
 		} else {
-			Result<List<UserInfo>> userResult = userFeignClient.getUsersByIds(Collections.singleton(messagePO.getSenderId()));
+			Result<List<UserInfoDes>> userResult = userFeignClient.getUsersByIds(Collections.singleton(messagePO.getSenderId()));
 			if (userResult.isSuccess() && userResult.getData() != null && !userResult.getData().isEmpty()) {
-				UserInfo senderUser = userResult.getData().get(0);
+				UserInfoDes senderUser = userResult.getData().get(0);
 				messageVO.setSenderNickname(senderUser.getNickname());
 				messageVO.setSenderAvatarUrl(senderUser.getAvatarUrl());
 			} else {
