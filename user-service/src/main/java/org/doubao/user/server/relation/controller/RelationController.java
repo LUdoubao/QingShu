@@ -1,9 +1,10 @@
 package org.doubao.user.server.relation.controller;
 
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.vo.PageResult;
 import org.doubao.user.server.relation.annotation.UserRateLimiter;
+import org.doubao.user.server.relation.dto.UserInfoDesFollow;
 import org.doubao.user.server.relation.service.RelationService;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,12 +65,12 @@ public class RelationController {
 	 * @return 分页粉丝ID列表
 	 */
 	@GetMapping("/followers")
-	public Result<PageResult<UserInfo>> getFollowers(
+	public Result<PageResult<UserInfoDesFollow>> getFollowers(
 			@RequestParam Long targetUserId,
 			@RequestParam(defaultValue = "1") int page,
 			@RequestParam(defaultValue = "20") int size
 	) {
-		PageResult<UserInfo> result = relationService.getFollowers(targetUserId, page, size);
+		PageResult<UserInfoDesFollow> result = relationService.getFollowers(targetUserId, page, size);
 		return Result.success(result);
 	}
 
@@ -89,12 +90,12 @@ public class RelationController {
 	 * @return 分页关注ID列表
 	 */
 	@GetMapping("/following")
-	public Result<PageResult<UserInfo>> getFollowing(
+	public Result<PageResult<UserInfoDes>> getFollowing(
 			@RequestParam Long userId,
 			@RequestParam(defaultValue = "1") int page,
 			@RequestParam(defaultValue = "20") int size
 	) {
-		PageResult<UserInfo> result = relationService.getFollowing(userId, page, size);
+		PageResult<UserInfoDes> result = relationService.getFollowing(userId, page, size);
 		return Result.success(result);
 	}
 

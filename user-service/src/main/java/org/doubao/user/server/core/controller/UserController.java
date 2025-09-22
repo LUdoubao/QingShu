@@ -1,7 +1,8 @@
 package org.doubao.user.server.core.controller;
 
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.server.core.dto.*;
 import org.doubao.user.server.core.service.UserService;
 import org.doubao.user.server.core.vo.UserVo;
@@ -34,17 +35,26 @@ public class UserController {
 	}
 
 	@PostMapping("/login")
-	public Result<UserVo> login(@RequestBody LoginDto loginDto) {
+	public Result<UserLoginVo> login(@RequestBody LoginDto loginDto) {
 		return Result.success(userService.login(loginDto.getUsername(), loginDto.getPassword()));
 	}
 
 	@GetMapping("/get/{userId}")
-	public Result<UserVo> getUser(@PathVariable Long userId) {
+	public Result<UserInfoProfile> getUser(@PathVariable Long userId) {
 		return Result.success(userService.getById(userId));
 	}
 
+	@GetMapping("/editGet")
+	public Result<UserInfoProfileEdit> editGet() {
+		return Result.success(userService.editGet());
+	}
+	@GetMapping("/editGetEmail")
+	public Result<String> editGetEmail() {
+		return Result.success(userService.editGetEmail());
+	}
+
 	@PostMapping("/listByIds")
-	public Result<List<UserInfo>> listByIds(@RequestBody Set<Long> userIds) {
+	public Result<List<UserInfoDes>> listByIds(@RequestBody Set<Long> userIds) {
 		return Result.success(userService.usersByIds(userIds));
 	}
 

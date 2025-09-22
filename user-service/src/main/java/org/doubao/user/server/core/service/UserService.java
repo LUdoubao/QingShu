@@ -1,11 +1,9 @@
 package org.doubao.user.server.core.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.doubao.mall.common.entity.UserInfo;
-import org.doubao.user.server.core.dto.PasswordChangeDto;
-import org.doubao.user.server.core.dto.UpdateEmailDto;
-import org.doubao.user.server.core.dto.UserDto;
-import org.doubao.user.server.core.dto.UserUpdateDto;
+import org.doubao.mall.common.entity.UserInfoDes;
+import org.doubao.mall.common.vo.UserLoginVo;
+import org.doubao.user.server.core.dto.*;
 import org.doubao.user.server.core.entity.User;
 import org.doubao.user.server.core.vo.PageUserVo;
 import org.doubao.user.server.core.vo.UserVo;
@@ -17,25 +15,17 @@ import java.util.Map;
 import java.util.Set;
 
 public interface UserService extends IService<User> {
-	UserVo getById(Long id);
+	UserInfoProfile getById(Long id);
 	void register(UserDto userDto);
 
 	void completeRegistration(UserDto userDto);
 
-	UserVo login(String username, String password);
+	UserLoginVo login(String username, String password);
 
 
 	void updateProfile(UserUpdateDto dto);
 
 	void changePassword(PasswordChangeDto dto);
-
-	PageUserVo<UserVo> adminSearchUsers(int page, int size, Integer status, String email);
-
-	void adminUpdateStatus(Long userId, Integer status);
-
-	void adminDeleteUser(Long userId);
-
-	void adminUpdateRole(Long userId, String role);
 
 	void loginOut(HttpServletRequest request);
 
@@ -49,7 +39,11 @@ public interface UserService extends IService<User> {
 
 	String uploadBg(MultipartFile file, Long userId);
 
-	List<UserInfo> usersByIds(Set<Long> userIds);
+	List<UserInfoDes> usersByIds(Set<Long> userIds);
 
 	boolean checkUserExists(Map<String, String> request);
+
+	UserInfoProfileEdit editGet();
+
+	String editGetEmail();
 }

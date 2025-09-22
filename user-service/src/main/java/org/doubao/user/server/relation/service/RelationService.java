@@ -1,8 +1,9 @@
 package org.doubao.user.server.relation.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.vo.PageResult;
+import org.doubao.user.server.relation.dto.UserInfoDesFollow;
 import org.doubao.user.server.relation.entity.UserRelation;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -30,7 +31,7 @@ public interface RelationService extends IService<UserRelation> {
 	 * @param size 每页条数
 	 * @return 分页粉丝列表（包含用户ID）
 	 */
-	PageResult<UserInfo> getFollowers(Long userId, int page, int size);
+	PageResult<UserInfoDesFollow> getFollowers(Long userId, int page, int size);
 
 
 	List<Long> allFollowers(Long userId);
@@ -42,7 +43,7 @@ public interface RelationService extends IService<UserRelation> {
 	 * @param size 每页条数
 	 * @return 分页关注列表（包含用户ID）
 	 */
-	PageResult<UserInfo> getFollowing(Long userId, int page, int size);
+	PageResult<UserInfoDes> getFollowing(Long userId, int page, int size);
 
 
 	List<Long> allFollows(Long userId);

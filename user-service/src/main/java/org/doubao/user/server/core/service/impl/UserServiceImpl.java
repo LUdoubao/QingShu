@@ -1,18 +1,15 @@
 package org.doubao.user.server.core.service.impl;
 
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.dto.FileUploadResult;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
-import org.doubao.user.server.core.dto.PasswordChangeDto;
-import org.doubao.user.server.core.dto.UpdateEmailDto;
-import org.doubao.user.server.core.dto.UserDto;
-import org.doubao.user.server.core.dto.UserUpdateDto;
+import org.doubao.user.server.core.dto.*;
 import org.doubao.user.server.core.entity.User;
 import org.doubao.user.server.core.feign.AuthServiceClient;
 import org.doubao.user.server.core.feign.OssServiceClient;
@@ -73,44 +70,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
-	public List<UserInfo> usersByIds(Set<Long> userIds) {
-		List<Long> noCacheId = new ArrayList<>();
-		List<UserVo> userVoList = new ArrayList<>();
-		List<UserInfo> userInfoList = new ArrayList<>();
-		for (Long userId : userIds) {
-			String cacheKey = "USER:" + userId;
-			Object user = redisTemplate.opsForValue().get(cacheKey);
-			if (user != null) {
-				UserVo userVo = JSON.toJavaObject(JSON.parseObject(JSON.toJSONString(user)), UserVo.class);
-				userVoList.add(userVo);
-			} else {
-				noCacheId.add(userId);
-			}
-		}
+	public List<UserInfoDes> usersByIds(Set<Long> userIds) {
+		List<UserInfoDes> userInfoList = new ArrayList<>();
+		List<Long> noCacheId = new ArrayList<>(userIds);
 		if (!noCacheId.isEmpty()) {
 			List<User> users = this.listByIds(noCacheId);
 			for (User user : users) {
-				String cacheKey = "USER:" + user.getId();
-				UserVo userVo = UserVo.from(user);
-				// 动态生成头像URL
-				userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
+				UserInfoDes userInfoDes = new UserInfoDes(user.getId(), user.getNickname());
+				userInfoDes.setAvatarUrl(ossServiceClient.generateAccessUrl(
 						user.getAvatarKey(),
-						user.getStorageType()
-				).getData());
-				userVo.setBgUrl(ossServiceClient.generateAccessUrl(
-						user.getBgKey(),
-						user.getStorageType()
-				).getData());
-				userVoList.add(userVo);
-				redisTemplate.opsForValue().set(cacheKey, userVo,
-						Duration.ofMinutes(30 + new Random().nextInt(10)));
+						user.getStorageType()).getData()
+				);
+				userInfoList.add(userInfoDes);
 			}
 		}
-		// UserVo 转 UserInfo
-		userVoList.forEach(userVo -> {
-			UserInfo userInfo = UserVo.fromVo(userVo);
-			userInfoList.add(userInfo);
-		});
 		return userInfoList;
 	}
 
@@ -121,28 +94,46 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
-	public UserVo getById(Long id) {
-		String cacheKey = "USER:" + id;
-		Object user = redisTemplate.opsForValue().get(cacheKey);
-		if (user == null) {
-			user = userMapper.selectById(id);
-			User userEntity = (User) user;
-			UserVo userVo = UserVo.from(userEntity);
-			// 动态生成头像URL
-			userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
-					userEntity.getAvatarKey(),
-					userEntity.getStorageType()
-			).getData());
-			userVo.setBgUrl(ossServiceClient.generateAccessUrl(
-					userEntity.getBgKey(),
-					userEntity.getStorageType()
-			).getData());
+	public UserInfoProfileEdit editGet() {
+		Long userId = UserContext.getUserId();
+		User user = userMapper.selectById(userId);
+		UserInfoProfileEdit userInfoDes = new UserInfoProfileEdit(user.getId(), user.getNickname(), user.getUsername());
+		// 动态生成头像URL
+		userInfoDes.setAvatarUrl(ossServiceClient.generateAccessUrl(
+				user.getAvatarKey(),
+				user.getStorageType()
+		).getData());
+		userInfoDes.setBgUrl(ossServiceClient.generateAccessUrl(
+				user.getBgKey(),
+				user.getStorageType()
+		).getData());
+		userInfoDes.setSignature(user.getSignature());
+		return userInfoDes;
+	}
 
-			redisTemplate.opsForValue().set(cacheKey, userVo,
-					Duration.ofMinutes(30 + new Random().nextInt(10)));
-			return userVo;
-		}
-		return JSON.toJavaObject(JSON.parseObject(JSON.toJSONString(user)),UserVo.class);
+	@Override
+	public String editGetEmail() {
+		Long userId = UserContext.getUserId();
+		User user = userMapper.selectById(userId);
+		String email = user.getEmail();
+		// 邮箱脱敏
+		return email.substring(0, 3) + "****" + email.substring(email.length() - 4);
+	}
+
+	@Override
+	public UserInfoProfile getById(Long id) {
+		User user = userMapper.selectById(id);
+		UserInfoProfile userInfoDes = new UserInfoProfile(user.getId(), user.getNickname(), user.getUsername());
+		// 动态生成头像URL
+		userInfoDes.setAvatarUrl(ossServiceClient.generateAccessUrl(
+				user.getAvatarKey(),
+				user.getStorageType()
+		).getData());
+		userInfoDes.setBgUrl(ossServiceClient.generateAccessUrl(
+				user.getBgKey(),
+				user.getStorageType()
+		).getData());
+		return userInfoDes;
 	}
 
 	@Override
@@ -191,9 +182,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
-	public UserVo login(String username, String password) {
-
-		User user = userMapper.selectOne(new QueryWrapper<User>().eq("username", username));
+	public UserLoginVo login(String username, String password) {
+		LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(User::getUsername, username);
+		User user = userMapper.selectOne(queryWrapper);
 
 		if (user == null || !passwordEncoder.matches(password, user.getPassword())) {
 			throw new BusinessException(ErrorCode.USERNAME_PASSWORD_ERROR);
@@ -202,26 +194,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		if (user.getStatus() == 1) {
 			throw new BusinessException(ErrorCode.USER_DISABLED);
 		}
+
 		UserLoginVo userInfo = new UserLoginVo();
 		userInfo.setId(user.getId());
 		userInfo.setUsername(user.getUsername());
 		UserLoginVo data = authServiceClient.login(userInfo).getData();
-		UserVo userVo = UserVo.from(user);
 		// 动态生成头像URL
-		userVo.setAvatarUrl(ossServiceClient.generateAccessUrl(
+		userInfo.setAvatarUrl(ossServiceClient.generateAccessUrl(
 				user.getAvatarKey(),
 				user.getStorageType()
 		).getData());
-		userVo.setBgUrl(ossServiceClient.generateAccessUrl(
-				user.getBgKey(),
-				user.getStorageType()
-		).getData());
-		userVo.setToken(data.getToken());
+		userInfo.setToken(data.getToken());
 
-		// String cacheKey = "USER:" + user.getId();
-		// redisTemplate.opsForValue().set(cacheKey, userVo,
-		// 		Duration.ofMinutes(30 + new Random().nextInt(10)));
-		return userVo;
+		return userInfo;
 	}
 
 	@Override
@@ -262,43 +247,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		}
 		// 正则：包含至少1个字母和1个数字
 		return newPassword.matches("^(?=.*[A-Za-z])(?=.*\\d).+$");
-	}
-	@Override
-	public PageUserVo<UserVo> adminSearchUsers(int page, int size, Integer status, String email) {
-		return null;
-	}
-
-	@Override
-	public void adminUpdateStatus(Long userId, Integer status) {
-		if (status != 0 && status != 1) {
-			throw new BusinessException(ErrorCode.INVALID_STATUS);
-		}
-
-		User user = new User();
-		user.setId(userId);
-		user.setStatus(status);
-		user.setRole(null);
-		userMapper.updateById(user);
-		clearUserCache(userId);
-	}
-
-	@Override
-	public void adminDeleteUser(Long userId) {
-		userMapper.deleteById(userId);
-		clearUserCache(userId);
-	}
-
-	@Override
-	public void adminUpdateRole(Long userId, String role) {
-		if (!"USER".equals(role) && !"ADMIN".equals(role)) {
-			throw new BusinessException(ErrorCode.INVALID_ROLE);
-		}
-
-		User user = new User();
-		user.setId(userId);
-		user.setRole(role);
-		userMapper.updateById(user);
-		clearUserCache(userId);
 	}
 
 	@Override

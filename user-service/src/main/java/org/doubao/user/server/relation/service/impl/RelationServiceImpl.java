@@ -3,13 +3,14 @@ package org.doubao.user.server.relation.service.impl;
 import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.PageResult;
 import org.doubao.user.server.core.service.UserService;
 import org.doubao.user.server.relation.dto.FollowerCount;
+import org.doubao.user.server.relation.dto.UserInfoDesFollow;
 import org.doubao.user.server.relation.entity.UserFollowOperateLog;
 import org.doubao.user.server.relation.entity.UserRelation;
 import org.doubao.user.server.relation.entity.UserRelationCount;
@@ -297,7 +298,7 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	 * 获取粉丝列表（分页）
 	 */
 	@Override
-	public PageResult<UserInfo> getFollowers(Long targetUserId, int page, int size) {
+	public PageResult<UserInfoDesFollow> getFollowers(Long targetUserId, int page, int size) {
 		// 1. 校验参数
 		validatePageParams(page, size);
 		userValidator.validateActiveUser(targetUserId); // 校验用户存在
@@ -311,11 +312,11 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 		int offset = (page - 1) * size;
 
 		// 4. 尝试从缓存获取
-		String cacheKey = String.format(FOLLOWER_CACHE_KEY, targetUserId, page, size);
-		PageResult<UserInfo> cachedResult = relationCacheService.getFollowerPage(cacheKey);
-		if (cachedResult != null) {
-			return cachedResult;
-		}
+		// String cacheKey = String.format(FOLLOWER_CACHE_KEY, targetUserId, page, size);
+		// PageResult<UserInfo> cachedResult = relationCacheService.getFollowerPage(cacheKey);
+		// if (cachedResult != null) {
+		// 	return cachedResult;
+		// }
 
 		// 5. 缓存未命中，查询数据库
 		List<Long> followerIds = userRelationMapper.selectFollowerIds(
@@ -329,23 +330,24 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 				RelationType.FOLLOW.getValue()
 		);
 
-		List<UserInfo> followers = new ArrayList<>();
+		List<UserInfoDes> followers = new ArrayList<>();
+		List<UserInfoDesFollow> followList = new ArrayList<>();
 		if (!followerIds.isEmpty()) {
 			Set<Long> followerIdSet = new HashSet<>(followerIds);
 			followers = userService.usersByIds(followerIdSet);
 			Map<Long, Boolean> follow = isFollow(targetUserId, followerIdSet);
-			for (UserInfo follower : followers) {
-				follower.setFollow(follow.getOrDefault(Long.valueOf(follower.getId()), false));
+			for (UserInfoDes follower : followers) {
+				UserInfoDesFollow followerDes = UserInfoDesFollow.fromUserInfoDes(follower, follow.getOrDefault(follower.getId(), false));
+				followList.add(followerDes);
 			}
 		}
 
 		// 6. 封装分页结果
-		PageResult<UserInfo> result = PageResult.of(page, size, total, followers);
+		PageResult<UserInfoDesFollow> result = PageResult.of(page, size, total, followList);
 
 		// 7. 缓存结果
-		relationCacheService.setFollowerPage(cacheKey, result, CACHE_TTL_SECONDS);
+		// relationCacheService.setFollowerPage(cacheKey, result, CACHE_TTL_SECONDS);
 
-		log.info("用户 {} 的粉丝列表查询完成，页码：{}，条数：{}", targetUserId, page, size);
 		return result;
 	}
 
@@ -362,7 +364,7 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	 * 获取关注列表（分页）
 	 */
 	@Override
-	public PageResult<UserInfo> getFollowing(Long targetUserId, int page, int size) {
+	public PageResult<UserInfoDes> getFollowing(Long targetUserId, int page, int size) {
 		// 1. 校验参数
 		validatePageParams(page, size);
 		userValidator.validateActiveUser(targetUserId);
@@ -375,11 +377,11 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 		int offset = (page - 1) * size;
 
 		// 3. 尝试从缓存获取
-		String cacheKey = String.format(FOLLOWING_CACHE_KEY, targetUserId, page, size);
-		PageResult<UserInfo> cachedResult = relationCacheService.getFollowingPage(cacheKey);
-		if (cachedResult != null) {
-			return cachedResult;
-		}
+		// String cacheKey = String.format(FOLLOWING_CACHE_KEY, targetUserId, page, size);
+		// PageResult<UserInfo> cachedResult = relationCacheService.getFollowingPage(cacheKey);
+		// if (cachedResult != null) {
+		// 	return cachedResult;
+		// }
 
 		// 4. 缓存未命中，查询数据库
 		List<Long> followingIds = userRelationMapper.selectFollowingIds(
@@ -393,17 +395,17 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 				RelationType.FOLLOW.getValue()
 		);
 
-		List<UserInfo> followings = new ArrayList<>();
+		List<UserInfoDes> followings = new ArrayList<>();
 		if (!followingIds.isEmpty()) {
 			Set<Long> followingIdSet = new HashSet<>(followingIds);
 			followings = userService.usersByIds(followingIdSet);
 		}
 
 		// 5. 封装分页结果
-		PageResult<UserInfo> result = PageResult.of(page, size, total, followings);
+		PageResult<UserInfoDes> result = PageResult.of(page, size, total, followings);
 
 		// 6. 缓存结果
-		relationCacheService.setFollowingPage(cacheKey, result, CACHE_TTL_SECONDS);
+		// relationCacheService.setFollowingPage(cacheKey, result, CACHE_TTL_SECONDS);
 
 		log.info("用户 {} 的关注列表查询完成，页码：{}，条数：{}", targetUserId, page, size);
 		return result;

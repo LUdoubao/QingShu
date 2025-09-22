@@ -1,9 +1,7 @@
 package org.doubao.user.server.relation.util;
 
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
-import org.doubao.mall.common.util.UserContext;
 import org.doubao.user.server.core.mapper.UserMapper;
 import org.springframework.stereotype.Component;
 

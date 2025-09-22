@@ -2,7 +2,6 @@ package org.doubao.user.server.relation.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.vo.PageResult;

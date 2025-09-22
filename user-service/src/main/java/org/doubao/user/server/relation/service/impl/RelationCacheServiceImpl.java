@@ -1,7 +1,5 @@
 package org.doubao.user.server.relation.service.impl;
 
-import org.doubao.mall.common.entity.UserInfo;
-import org.doubao.mall.common.vo.PageResult;
 import org.doubao.user.server.relation.service.RelationCacheService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,28 +20,6 @@ public class RelationCacheServiceImpl implements RelationCacheService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RelationCacheServiceImpl.class);
 	@Autowired
 	private RedisTemplate<String, Object> redisTemplate;
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public PageResult<UserInfo> getFollowerPage(String cacheKey) {
-		return (PageResult<UserInfo>) redisTemplate.opsForValue().get(cacheKey);
-	}
-
-	@Override
-	public void setFollowerPage(String cacheKey, PageResult<UserInfo> result, int ttlSeconds) {
-		redisTemplate.opsForValue().set(cacheKey, result, ttlSeconds, TimeUnit.SECONDS);
-	}
-
-	@Override
-	@SuppressWarnings("unchecked")
-	public PageResult<UserInfo> getFollowingPage(String cacheKey) {
-		return (PageResult<UserInfo>) redisTemplate.opsForValue().get(cacheKey);
-	}
-
-	@Override
-	public void setFollowingPage(String cacheKey, PageResult<UserInfo> result, int ttlSeconds) {
-		redisTemplate.opsForValue().set(cacheKey, result, ttlSeconds, TimeUnit.SECONDS);
-	}
 
 	@Override
 	public void deleteCache(String cacheKey) {
