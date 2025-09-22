@@ -10,7 +10,7 @@ import org.doubao.feed.service.model.dto.ContentDTO;
 import org.doubao.feed.service.model.dto.DynamicDTO;
 import org.doubao.feed.service.model.entity.EventTimeline;
 import org.doubao.feed.service.model.entity.UserTimeline;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.vo.PageResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -228,10 +228,10 @@ public class FeedAggregationService {
 				.collect(Collectors.toSet());
 		logger.info("用户ID actorIds列表：{}", actorIds);
 
-		List<UserInfo> userInfos = userClient.getUsersByIds(actorIds).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(actorIds).getData();
 		logger.info("用户信息列表：{}", JSON.toJSONString(userInfos));
-		Map<String, UserInfo> userMap = userInfos.stream()
-				.collect(Collectors.toMap(UserInfo::getId, user -> user));
+		Map<Long, UserInfoDes> userMap = userInfos.stream()
+				.collect(Collectors.toMap(UserInfoDes::getId, user -> user));
 		logger.info("用户Map：{}", JSON.toJSONString(userMap));
 
 		// 2. 批量获取内容信息
@@ -269,7 +269,7 @@ public class FeedAggregationService {
 		// 4. 补充信息到DTO
 		dynamics.forEach(dynamic -> {
 			// 补充用户信息
-			UserInfo user = userMap.get(String.valueOf(dynamic.getActorId()));
+			UserInfoDes user = userMap.get(dynamic.getActorId());
 			if (user != null) {
 				dynamic.setActorName(user.getNickname());
 				dynamic.setActorAvatar(user.getAvatarUrl());

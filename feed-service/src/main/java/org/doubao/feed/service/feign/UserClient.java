@@ -2,7 +2,7 @@ package org.doubao.feed.service.feign;
 
 import org.doubao.feed.service.feign.fallback.UserClientFallbackFactory;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +41,7 @@ public interface UserClient {
 	 * 批量获取用户信息
 	 */
 	@PostMapping("/user/listByIds")
-	Result<List<UserInfo>> getUsersByIds(@RequestBody Set<Long> userIds);
+	Result<List<UserInfoDes>> getUsersByIds(@RequestBody Set<Long> userIds);
 
 	/**
 	 * 检查是否互相关注

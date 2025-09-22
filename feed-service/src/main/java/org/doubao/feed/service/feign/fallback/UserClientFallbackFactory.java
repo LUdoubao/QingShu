@@ -2,7 +2,7 @@ package org.doubao.feed.service.feign.fallback;
 
 import org.doubao.feed.service.feign.UserClient;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
@@ -45,7 +45,7 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
 			}
 
 			@Override
-			public Result<List<UserInfo>> getUsersByIds(Set<Long> userIds) {
+			public Result<List<UserInfoDes>> getUsersByIds(Set<Long> userIds) {
 				log.error("[UserClient] getUsersByIds fallback, userIds: {}, cause: {}", userIds, cause.getMessage());
 				return Result.success(Collections.emptyList());
 			}
