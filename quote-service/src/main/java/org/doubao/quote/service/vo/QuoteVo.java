@@ -1,7 +1,7 @@
 package org.doubao.quote.service.vo;
 
 import org.doubao.mall.common.entity.BaseEntity;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.quote.service.entity.Tag;
 
 import java.util.List;
@@ -43,7 +43,7 @@ public class QuoteVo extends BaseEntity {
 	/**
 	 * 用户信息
 	 */
-	private UserInfo userInfo;
+	private UserInfoDes userInfo;
 
 	/**
 	 * 是否关注
@@ -51,11 +51,11 @@ public class QuoteVo extends BaseEntity {
 	private boolean follow;
 
 
-	public UserInfo getUserInfo() {
+	public UserInfoDes getUserInfo() {
 		return userInfo;
 	}
 
-	public void setUserInfo(UserInfo userInfo) {
+	public void setUserInfo(UserInfoDes userInfo) {
 		this.userInfo = userInfo;
 	}
 

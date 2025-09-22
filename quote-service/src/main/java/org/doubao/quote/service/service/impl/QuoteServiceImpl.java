@@ -7,10 +7,11 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
@@ -111,12 +112,12 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Override
 	public Result<String> updateQuote(QuoteUpdateDto dto) {
-		UserInfo userInfo = UserContext.getUser();
+		UserLoginVo userInfo = UserContext.getUser();
 		QuoteVo afterQuoteVo = dto.getAfterQuoteVo();
 		Quote quote = new Quote();
 		BeanUtils.copyProperties(afterQuoteVo, quote);
 		List<Tag> tags = afterQuoteVo.getTags();
-		if (userInfo.getId().equals("1") && userInfo.getUsername().equals("admin")) {
+		if (userInfo.getId() == 1 && userInfo.getUsername().equals("admin")) {
 			// 管理员直接保存
 			quote.setStatus(1);
 			this.updateById(quote);
@@ -186,7 +187,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		QuoteVo quoteVo = new QuoteVo();
 		BeanUtils.copyProperties(quote, quoteVo);
 		Long createdId = quoteVo.getCreatedId();
-		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
 
 		List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
 		Long categoryId = quoteVo.getCategoryId();
@@ -205,16 +206,16 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 		quoteVo.setCategoryName(category.getName());
 		quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
-		Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+		Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
 		first.ifPresent(quoteVo::setUserInfo);
 		return Result.success(quoteVo);
 	}
 
 	@Override
 	public Result<Page<QuoteVo>> pageManager(PageDto pageDto) {
-		String userId = UserContext.getUser().getId();
-		if (!"1".equals(userId)) {
-			pageDto.setUserId(Long.valueOf(userId));
+		Long userId = UserContext.getUser().getId();
+		if (userId!= null && userId != 1) {
+			pageDto.setUserId(userId);
 		}
 		return query(pageDto);
 	}
@@ -257,7 +258,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 			// 获取创建者信息
 			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
-			List<UserInfo> userInfos = userClient.getUsersByIds(createdIds).getData();
+			List<UserInfoDes> userInfos = userClient.getUsersByIds(createdIds).getData();
 			// 获取关注信息
 			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, createdIds).getData();
 
@@ -288,7 +289,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
 				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
 				// 设置用户信息
-				Optional<UserInfo> first = userInfos.stream().filter(userInfo -> userInfo.getId().equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+				Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
 				first.ifPresent(quoteVo::setUserInfo);
 				// 设置是否关注
 				quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
@@ -308,7 +309,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 
 		Long quoteId = dto.getId();
-		UserInfo user = UserContext.getUser();
+		UserLoginVo user = UserContext.getUser();
 		if (status == 0) {// 审核不通过
 			// 引文表状态恢复1
 			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
@@ -321,7 +322,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 					dto.getContent(),
 					"REJECTED",
 					"审核驳回",
-					user.getUsername(),
+					"管理员",
 					dto.getCreatedId()
 			);
 		} else {

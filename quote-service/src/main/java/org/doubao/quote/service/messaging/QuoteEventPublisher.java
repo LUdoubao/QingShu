@@ -2,7 +2,7 @@ package org.doubao.quote.service.messaging;
 
 import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.BusinessEvent;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.EventType;
 import org.doubao.mall.common.event.AuditQuoteEvent;
 import org.doubao.mall.common.event.VerifyQuoteEvent;
@@ -103,7 +103,7 @@ public class QuoteEventPublisher {
 
 	public void pushFanoutFeedPublish(Quote quote) {
 		taskExecutor.asyncExecute(() -> {
-			List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(quote.getCreatedId())).getData();
+			List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(quote.getCreatedId())).getData();
 
 			BusinessEvent businessEvent = new BusinessEvent();
 			Long timestamp = System.currentTimeMillis();
