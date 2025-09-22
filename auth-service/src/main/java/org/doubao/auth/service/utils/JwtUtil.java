@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.springframework.stereotype.Component;
 

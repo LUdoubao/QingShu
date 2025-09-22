@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import org.doubao.auth.service.utils.JwtUtil;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +40,6 @@ public class AuthController {
 		try {
 			LOGGER.info("进入 /auth/verify，收到 token: {}", token);
 			Claims claims = jwtUtil.getClaimsFromToken(token);
-			if (claims != null) {
-				String userId = claims.get("userId", String.class);
-				String subject = claims.getSubject();
-				LOGGER.info("subject {} 登录验证", subject);
-				LOGGER.info("用户 {} 登录验证成功", userId);
-			}
 			return ResponseEntity.ok(claims);
 		} catch (JwtException e) {
 			LOGGER.error("token验证失败",e);
@@ -59,9 +52,9 @@ public class AuthController {
 			LOGGER.info("进入 /auth/webSocket，收到 token: {}", token);
 			Claims claims = jwtUtil.getClaimsFromToken(token);
 			if (claims != null) {
-				String userId = claims.get("userId", String.class);
+				Long userId = claims.get("userId", Long.class);
 				LOGGER.info("用户 {} webSocket验证成功", userId);
-				return Result.success(userId);
+				return Result.success(String.valueOf(userId));
 			}
 			return Result.error("Token验证失败");
 		} catch (JwtException e) {
