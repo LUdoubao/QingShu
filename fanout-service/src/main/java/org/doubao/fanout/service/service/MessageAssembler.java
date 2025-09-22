@@ -2,7 +2,6 @@ package org.doubao.fanout.service.service;
 
 import org.doubao.mall.common.entity.FanoutMessage;
 import org.doubao.mall.common.entity.BusinessEvent;
-import org.doubao.mall.common.entity.UserInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
