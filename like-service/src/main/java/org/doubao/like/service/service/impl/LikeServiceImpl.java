@@ -28,7 +28,7 @@ import org.doubao.like.service.utils.RedisKeyUtil;
 import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
@@ -97,10 +97,10 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		String operatorUserName = Constants.DEFAULT_USER_NAME;
 		String operatorUserAvatar = "";
-		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(operatorUserId)).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(operatorUserId)).getData();
 		if (!CollectionUtils.isEmpty(userInfos)) {
-			UserInfo userInfo = userInfos.get(0);
-			operatorUserName = userInfo.getNickname() == null ? userInfo.getUsername() : userInfo.getNickname();
+			UserInfoDes userInfo = userInfos.get(0);
+			operatorUserName = userInfo.getNickname();
 			operatorUserAvatar = userInfo.getAvatarUrl();
 		}
 
