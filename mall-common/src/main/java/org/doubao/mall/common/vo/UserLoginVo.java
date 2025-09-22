@@ -4,6 +4,15 @@ public class UserLoginVo {
 	private Long id;
 	private String token;
 	private String username;
+	private String avatarUrl;
+
+	public String getAvatarUrl() {
+		return avatarUrl;
+	}
+
+	public void setAvatarUrl(String avatarUrl) {
+		this.avatarUrl = avatarUrl;
+	}
 
 	public Long getId() {
 		return id;
@@ -28,4 +37,5 @@ public class UserLoginVo {
 	public void setToken(String token) {
 		this.token = token;
 	}
+
 }

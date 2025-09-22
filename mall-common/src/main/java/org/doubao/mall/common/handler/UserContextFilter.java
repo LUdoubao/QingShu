@@ -1,7 +1,7 @@
 package org.doubao.mall.common.handler;
 
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -24,8 +24,8 @@ public class UserContextFilter extends OncePerRequestFilter {
 		String username = request.getHeader("X-User-Name");
 
 		if (userId != null && username != null) {
-			UserInfo user = new UserInfo();
-			user.setId(userId);
+			UserLoginVo user = new UserLoginVo();
+			user.setId(Long.valueOf(userId));
 			user.setUsername(username);
 			UserContext.setUser(user);
 		}

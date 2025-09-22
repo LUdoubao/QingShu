@@ -2,8 +2,8 @@ package org.doubao.mall.common.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.UserLoginVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -35,8 +35,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 	}
 
 	private Long getCurrentUserId() {
-		// 从你自定义的 UserContext 中获取当前用户 ID
-		UserInfo user = UserContext.getUser();
-		return user != null ? Long.valueOf(user.getId()) : null;
+		UserLoginVo user = UserContext.getUser();
+		return user != null ? user.getId() : null;
 	}
 }
