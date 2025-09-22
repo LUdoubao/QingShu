@@ -1,7 +1,7 @@
 package org.doubao.search.service.db.dto;
 
 import org.doubao.mall.common.entity.BaseEntity;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 
 import java.util.List;
 
@@ -42,7 +42,7 @@ public class SearchResultDTO extends BaseEntity {
     /**
      * 用户信息
      */
-    private UserInfo userInfo;
+    private UserInfoDes userInfo;
 
     /**
      * 是否关注
@@ -113,11 +113,11 @@ public class SearchResultDTO extends BaseEntity {
         this.original = original;
     }
 
-    public UserInfo getUserInfo() {
+    public UserInfoDes getUserInfo() {
         return userInfo;
     }
 
-    public void setUserInfo(UserInfo userInfo) {
+    public void setUserInfo(UserInfoDes userInfo) {
         this.userInfo = userInfo;
     }
 
