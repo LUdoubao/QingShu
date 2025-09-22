@@ -16,7 +16,7 @@ import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
 import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
@@ -69,7 +69,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		}
 
 		// 3. 频率限制
-		long userId = Long.parseLong(UserContext.getUser().getId());
+		long userId = UserContext.getUser().getId();
 		String rateKey = "comment_rate:" + userId;
 		Long count = redisTemplate.opsForValue().increment(rateKey, 1);
 		if (count != null && count == 1) {
@@ -116,10 +116,10 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
 		String operatorUserName = Constants.DEFAULT_USER_NAME;
 		String operatorUserAvatar = "";
-		List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(userId)).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(userId)).getData();
 		if (!CollectionUtils.isEmpty(userInfos)) {
-			UserInfo userInfo = userInfos.get(0);
-			operatorUserName = userInfo.getNickname() == null ? userInfo.getUsername() : userInfo.getNickname();
+			UserInfoDes userInfo = userInfos.get(0);
+			operatorUserName = userInfo.getNickname();
 			operatorUserAvatar = userInfo.getAvatarUrl();
 		}
 		commentEventPublisher.pushCommentNotification(repliedUserId, !dto.isReply(), comment.getPostId(), comment.getContent(), originalComment,
@@ -132,31 +132,6 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		}
 
 		return comment.getCommentId();
-	}
-
-	@Override
-	public List<CommentVO> getHotComments(String postId, int limit, int offset) {
-		String cacheKey = "hot_comments:" + postId;
-
-		// 尝试从缓存获取
-		List<CommentVO> cachedComments = (List<CommentVO>) redisTemplate.opsForValue().get(cacheKey);
-		if (cachedComments != null) {
-			return cachedComments.subList(offset, Math.min(offset + limit, cachedComments.size()));
-		}
-
-		// 缓存未命中，从数据库查询
-		List<Comment> comments = commentMapper.selectByPostId(postId);
-
-		// 计算热度并排序
-		List<CommentVO> result = comments.stream()
-				.map(this::convertToVO)
-				.sorted(Comparator.comparingDouble(CommentVO::getHotScore).reversed())
-				.collect(Collectors.toList());
-
-		// 存入缓存，设置10分钟过期
-		redisTemplate.opsForValue().set(cacheKey, result, 10, TimeUnit.MINUTES);
-
-		return result.subList(offset, Math.min(offset + limit, result.size()));
 	}
 
 	@Override
@@ -217,9 +192,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		);
 		Set<Long> userIds = replyPage.getRecords().stream().map(Comment::getUserId).collect(Collectors.toSet());
 		userIds.addAll(replyPage.getRecords().stream().map(Comment::getRepliedUserId).collect(Collectors.toSet()));
-		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(userIds).getData();
 		List<String> replyIds =  new ArrayList<>();
-		String userId = UserContext.getUser().getId();
+		Long userId = UserContext.getUser().getId();
 
 		List<ReplyVO> replyVOList = replyPage.getRecords().stream()
 				.map(comment -> {
@@ -231,15 +206,15 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
 					replyVO.setLikeCount(comment.getLikeCount());
 					// 5. 补充用户信息（通过用户服务获取）
-					Optional<UserInfo> first = userInfos.stream().filter(userInfo -> Objects.equals(comment.getUserId(), Long.valueOf(userInfo.getId()))).findFirst();
+					Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> Objects.equals(comment.getUserId(), userInfo.getId())).findFirst();
 					if (first.isPresent()) {
-						UserInfo userInfo = first.get();
+						UserInfoDes userInfo = first.get();
 						replyVO.setUser(userInfo);
 					}
 
 					// 6. 处理被回复者信息
 					userInfos.stream()
-							.filter(userInfo -> Objects.equals(comment.getRepliedUserId(), Long.valueOf(userInfo.getId())))
+							.filter(userInfo -> Objects.equals(comment.getRepliedUserId(), userInfo.getId()))
 							.findFirst()
 							.ifPresent(userInfo -> replyVO.setRepliedNickname(userInfo.getNickname()));
 					return replyVO;
@@ -257,7 +232,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			}).collect(Collectors.toList()));
 			// 不查询点赞数量，只查询点赞状态
 			likeQueryDto.setQueryCount(false);
-			likeQueryDto.setUserId(Long.valueOf(userId));
+			likeQueryDto.setUserId(userId);
 			BatchLikeStatusResponse batchLikeStatusResponse = likeClient.batchGetLikeStatus(likeQueryDto).getData();
 			List<BatchLikeStatusResponse.LikeStatusResult> results = batchLikeStatusResponse.getResults();
 			if (results != null && !results.isEmpty()) {
@@ -322,7 +297,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	 */
 	@Override
 	public IPage<CommentVO> getCommentList(String postId, Page<Comment> page, String sortType) {
-		String userId = UserContext.getUser().getId();
+		Long userId = UserContext.getUser().getId();
 
 		// 1. 尝试从缓存获取（热点数据）
 		String cacheKey = "comments:post:" + postId + ":" + sortType + ":"  + userId + ":" + page.getCurrent() + ":" + page.getSize();
@@ -353,7 +328,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		// 3. 转换为VO（包含用户信息、点赞状态、回复列表）
 		Set<Long> userIds = commentPage.getRecords().stream().map(Comment::getUserId).collect((Collectors.toSet()));
 		userIds.addAll(commentPage.getRecords().stream().map(Comment::getRepliedUserId).filter(Objects::nonNull).collect(Collectors.toSet()));
-		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(userIds).getData();
 
 		List<String> commentIds = commentPage.getRecords().stream().map(Comment::getCommentId).collect(Collectors.toList());
 		IPage<CommentVO> resultPage = commentPage.convert(comment -> {
@@ -361,9 +336,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			BeanUtils.copyProperties(comment, vo);
 
 			// 3.1 补充用户信息（远程调用用户服务）
-			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> Objects.equals(comment.getUserId(), Long.valueOf(userInfo.getId()))).findFirst();
+			Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> Objects.equals(comment.getUserId(), userInfo.getId())).findFirst();
 			if (first.isPresent()) {
-				UserInfo userInfo = first.get();
+				UserInfoDes userInfo = first.get();
 				vo.setUser(userInfo);
 			}
 
@@ -455,21 +430,21 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	private List<ReplyVO> convertReplies(List<Comment> replies) {
 		Set<Long> userIds = replies.stream().map(Comment::getUserId).collect(Collectors.toSet());
 		userIds.addAll(replies.stream().map(Comment::getRepliedUserId).filter(Objects::nonNull).collect(Collectors.toSet()));
-		List<UserInfo> userInfos = userClient.getUsersByIds(userIds).getData();
+		List<UserInfoDes> userInfos = userClient.getUsersByIds(userIds).getData();
 		return replies.stream().map(reply -> {
 			ReplyVO replyVO = new ReplyVO();
 			BeanUtils.copyProperties(reply, replyVO);
 			replyVO.setReplyId(reply.getCommentId());
 			replyVO.setLikeCount(reply.getLikeCount());
 			replyVO.setAuthorTop(reply.getIsTop() == 1);
-			Optional<UserInfo> first = userInfos.stream().filter(userInfo -> Objects.equals(reply.getUserId(), Long.valueOf(userInfo.getId()))).findFirst();
+			Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> Objects.equals(reply.getUserId(), userInfo.getId())).findFirst();
 			if (first.isPresent()) {
-				UserInfo userInfo = first.get();
+				UserInfoDes userInfo = first.get();
 				replyVO.setUser(userInfo);
 			}
-			Optional<UserInfo> replyUser = userInfos.stream().filter(userInfo -> Objects.equals(reply.getRepliedUserId(), Long.valueOf(userInfo.getId()))).findFirst();
+			Optional<UserInfoDes> replyUser = userInfos.stream().filter(userInfo -> Objects.equals(reply.getRepliedUserId(), userInfo.getId())).findFirst();
 			if (replyUser.isPresent()) {
-				UserInfo userInfo = replyUser.get();
+				UserInfoDes userInfo = replyUser.get();
 				replyVO.setRepliedNickname(userInfo.getNickname());
 			}
 			return replyVO;
@@ -483,13 +458,4 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 				commentId :
 				getRootCommentId(parent.getParentId());
 	}
-
-	private CommentVO convertToVO(Comment comment) {
-		CommentVO vo = new CommentVO();
-		BeanUtils.copyProperties(comment, vo);
-		vo.setHotScore(calculateHotScore(comment));
-		vo.setUser(UserContext.getUser());
-		return vo;
-	}
-
 }

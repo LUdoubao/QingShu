@@ -3,7 +3,7 @@ package org.doubao.comment.service.vo;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -44,7 +44,7 @@ public class ReplyVO implements Serializable {
 	@ApiModelProperty(value = "回复标签（如管理员回复）")
 	private String[] tags;
 
-	private UserInfo user;
+	private UserInfoDes user;
 
 	public Long getLikeCount() {
 		return likeCount;
@@ -54,11 +54,11 @@ public class ReplyVO implements Serializable {
 		this.likeCount = likeCount;
 	}
 
-	public UserInfo getUser() {
+	public UserInfoDes getUser() {
 		return user;
 	}
 
-	public void setUser(UserInfo user) {
+	public void setUser(UserInfoDes user) {
 		this.user = user;
 	}
 

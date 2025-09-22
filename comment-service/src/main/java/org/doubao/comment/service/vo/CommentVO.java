@@ -1,14 +1,14 @@
 package org.doubao.comment.service.vo;
 
 import org.doubao.comment.service.entity.Comment;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 
 import java.util.List;
 
 public class CommentVO extends Comment {
 	private double hotScore;
 	private boolean isLike;
-	private UserInfo user;
+	private UserInfoDes user;
 	private List<ReplyVO> replyList;
 	public double getHotScore() {
 		return hotScore;
@@ -18,11 +18,11 @@ public class CommentVO extends Comment {
 		this.hotScore = hotScore;
 	}
 
-	public UserInfo getUser() {
+	public UserInfoDes getUser() {
 		return user;
 	}
 
-	public void setUser(UserInfo user) {
+	public void setUser(UserInfoDes user) {
 		this.user = user;
 	}
 

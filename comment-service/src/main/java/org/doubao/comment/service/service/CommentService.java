@@ -15,8 +15,6 @@ import java.util.List;
 public interface CommentService extends IService<Comment> {
 	String createComment(CommentDTO dto);
 
-	List<CommentVO> getHotComments(String postId, int limit, int offset);
-
 	IPage<CommentVO> getCommentList(String postId, Page<Comment> page, String sortType);
 
 	double calculateHotScore(Comment comment);
