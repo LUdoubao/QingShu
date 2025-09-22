@@ -7,7 +7,7 @@ import org.doubao.favorite.service.mapper.FavoriteFolderMapper;
 import org.doubao.favorite.service.service.FolderService;
 import org.doubao.favorite.service.utils.FavoriteComponent;
 import org.doubao.favorite.service.vo.FavoriteFolderVo;
-import org.doubao.mall.common.entity.UserInfo;
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -100,10 +100,10 @@ public class FolderServiceImpl extends ServiceImpl<FavoriteFolderMapper, Favorit
 			// 查询收藏夹中内容数
 			favoriteFolderVo.setFavoriteCount(folderMapper.selectFavoriteCount(folderId));
 			// 查询用户信息
-			List<UserInfo> userInfos = userClient.getUsersByIds(Collections.singleton(favoriteFolder.getUserId())).getData();
+			List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(favoriteFolder.getUserId())).getData();
 			if (!userInfos.isEmpty()) {
-				UserInfo userInfo = userInfos.get(0);
-				favoriteFolderVo.setCreateUserName(userInfo.getNickname() == null ? userInfo.getUsername() : userInfo.getNickname());
+				UserInfoDes userInfo = userInfos.get(0);
+				favoriteFolderVo.setCreateUserName(userInfo.getNickname());
 				favoriteFolderVo.setCreateUserAvatar(userInfo.getAvatarUrl());
 			}
 			return favoriteFolderVo;
