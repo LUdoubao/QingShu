@@ -34,9 +34,6 @@ public class LinkServiceImpl extends ServiceImpl<ShareLinkMapper, ShareLink> imp
 	private QuoteServiceFeign quoteServiceFeign;
 
 	@Autowired
-	private EncryptionUtil encryptionUtil;
-
-	@Autowired
 	private RedisTemplate<String, Object> redisTemplate;
 
 	@Autowired

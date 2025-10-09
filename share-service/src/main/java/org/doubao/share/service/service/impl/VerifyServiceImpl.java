@@ -37,9 +37,6 @@ public class VerifyServiceImpl implements VerifyService {
 	private UserServiceFeign userServiceFeign;
 
 	@Autowired
-	private EncryptionUtil encryptionUtil;
-
-	@Autowired
 	private ObjectMapper objectMapper;
 
 	@Autowired
