@@ -1,6 +1,6 @@
 package org.doubao.api.gateway.filter;
 
-import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.DefaultClaims;
 import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
@@ -92,20 +92,38 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 				.onErrorResume(e -> {       // 处理所有验证异常
 					// 记录详细错误日志
 					LOG.error("JWT 解析失败", e);
-					Throwable rootCause = e.getCause();
+
+					// 检查根原因是否为服务不可用异常
+					Throwable rootCause = e;
+					while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+						rootCause = rootCause.getCause();
+					}
+
+					LOG.error("根异常类型：{}", rootCause.getClass().getName());
+
+					// 判断异常类型并设置响应状态
 					if (rootCause instanceof ServiceUnavailableException) {
 						// 服务不可用
 						exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
-					} else {
-						// 认证错误
+					} else if (isAuthenticationException(e)) {
+						// 认证错误（JWT相关异常）
 						exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					} else {
+						// 其他非认证错误统一视为服务不可用
+						exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
 					}
 
 					// 立即结束响应
 					return exchange.getResponse().setComplete();
 				});
 	}
-
+	// 辅助方法：判断是否为认证相关异常
+	private boolean isAuthenticationException(Throwable e) {
+		return e instanceof ExpiredJwtException ||        // JWT过期
+				e instanceof UnsupportedJwtException ||   // 不支持的JWT
+				e instanceof MalformedJwtException ||     // JWT格式错误
+				e instanceof SignatureException;        // 签名验证失败
+	}
 	@Override
 	public int getOrder() {
 		return -1;
