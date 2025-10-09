@@ -48,6 +48,10 @@ public class UserController {
 	public Result<UserInfoProfileEdit> editGet() {
 		return Result.success(userService.editGet());
 	}
+	@GetMapping("/getWithSignature/{userId}")
+	public Result<UserInfoProfileEdit> getWithSignature(@PathVariable Long userId) {
+		return Result.success(userService.getWithSignature(userId));
+	}
 	@GetMapping("/editGetEmail")
 	public Result<String> editGetEmail() {
 		return Result.success(userService.editGetEmail());

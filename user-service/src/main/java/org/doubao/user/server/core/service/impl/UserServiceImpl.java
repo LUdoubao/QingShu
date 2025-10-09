@@ -95,7 +95,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 	@Override
 	public UserInfoProfileEdit editGet() {
-		Long userId = UserContext.getUserId();
+		return editGet(UserContext.getUserId());
+	}
+	public UserInfoProfileEdit editGet(Long userId) {
 		User user = userMapper.selectById(userId);
 		UserInfoProfileEdit userInfoDes = new UserInfoProfileEdit(user.getId(), user.getNickname(), user.getUsername());
 		// 动态生成头像URL
@@ -118,6 +120,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		String email = user.getEmail();
 		// 邮箱脱敏
 		return email.substring(0, 3) + "****" + email.substring(email.length() - 4);
+	}
+
+	@Override
+	public UserInfoProfileEdit getWithSignature(Long userId) {
+		return editGet(userId);
 	}
 
 	@Override

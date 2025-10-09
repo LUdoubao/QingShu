@@ -46,4 +46,6 @@ public interface UserService extends IService<User> {
 	UserInfoProfileEdit editGet();
 
 	String editGetEmail();
+
+	UserInfoProfileEdit getWithSignature(Long userId);
 }
