@@ -400,7 +400,9 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	public Result<List<Map<String, Object>>> batch(List<Long> ids) {
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
-				.in(Quote::getId, ids);
+				.in(Quote::getId, ids)
+				.eq(Quote::getDeleted, 0)
+				.eq(Quote::getStatus, 1);
 		List<Quote> quotes = this.list(queryWrapper);
 
 		List<Map<String, Object>> mapList = new ArrayList<>();
