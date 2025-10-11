@@ -28,6 +28,22 @@ public class UserController {
 		return Result.success(true);
 	}
 
+	@PostMapping("/forgot-password/code")
+	public Result<?> forgotPasswordCode(@RequestBody ForgotPasswordCodeDto forgotPasswordCodeDto) {
+		userService.forgotPasswordCode(forgotPasswordCodeDto);
+		return Result.success(true);
+	}
+	@PostMapping("/forgot-password/verify")
+	public Result<?> forgotPasswordVerify(@RequestBody ForgotPasswordVerifyDto forgotPasswordVerifyDto) {
+		userService.forgotPasswordVerify(forgotPasswordVerifyDto);
+		return Result.success(true);
+	}
+	@PostMapping("/forgot-password/reset")
+	public Result<?> forgotPasswordReset(@RequestBody ForgotPasswordResetDto forgotPasswordResetDto) {
+		userService.forgotPasswordReset(forgotPasswordResetDto);
+		return Result.success(true);
+	}
+
 	@PostMapping("/verify")
 	public Result<?> completeRegistration(@Valid @RequestBody UserDto userDto) {
 		userService.completeRegistration(userDto);

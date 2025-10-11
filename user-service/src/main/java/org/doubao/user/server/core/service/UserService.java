@@ -10,6 +10,7 @@ import org.doubao.user.server.core.vo.UserVo;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -48,4 +49,10 @@ public interface UserService extends IService<User> {
 	String editGetEmail();
 
 	UserInfoProfileEdit getWithSignature(Long userId);
+
+	void forgotPasswordCode(ForgotPasswordCodeDto forgotPasswordCodeDto);
+
+	void forgotPasswordVerify(ForgotPasswordVerifyDto forgotPasswordVerifyDto);
+
+	void forgotPasswordReset(ForgotPasswordResetDto forgotPasswordResetDto);
 }

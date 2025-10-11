@@ -128,6 +128,60 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	}
 
 	@Override
+	public void forgotPasswordCode(ForgotPasswordCodeDto forgotPasswordCodeDto) {
+		String email = forgotPasswordCodeDto.getEmail();
+		if (email == null) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+		if (userMapper.findByEmail(email) == null) {
+			throw new BusinessException(ErrorCode.USER_EMAIL_NOT_EXISTS);
+		}
+		sendEmailCodeAndSave(email, "您的重置密码验证码");
+	}
+
+	@Override
+	public void forgotPasswordVerify(ForgotPasswordVerifyDto forgotPasswordVerifyDto) {
+		String email = forgotPasswordVerifyDto.getEmail();
+		String code = forgotPasswordVerifyDto.getCode();
+		forgotPasswordVerify(email, code, false);
+	}
+
+	private void forgotPasswordVerify(String email, String code, boolean isClear) {
+		if (email == null || code == null) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+
+		String redisKey = "VERIFY_CODE:" + email;
+		Object redisCode = redisTemplate.opsForValue().get(redisKey);
+		if (redisCode == null || redisCode.equals("") || !String.valueOf(redisCode).equals(code)) {
+			throw new BusinessException(ErrorCode.VERIFY_CODE_ERROR);
+		}
+		if (isClear) {
+			redisTemplate.delete(redisKey);
+		}
+	}
+
+	@Override
+	public void forgotPasswordReset(ForgotPasswordResetDto forgotPasswordResetDto) {
+		String email = forgotPasswordResetDto.getEmail();
+		String code = forgotPasswordResetDto.getCode();
+
+		String newPassword = forgotPasswordResetDto.getNewPassword();
+		if (email == null || newPassword == null) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+		if (!isValidNewPassword(newPassword)) {
+			throw new BusinessException(ErrorCode.USER_INVALID_NEW_PASSWORD);
+		}
+		forgotPasswordVerify(email, code, true);
+
+		if (userMapper.findByEmail(email) == null) {
+			throw new BusinessException(ErrorCode.USER_EMAIL_NOT_EXISTS);
+		}
+		userMapper.updateUserPassword(email, passwordEncoder.encode(newPassword));
+	}
+
+	@Override
 	public UserInfoProfile getById(Long id) {
 		User user = userMapper.selectById(id);
 		UserInfoProfile userInfoDes = new UserInfoProfile(user.getId(), user.getNickname(), user.getUsername());
@@ -296,6 +350,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		user.setEmail(dto.getEmail());
 		user.setRole(null);
 		userMapper.updateById(user);
+
+		redisTemplate.delete(redisKey);
 	}
 
 	private void clearUserCache(Long userId) {
@@ -306,7 +362,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	private void sendEmailCodeAndSave(String email, String subject) {
 		// 生成验证码（6位数字）
 		String code = String.format("%06d", new Random().nextInt(999999));
-		logger.info("----------------Generated verification code: {}", code);
 		// 发送验证邮件
 		userEventPublisher.sendVerificationEmail(email, code, subject);
 		// 存储验证码到Redis（5分钟有效）

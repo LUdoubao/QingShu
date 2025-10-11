@@ -22,4 +22,6 @@ public interface UserMapper extends BaseMapper<User> {
 					  @Param("storageType") String storageType);
 
 	boolean existsByNickname(@Param("nickname") String nickname);
+
+	void updateUserPassword(@Param("email") String email, @Param("pwd") String pwd);
 }

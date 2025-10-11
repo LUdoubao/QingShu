@@ -36,4 +36,12 @@
     <select id="existsByNickname" resultType="boolean">
         SELECT EXISTS(SELECT 1 FROM user WHERE nickname = #{nickname})
     </select>
+
+
+    <!-- void updateUserPassword(@Param("email") String email, @Param("pwd") String pwd); -->
+    <update id="updateUserPassword">
+        UPDATE user SET
+            password = #{pwd}
+        WHERE email = #{email}
+    </update>
 </mapper>
