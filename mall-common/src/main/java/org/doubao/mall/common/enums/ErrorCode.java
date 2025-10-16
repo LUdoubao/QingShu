@@ -51,6 +51,9 @@ public enum ErrorCode {
 	USER_BLOCK_SELF("USER_024",  "不能拉黑自己"),
 	USER_BLOCK_EXISTS("USER_024",  "该用户已在黑名单中"),
 	USER_BLOCK_NOT_EXISTS("USER_025",  "该用户不在黑名单中"),
+	USER_INVALID_FIRST_CATEGORY("USER_026",  "无效的一级分类"),
+	USER_INVALID_SECOND_CATEGORY("USER_027",  "无效的二级分类"),
+	USER_INVALID_THIRD_CATEGORY("USER_028",  "无效的三级分类"),
 
 
 
