@@ -53,6 +53,9 @@ public enum ErrorCode {
 	USER_BLOCK_NOT_EXISTS("USER_025",  "该用户不在黑名单中"),
 	USER_EMAIL_NOT_EXISTS("USER_026",  "该邮箱未注册"),
 	VERIFY_CODE_ERROR("USER_027",  "验证码错误"),
+	USER_INVALID_FIRST_CATEGORY("USER_028",  "无效的一级分类"),
+	USER_INVALID_SECOND_CATEGORY("USER_029",  "无效的二级分类"),
+	USER_INVALID_THIRD_CATEGORY("USER_030",  "无效的三级分类"),
 
 
 
