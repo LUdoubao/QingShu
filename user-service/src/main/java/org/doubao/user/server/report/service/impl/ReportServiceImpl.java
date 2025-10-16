@@ -3,6 +3,8 @@ package org.doubao.user.server.report.service.impl;
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.user.server.report.constant.ReportConstant;
 import org.doubao.user.server.report.dto.request.ReportSubmitRequest;
 import org.doubao.user.server.report.dto.request.ReviewHandleRequest;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -161,6 +164,7 @@ public class ReportServiceImpl implements ReportService {
         return true;
     }
 
+
     /**
      * 检查用户当日举报次数是否超限
      */
@@ -186,20 +190,20 @@ public class ReportServiceImpl implements ReportService {
         // 检查一级分类是否存在且启用
         ReportCategory firstCategory = reportCategoryMapper.selectById(firstId);
         if (firstCategory == null || firstCategory.getStatus() != 1 || firstCategory.getParentId() != 0) {
-            throw new IllegalArgumentException("无效的一级分类");
+            throw new BusinessException(ErrorCode.USER_INVALID_FIRST_CATEGORY);
         }
 
         // 检查二级分类是否存在且启用
         ReportCategory secondCategory = reportCategoryMapper.selectById(secondId);
-        if (secondCategory == null || secondCategory.getStatus() != 1 || !secondCategory.getParentId().equals(firstId)) {
-            throw new IllegalArgumentException("无效的二级分类");
+        if (secondCategory == null || secondCategory.getStatus() != 1 || !Objects.equals(secondCategory.getParentId(), firstId)) {
+            throw new BusinessException(ErrorCode.USER_INVALID_SECOND_CATEGORY);
         }
 
         // 检查三级分类（如果存在）
         if (thirdId != null) {
             ReportCategory thirdCategory = reportCategoryMapper.selectById(thirdId);
             if (thirdCategory == null || thirdCategory.getStatus() != 1 || !thirdCategory.getParentId().equals(secondId)) {
-                throw new IllegalArgumentException("无效的三级分类");
+                throw new BusinessException(ErrorCode.USER_INVALID_THIRD_CATEGORY);
             }
         }
     }

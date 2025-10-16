@@ -20,7 +20,7 @@ public class ReportMain {
 
     private Integer reportedType; // 被举报对象类型：1=内容，2=用户，3=评论
 
-    private Long reportedId; // 被举报对象ID
+    private String reportedId; // 被举报对象ID
 
     private Integer firstCategoryId; // 一级分类ID
 
@@ -64,11 +64,11 @@ public class ReportMain {
         this.userId = userId;
     }
 
-    public Long getReportedId() {
+    public String getReportedId() {
         return reportedId;
     }
 
-    public void setReportedId(Long reportedId) {
+    public void setReportedId(String reportedId) {
         this.reportedId = reportedId;
     }
 

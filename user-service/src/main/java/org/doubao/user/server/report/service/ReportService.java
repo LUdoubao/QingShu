@@ -34,8 +34,4 @@ public interface ReportService {
      * @return 处理结果
      */
     Boolean handleReview(ReviewHandleRequest request);
-
-    Long saveReport(@Valid ReportSubmitRequest reportSubmitRequest);
-
-    ReportSubmitResponse getReportById(Long id);
 }

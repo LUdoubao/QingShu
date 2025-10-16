@@ -20,7 +20,7 @@ public class ReportSubmitRequest {
 
     @ApiModelProperty(value = "被举报对象ID", required = true)
     @NotNull(message = "被举报对象ID不能为空")
-    private Long reportedId;
+    private String reportedId;
 
     @ApiModelProperty(value = "一级分类ID", required = true)
     @NotNull(message = "一级分类ID不能为空")
@@ -48,11 +48,11 @@ public class ReportSubmitRequest {
         this.firstCategoryId = firstCategoryId;
     }
 
-    public @NotNull(message = "被举报对象ID不能为空") Long getReportedId() {
+    public @NotNull(message = "被举报对象ID不能为空") String getReportedId() {
         return reportedId;
     }
 
-    public void setReportedId(@NotNull(message = "被举报对象ID不能为空") Long reportedId) {
+    public void setReportedId(@NotNull(message = "被举报对象ID不能为空") String reportedId) {
         this.reportedId = reportedId;
     }
 
