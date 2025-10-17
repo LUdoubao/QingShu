@@ -56,6 +56,11 @@ public enum ErrorCode {
 	USER_INVALID_FIRST_CATEGORY("USER_028",  "无效的一级分类"),
 	USER_INVALID_SECOND_CATEGORY("USER_029",  "无效的二级分类"),
 	USER_INVALID_THIRD_CATEGORY("USER_030",  "无效的三级分类"),
+	USER_REPORT_LIMIT("USER_031",  "您今日举报次数已达上限，请明天再试"),
+	USER_REPORT_NOT_FOUND("USER_032",  "举报记录不存在"),
+	USER_REPORT_NOT_AUTHORIZED("USER_033",  "无权查询该举报信息"),
+	USER_REPORT_STATUS_ERROR("USER_034",  "当前举报状态不允许处理"),
+	USER_INVALID_REPORT_RESULT("USER_035",  "无效的审核结果"),
 
 
 
