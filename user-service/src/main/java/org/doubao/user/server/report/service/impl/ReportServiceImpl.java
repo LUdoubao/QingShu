@@ -102,12 +102,12 @@ public class ReportServiceImpl implements ReportService {
         // 2. 缓存未命中，从数据库查询
         ReportMain reportMain = reportMainMapper.selectById(reportId);
         if (reportMain == null) {
-            throw new IllegalArgumentException("举报记录不存在");
+            throw new BusinessException(ErrorCode.USER_REPORT_NOT_FOUND);
         }
 
         // 3. 权限校验：只能查询自己提交的举报
         if (!reportMain.getUserId().equals(userId)) {
-            throw new SecurityException("无权查询该举报信息");
+            throw new BusinessException(ErrorCode.USER_REPORT_NOT_AUTHORIZED);
         }
 
         // 4. 查询证据信息
@@ -134,13 +134,13 @@ public class ReportServiceImpl implements ReportService {
         // 1. 验证举报是否存在
         ReportMain reportMain = reportMainMapper.selectById(request.getReportId());
         if (reportMain == null) {
-            throw new IllegalArgumentException("举报记录不存在");
+            throw new BusinessException(ErrorCode.USER_REPORT_NOT_FOUND);
         }
 
         // 2. 验证举报状态是否可处理
         if (reportMain.getStatus() != ReportConstant.REPORT_STATUS_PENDING
                 && reportMain.getStatus() != ReportConstant.REPORT_STATUS_PROCESSING) {
-            throw new IllegalStateException("当前举报状态不允许处理，状态：" + reportMain.getStatus());
+            throw new BusinessException(ErrorCode.USER_REPORT_STATUS_ERROR);
         }
 
         // 3. 更新举报状态
@@ -179,7 +179,7 @@ public class ReportServiceImpl implements ReportService {
 
         // 检查是否超过限制
         if (count != null && count > ReportConstant.MAX_REPORT_PER_DAY) {
-            throw new RuntimeException("您今日举报次数已达上限，请明天再试");
+            throw new BusinessException(ErrorCode.USER_REPORT_LIMIT);
         }
     }
 
@@ -285,7 +285,7 @@ public class ReportServiceImpl implements ReportService {
             case 3:
                 return ReportConstant.REPORT_STATUS_REVIEW;
             default:
-                throw new IllegalArgumentException("无效的审核结果：" + reviewResult);
+                throw new BusinessException(ErrorCode.USER_INVALID_REPORT_RESULT);
         }
     }
 
