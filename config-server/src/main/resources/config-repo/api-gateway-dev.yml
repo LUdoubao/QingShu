@@ -146,12 +146,6 @@ resilience4j:
 #        # 超时时取消异步调用：强制中断长时间阻塞的调用
 #        cancelRunningFuture: true
 
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty: DEBUG
-    io.github.resilience4j: DEBUG
-
 # Spring Boot Actuator 监控配置
 management:
   # 端点相关配置
