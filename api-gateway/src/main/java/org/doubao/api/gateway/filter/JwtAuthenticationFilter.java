@@ -75,7 +75,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 				.retrieve()  // 发送请求并获取响应
 				.onStatus(HttpStatus::isError, clientResponse ->  // 处理HTTP错误状态
 						// 转换错误响应为异常流
-						Mono.error(new RuntimeException("Token validation failed: " +
+						Mono.error(new JwtException("Token validation failed: " +
 								clientResponse.statusCode()))
 				)
 				.bodyToMono(DefaultClaims.class)  // 将响应体转换为String类型
@@ -120,10 +120,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 	}
 	// 辅助方法：判断是否为认证相关异常
 	private boolean isAuthenticationException(Throwable e) {
-		return e instanceof ExpiredJwtException ||        // JWT过期
-				e instanceof UnsupportedJwtException ||   // 不支持的JWT
-				e instanceof MalformedJwtException ||     // JWT格式错误
-				e instanceof SignatureException;        // 签名验证失败
+		return e instanceof JwtException;     // JWT错误
 	}
 	@Override
 	public int getOrder() {
