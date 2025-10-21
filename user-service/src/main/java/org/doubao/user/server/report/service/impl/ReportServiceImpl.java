@@ -117,9 +117,6 @@ public class ReportServiceImpl implements ReportService {
             throw new BusinessException(ErrorCode.USER_REPORT_NOT_AUTHORIZED);
         }
 
-        // 4. 查询证据信息
-        List<String> evidenceUrls = getEvidenceUrls(reportId);
-
         // 5. 构建响应
         statusResponse = new ReportStatusResponse();
         statusResponse.setReportId(reportId);
@@ -128,7 +125,16 @@ public class ReportServiceImpl implements ReportService {
         statusResponse.setHandleResult(reportMain.getHandleResult());
         statusResponse.setHandleTime(reportMain.getHandleTime() != null ?
                 reportMain.getHandleTime().toString() : null);
-        statusResponse.setEvidenceUrls(evidenceUrls);
+        statusResponse.setCreatedTime(reportMain.getCreatedTime());
+
+        // 查询证据信息
+        ReportEvidence evidence = evidenceRepository.findByReportId(reportId);
+        if (evidence != null) {
+            if (evidence.getEvidenceUrls() != null) {
+                statusResponse.setEvidenceUrls(evidence.getEvidenceUrls());
+            }
+            statusResponse.setDescription(evidence.getDescription());
+        }
 
         // 6. 更新缓存
         updateReportStatusCache(reportId, reportMain.getStatus(), statusResponse);
@@ -344,7 +350,7 @@ public class ReportServiceImpl implements ReportService {
        ReportEvidence reportEvidence = evidenceRepository.findByReportId(reportId);
 
         List<String> urls = new ArrayList<>();
-        if (reportEvidence != null) {
+        if (reportEvidence != null && reportEvidence.getEvidenceUrls() != null) {
             urls.addAll(reportEvidence.getEvidenceUrls());
         }
         return urls;
@@ -461,6 +467,7 @@ public class ReportServiceImpl implements ReportService {
         AdminReportQueryDTO query = new AdminReportQueryDTO();
         query.setPageNum(1);
         query.setPageSize(1);
+        query.setReportId(reportId);
 
         IPage<ReportRecordDTO> page = new Page<>(1, 1);
         IPage<ReportRecordDTO> resultPage = reportMainMapper.selectAdminReportPage(page, query);
@@ -473,11 +480,13 @@ public class ReportServiceImpl implements ReportService {
         fillReportRecordInfo(recordDTO);
 
         // 查询证据信息
-        // ReportEvidence evidence = evidenceRepository.findByReportId(reportId);
-        // if (evidence != null) {
-        //     recordDTO.setEvidenceUrls(evidence.getEvidenceUrls());
-        //     recordDTO.setDescription(evidence.getDescription());
-        // }
+        ReportEvidence evidence = evidenceRepository.findByReportId(reportId);
+        if (evidence != null) {
+            if (evidence.getEvidenceUrls() != null) {
+                recordDTO.setEvidenceUrls(evidence.getEvidenceUrls());
+            }
+            recordDTO.setDescription(evidence.getDescription());
+        }
 
         return recordDTO;
     }

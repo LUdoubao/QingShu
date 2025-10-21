@@ -27,11 +27,21 @@ public class ReportQueryDTO {
 	@ApiModelProperty(value = "举报人ID")
 	private Long userId;
 
+	private Long reportId;
+
 	@ApiModelProperty(value = "查询开始时间")
 	private LocalDateTime startTime;
 
 	@ApiModelProperty(value = "查询结束时间")
 	private LocalDateTime endTime;
+
+	public Long getReportId() {
+		return reportId;
+	}
+
+	public void setReportId(Long reportId) {
+		this.reportId = reportId;
+	}
 
 	public Integer getPageNum() {
 		return pageNum;
