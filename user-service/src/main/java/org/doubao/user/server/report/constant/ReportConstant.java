@@ -27,6 +27,7 @@ public class ReportConstant {
     public static final int REPORTED_TYPE_CONTENT = 1;      // 内容
     public static final int REPORTED_TYPE_USER = 2;         // 用户
     public static final int REPORTED_TYPE_COMMENT = 3;      // 评论
+    public static final int REPORTED_TYPE_DIALOG = 4;      // 对话
 
     /**
      * AI预检测风险等级

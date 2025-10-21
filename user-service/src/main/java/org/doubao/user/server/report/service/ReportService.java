@@ -1,7 +1,10 @@
 package org.doubao.user.server.report.service;
 
+import org.doubao.user.server.report.dto.request.AdminReportQueryDTO;
 import org.doubao.user.server.report.dto.request.ReportSubmitRequest;
 import org.doubao.user.server.report.dto.request.ReviewHandleRequest;
+import org.doubao.user.server.report.dto.response.ReportPageResponse;
+import org.doubao.user.server.report.dto.response.ReportRecordDTO;
 import org.doubao.user.server.report.dto.response.ReportStatusResponse;
 import org.doubao.user.server.report.dto.response.ReportSubmitResponse;
 
@@ -26,7 +29,7 @@ public interface ReportService {
      * @param userId 举报人ID（用于权限校验）
      * @return 举报状态信息
      */
-    ReportStatusResponse getReportStatus(Long reportId, Long userId);
+    ReportStatusResponse getReportStatus(Long reportId);
 
     /**
      * 处理审核
@@ -34,4 +37,19 @@ public interface ReportService {
      * @return 处理结果
      */
     Boolean handleReview(ReviewHandleRequest request);
+
+    /**
+     * 管理员分页查询举报记录
+     */
+    ReportPageResponse adminQueryReport(AdminReportQueryDTO query);
+
+    /**
+     * 用户查询自己的举报记录
+     */
+    ReportPageResponse userQueryReports(Integer pageNum, Integer pageSize, Integer status);
+
+    /**
+     * 根据举报ID获取举报详情（管理员用）
+     */
+    ReportRecordDTO getReportDetailForAdmin(Long reportId);
 }

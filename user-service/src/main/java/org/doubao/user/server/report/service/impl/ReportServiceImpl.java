@@ -2,12 +2,18 @@ package org.doubao.user.server.report.service.impl;
 
 import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.extern.slf4j.Slf4j;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.UserContext;
 import org.doubao.user.server.report.constant.ReportConstant;
+import org.doubao.user.server.report.dto.request.AdminReportQueryDTO;
 import org.doubao.user.server.report.dto.request.ReportSubmitRequest;
 import org.doubao.user.server.report.dto.request.ReviewHandleRequest;
+import org.doubao.user.server.report.dto.response.ReportPageResponse;
+import org.doubao.user.server.report.dto.response.ReportRecordDTO;
 import org.doubao.user.server.report.dto.response.ReportStatusResponse;
 import org.doubao.user.server.report.dto.response.ReportSubmitResponse;
 import org.doubao.user.server.report.entity.ReportCategory;
@@ -92,7 +98,8 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
-    public ReportStatusResponse getReportStatus(Long reportId, Long userId) {
+    public ReportStatusResponse getReportStatus(Long reportId) {
+        Long userId = UserContext.getUserId();
         // 1. 从缓存查询状态
         ReportStatusResponse statusResponse = getReportStatusFromCache(reportId);
         if (statusResponse != null) {
@@ -393,4 +400,127 @@ public class ReportServiceImpl implements ReportService {
         // 设置过期时间
         updateReportStatusCache(reportId, status);
     }
+
+    @Override
+    public ReportPageResponse adminQueryReport(AdminReportQueryDTO query) {
+        // 分页查询
+        IPage<ReportRecordDTO> page = new Page<>(query.getPageNum(), query.getPageSize());
+        IPage<ReportRecordDTO> resultPage = reportMainMapper.selectAdminReportPage(page, query);
+
+        // 处理返回结果，设置类型名称等
+        resultPage.getRecords().forEach(this::fillReportRecordInfo);
+
+        // 构建分页响应
+        ReportPageResponse response = new ReportPageResponse();
+        response.setTotal(resultPage.getTotal());
+        response.setTotalPages((int) resultPage.getPages());
+        response.setPageNum(query.getPageNum());
+        response.setPageSize(query.getPageSize());
+        response.setRecords(resultPage.getRecords());
+
+        return response;
+    }
+
+    @Override
+    public ReportPageResponse userQueryReports(Integer pageNum, Integer pageSize, Integer status) {
+        Long userId = UserContext.getUserId();
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            pageSize = 10;
+        }
+
+        // 分页查询用户的举报记录
+        IPage<ReportRecordDTO> page = new Page<>(pageNum, pageSize);
+        IPage<ReportRecordDTO> resultPage = reportMainMapper.selectUserReportPage(page, userId, status);
+
+        // 处理返回结果
+        resultPage.getRecords().forEach(this::fillReportRecordInfo);
+
+        // 构建分页响应
+        ReportPageResponse response = new ReportPageResponse();
+        response.setTotal(resultPage.getTotal());
+        response.setTotalPages((int) resultPage.getPages());
+        response.setPageNum(pageNum);
+        response.setPageSize(pageSize);
+        response.setRecords(resultPage.getRecords());
+
+        return response;
+    }
+
+    @Override
+    public ReportRecordDTO getReportDetailForAdmin(Long reportId) {
+        // 先检查举报是否存在
+        ReportMain reportMain = reportMainMapper.selectById(reportId);
+        if (reportMain == null) {
+            throw new BusinessException(ErrorCode.USER_REPORT_NOT_FOUND);
+        }
+
+        // 查询举报详情
+        AdminReportQueryDTO query = new AdminReportQueryDTO();
+        query.setPageNum(1);
+        query.setPageSize(1);
+
+        IPage<ReportRecordDTO> page = new Page<>(1, 1);
+        IPage<ReportRecordDTO> resultPage = reportMainMapper.selectAdminReportPage(page, query);
+
+        if (resultPage.getRecords().isEmpty()) {
+            throw new BusinessException(ErrorCode.USER_REPORT_NOT_FOUND);
+        }
+
+        ReportRecordDTO recordDTO = resultPage.getRecords().get(0);
+        fillReportRecordInfo(recordDTO);
+
+        // 查询证据信息
+        // ReportEvidence evidence = evidenceRepository.findByReportId(reportId);
+        // if (evidence != null) {
+        //     recordDTO.setEvidenceUrls(evidence.getEvidenceUrls());
+        //     recordDTO.setDescription(evidence.getDescription());
+        // }
+
+        return recordDTO;
+    }
+
+    /**
+     * 填充举报记录的辅助信息（类型名称、状态描述等）
+     */
+    private void fillReportRecordInfo(ReportRecordDTO record) {
+        // 设置被举报对象类型名称
+        switch (record.getReportedType()) {
+            case ReportConstant.REPORTED_TYPE_CONTENT:
+                record.setReportedTypeName("内容");
+                break;
+            case ReportConstant.REPORTED_TYPE_USER:
+                record.setReportedTypeName("用户");
+                break;
+            case ReportConstant.REPORTED_TYPE_COMMENT:
+                record.setReportedTypeName("评论");
+                break;
+            case ReportConstant.REPORTED_TYPE_DIALOG:
+                record.setReportedTypeName("对话");
+                break;
+            default:
+                record.setReportedTypeName("未知");
+        }
+
+        // 设置风险等级名称
+        switch (record.getRiskLevel()) {
+            case ReportConstant.RISK_LEVEL_NORMAL:
+                record.setRiskLevelName("正常");
+                break;
+            case ReportConstant.RISK_LEVEL_LOW:
+                record.setRiskLevelName("低风险");
+                break;
+            case ReportConstant.RISK_LEVEL_HIGH:
+                record.setRiskLevelName("高风险");
+                break;
+            default:
+                record.setRiskLevelName("未知");
+        }
+
+        // 设置状态描述
+        record.setStatusDesc(getStatusDesc(record.getStatus()));
+    }
+
 }

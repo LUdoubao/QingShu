@@ -6,6 +6,7 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.user.server.report.dto.request.ReportQueryDTO;
 import org.doubao.user.server.report.dto.request.ReportSubmitRequest;
 import org.doubao.user.server.report.dto.request.ReviewHandleRequest;
+import org.doubao.user.server.report.dto.response.ReportPageResponse;
 import org.doubao.user.server.report.dto.response.ReportStatusResponse;
 import org.doubao.user.server.report.dto.response.ReportSubmitResponse;
 import org.doubao.user.server.report.service.ReportService;
@@ -36,14 +37,18 @@ public class ReportController {
 	@GetMapping("/status/{reportId}")
 	@ApiOperation("查询举报状态")
 	public Result<ReportStatusResponse> getReportStatus(
-			@PathVariable Long reportId,
-			@RequestHeader("userId") Long userId) {
-		return Result.success(reportService.getReportStatus(reportId, userId));
+			@PathVariable Long reportId) {
+		return Result.success(reportService.getReportStatus(reportId));
 	}
 
-	@PostMapping("/review/handle")
-	@ApiOperation("管理员处理审核")
-	public Result<Boolean> handleReview(@Valid @RequestBody ReviewHandleRequest request) {
-		return Result.success(reportService.handleReview(request));
+
+	@GetMapping("/my")
+	@ApiOperation("用户查询自己的举报记录")
+	public Result<ReportPageResponse> getUserReports(
+			@RequestParam(required = false) Integer pageNum,
+			@RequestParam(required = false) Integer pageSize,
+			@RequestParam(required = false) Integer status) {
+		return Result.success(reportService.userQueryReports(pageNum, pageSize, status));
 	}
+
 }
