@@ -1,6 +1,7 @@
 package org.doubao.comment.service.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -292,6 +293,30 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		return response;
 	}
 
+	@Override
+	public void updateStatus(Map<String, String> request) {
+		String commentId = request.get("commentId");
+		int status = Integer.parseInt(request.get("status"));
+		LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.eq(Comment::getCommentId, commentId);
+		Comment comment = this.getOne(queryWrapper);
+		if (comment == null) {
+			return;
+		}
+		if (status == 1) {
+			comment.setContent("该评论已被折叠");
+		}
+		comment.setStatus(status);
+		this.updateById(comment);
+
+		// 清除缓存
+		String cacheKey = "comments:post:" + comment.getPostId() +":*";
+		Set<String> keys = redisTemplate.keys(cacheKey);
+		if (keys != null && !keys.isEmpty()) {
+			redisTemplate.delete(keys);
+		}
+	}
+
 	/**
 	 * 获取评论列表（支持分页、排序）
 	 */
@@ -311,7 +336,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		LambdaQueryWrapper<Comment> query = new LambdaQueryWrapper<Comment>()
 				.eq(Comment::getPostId, postId)
 				.isNull(Comment::getParentId) // 一级评论无父ID
-				.eq(Comment::getStatus, 0); // 只查正常状态（未折叠/删除）
+				.in(Comment::getStatus, 0,1); // （折叠/正常）
 
 		// 2.2 排序处理
 		if ("hot".equals(sortType)) {

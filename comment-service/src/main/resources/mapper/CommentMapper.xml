@@ -18,7 +18,10 @@
         SELECT
         *
         FROM comments
-        WHERE parent_id = #{commentId}
+        WHERE root_id = #{commentId}
+        AND parent_id IS NOT NULL
+        AND status = 0
+        AND deleted = 0
         ORDER BY created_time DESC
         LIMIT #{count}
     </select>

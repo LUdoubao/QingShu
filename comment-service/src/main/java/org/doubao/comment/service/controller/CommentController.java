@@ -86,25 +86,9 @@ public class CommentController {
 		return Result.success(response);
 	}
 
-	// @PostMapping("/{commentId}/reply")
-	// public Result<String> replyComment(
-	// 		@PathVariable String commentId,
-	// 		@RequestBody ReplyDTO dto) {
-	// 	String replyId = commentService.replyComment(commentId, dto);
-	// 	return Result.success(replyId);
-	// }
-
-	// @PutMapping("/{commentId}/top")
-	// public Result<Void> topComment(
-	// 		@PathVariable String commentId,
-	// 		@RequestBody Map<String, String> action) {
-	// 	commentService.handleTop(commentId, action.get("action"));
-	// 	return Result.success(null);
-	// }
-
-	// @DeleteMapping("/{commentId}")
-	// public Result<Void> deleteComment(@PathVariable String commentId) {
-	// 	commentService.deleteComment(commentId);
-	// 	return Result.success(null);
-	// }
+	@PostMapping("/updateStatus")
+	public Result<Void> updateStatus(@RequestBody Map<String, String> request) {
+		commentService.updateStatus(request);
+		return Result.success();
+	}
 }

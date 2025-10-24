@@ -11,6 +11,7 @@ import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CommentService extends IService<Comment> {
 	String createComment(CommentDTO dto);
@@ -31,4 +32,5 @@ public interface CommentService extends IService<Comment> {
 
 	ToggleLikeResponse toggleLike(String commentId);
 
+	void updateStatus(Map<String, String> request);
 }
