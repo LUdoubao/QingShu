@@ -35,9 +35,9 @@ public class AdminReportController {
 	public Result<ReportRecordDTO> getReportDetail(@PathVariable Long reportId) {
 		return Result.success(reportService.getReportDetailForAdmin(reportId));
 	}
-	@PostMapping("/review/handle")
+	@PostMapping("/handle")
 	@ApiOperation("管理员处理审核")
-	public Result<Boolean> handleReview(@Valid @RequestBody ReviewHandleRequest request) {
-		return Result.success(reportService.handleReview(request));
+	public Result<Boolean> handle(@Valid @RequestBody ReviewHandleRequest request) {
+		return Result.success(reportService.handle(request));
 	}
 }

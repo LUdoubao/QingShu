@@ -20,6 +20,8 @@ import org.doubao.user.server.report.entity.ReportCategory;
 import org.doubao.user.server.report.entity.ReportEvidence;
 import org.doubao.user.server.report.entity.ReportMain;
 import org.doubao.user.server.report.entity.ReportReviewLog;
+import org.doubao.user.server.report.feign.CommentClient;
+import org.doubao.user.server.report.feign.QuoteClient;
 import org.doubao.user.server.report.mapper.ReportCategoryMapper;
 import org.doubao.user.server.report.mapper.ReportMainMapper;
 import org.doubao.user.server.report.mapper.ReportReviewLogMapper;
@@ -34,10 +36,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -65,6 +64,11 @@ public class ReportServiceImpl implements ReportService {
     @Autowired(required = false) // 允许AI服务未实现
     private AIPreCheckService aiPreCheckService;
 
+    @Autowired
+    private QuoteClient quoteClient;
+    @Autowired
+    private CommentClient commentClient;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ReportSubmitResponse submitReport(Long userId, ReportSubmitRequest request) {
@@ -80,6 +84,8 @@ public class ReportServiceImpl implements ReportService {
         Long reportId = reportMain.getId();
         log.info("用户[{}]提交举报成功，举报ID：{}", userId, reportId);
 
+
+        // 如果被举报目标次数超过三次，字段触发举报流程TODO
         // 4. 保存证据信息
         saveEvidence(reportId, request);
 
@@ -143,7 +149,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Boolean handleReview(ReviewHandleRequest request) {
+    public Boolean handle(ReviewHandleRequest request) {
         // 1. 验证举报是否存在
         ReportMain reportMain = reportMainMapper.selectById(request.getReportId());
         if (reportMain == null) {
@@ -151,8 +157,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 2. 验证举报状态是否可处理
-        if (reportMain.getStatus() != ReportConstant.REPORT_STATUS_PENDING
-                && reportMain.getStatus() != ReportConstant.REPORT_STATUS_PROCESSING) {
+        if (reportMain.getStatus() != ReportConstant.REPORT_STATUS_PENDING) {
             throw new BusinessException(ErrorCode.USER_REPORT_STATUS_ERROR);
         }
 
@@ -162,6 +167,9 @@ public class ReportServiceImpl implements ReportService {
         reportMain.setHandleTime(LocalDateTime.now());
         reportMain.setUpdatedTime(LocalDateTime.now());
         reportMainMapper.updateById(reportMain);
+
+        // 处理对应业务
+        handleByType(request.getReportedType(), request.getReportedId(), request.getReviewResult());
 
         // 4. 保存审核记录
         ReportReviewLog reviewLog = buildReviewLog(request);
@@ -175,6 +183,31 @@ public class ReportServiceImpl implements ReportService {
         sendNotification(reportMain, request);
 
         return true;
+    }
+
+    private void handleByType(Integer reportedType, String reportedId, Integer reviewResult) {
+        if (reviewResult != 1) {
+            return;
+        }
+        // 1.如果是内容举报，审核通过后，将内容状态更新为屏蔽
+        // 2.如果是评论举报，审核通过后，将评论状态更新为折叠
+        // 3.如果是用户举报，审核通过后，将用户禁言一天
+        Map<String, String> result = new HashMap<>();
+        switch (reportedType) {
+            case ReportConstant.REPORTED_TYPE_CONTENT:
+                result.put("quoteId", reportedId);
+                result.put("status", "2");
+                quoteClient.updateStatus(result);
+                break;
+            case ReportConstant.REPORTED_TYPE_COMMENT:
+                result.put("commentId", reportedId);
+                result.put("status", "1");
+                commentClient.updateStatus(result);
+                break;
+            default:
+                throw new BusinessException(ErrorCode.USER_REPORT_NOT_SUPPORT_TYPE);
+        }
+
     }
 
 

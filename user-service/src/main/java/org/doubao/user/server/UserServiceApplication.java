@@ -16,7 +16,11 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 		"org.doubao.user.server.report.mapper",
 		"org.doubao.user.server.log.mapper"
 })
-@EnableFeignClients({"org.doubao.user.server.core.feign", "org.doubao.user.server.relation.feign"})
+@EnableFeignClients({
+		"org.doubao.user.server.core.feign",
+		"org.doubao.user.server.relation.feign",
+		"org.doubao.user.server.report.feign"
+})
 @EnableAspectJAutoProxy
 public class UserServiceApplication {
 	public static void main(String[] args) {

@@ -17,6 +17,8 @@ public class ReviewHandleRequest {
     @NotNull(message = "举报ID不能为空")
     private Long reportId;
 
+    private String reportedId;
+
     @ApiModelProperty(value = "审核员ID", required = true)
     @NotNull(message = "审核员ID不能为空")
     private Long reviewerId;
@@ -29,8 +31,23 @@ public class ReviewHandleRequest {
     @Length(max = 500, message = "审核意见不能超过500字")
     private String reviewOpinion;
 
-    @ApiModelProperty(value = "处理动作（如\"delete_content=1,ban_user=7\"表示删除内容+禁言7天）")
-    private String handleAction;
+    private Integer reportedType;
+
+    public Integer getReportedType() {
+        return reportedType;
+    }
+
+    public void setReportedType(Integer reportedType) {
+        this.reportedType = reportedType;
+    }
+
+    public String getReportedId() {
+        return reportedId;
+    }
+
+    public void setReportedId(String reportedId) {
+        this.reportedId = reportedId;
+    }
 
     public @NotNull(message = "举报ID不能为空") Long getReportId() {
         return reportId;
@@ -62,13 +79,5 @@ public class ReviewHandleRequest {
 
     public void setReviewOpinion(@Length(max = 500, message = "审核意见不能超过500字") String reviewOpinion) {
         this.reviewOpinion = reviewOpinion;
-    }
-
-    public String getHandleAction() {
-        return handleAction;
-    }
-
-    public void setHandleAction(String handleAction) {
-        this.handleAction = handleAction;
     }
 }

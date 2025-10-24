@@ -36,7 +36,7 @@ public interface ReportService {
      * @param request 审核请求参数
      * @return 处理结果
      */
-    Boolean handleReview(ReviewHandleRequest request);
+    Boolean handle(ReviewHandleRequest request);
 
     /**
      * 管理员分页查询举报记录
