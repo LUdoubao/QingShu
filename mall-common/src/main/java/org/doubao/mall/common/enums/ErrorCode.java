@@ -61,6 +61,7 @@ public enum ErrorCode {
 	USER_REPORT_NOT_AUTHORIZED("USER_033",  "无权查询该举报信息"),
 	USER_REPORT_STATUS_ERROR("USER_034",  "当前举报状态不允许处理"),
 	USER_INVALID_REPORT_RESULT("USER_035",  "无效的审核结果"),
+	USER_REPORT_NOT_SUPPORT_TYPE("USER_036",  "不支持的举报类型"),
 
 
 
