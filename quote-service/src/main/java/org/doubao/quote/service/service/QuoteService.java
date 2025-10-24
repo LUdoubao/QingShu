@@ -45,4 +45,6 @@ public interface QuoteService extends IService<Quote> {
 	Result<Map<String, String>> getSearchSuggestions(String keyword);
 
 	Result<Map<String, Object>> search(String keyword, int page, int size, String type, Long currentUserId);
+
+	void updateStatus(Map<String, String> request);
 }

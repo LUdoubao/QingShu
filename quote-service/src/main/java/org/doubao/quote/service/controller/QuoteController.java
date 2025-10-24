@@ -97,5 +97,13 @@ public class QuoteController {
 								@RequestParam("type") String type) {
 		return quoteService.search(keyword, page, size, type, currentUserId);
 	}
+
+
+
+	@PostMapping("/updateStatus")
+	Result<Void> updateStatus(@RequestBody Map<String, String> request) {
+		quoteService.updateStatus(request);
+		return Result.success();
+	}
 }
 

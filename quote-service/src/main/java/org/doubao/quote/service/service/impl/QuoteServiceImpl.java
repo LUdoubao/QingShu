@@ -543,6 +543,16 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return Result.success();
 	}
 
+	@Override
+	public void updateStatus(Map<String, String> request) {
+		Long quoteId = Long.valueOf(request.get("quoteId"));
+		int status = Integer.parseInt(request.get("status"));
+		LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
+		updateWrapper.set(Quote::getStatus, status)
+				.eq(Quote::getId, quoteId);
+		this.update(updateWrapper);
+	}
+
 	public List<CategoryCountVO> getTopCategoriesByKeyword(String keyword) {
 		if (StringUtils.isBlank(keyword)) {
 			return Collections.emptyList();
