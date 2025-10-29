@@ -267,6 +267,7 @@ public class FeedAggregationService {
 
 		logger.info("内容contentMap：{}", JSON.toJSONString(contentMap));
 		// 4. 补充信息到DTO
+		List<DynamicDTO> delList = new ArrayList<>();
 		dynamics.forEach(dynamic -> {
 			// 补充用户信息
 			UserInfoDes user = userMap.get(dynamic.getActorId());
@@ -283,12 +284,18 @@ public class FeedAggregationService {
 				if (content != null) {
 					dynamic.setContentSummary(getContentSummary(content.getContent()));
 					dynamic.setContentUrl(content.getUrl());
+				} else {
+					// 删除无效动态
+					delList.add(dynamic);
 				}
 			}
 
 			// 补充事件类型名称
 			dynamic.setEventTypeName(getEventTypeName(dynamic.getEventType()));
 		});
+
+		// 删除无效动态
+		dynamics.removeAll(delList);
 
 		return dynamics;
 	}
