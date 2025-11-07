@@ -91,4 +91,9 @@ public class CommentController {
 		commentService.updateStatus(request);
 		return Result.success();
 	}
+	@PostMapping("/count/batch")
+	public Result<Map<Long, Long>> batchGetCounts(@RequestBody List<Long> contentIds) {
+		Map<Long, Long> counts = commentService.batchCounts(contentIds);
+		return Result.success(counts);
+	}
 }

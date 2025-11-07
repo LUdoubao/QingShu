@@ -33,4 +33,6 @@ public interface CommentService extends IService<Comment> {
 	ToggleLikeResponse toggleLike(String commentId);
 
 	void updateStatus(Map<String, String> request);
+
+	Map<Long, Long> batchCounts(List<Long> contentIds);
 }

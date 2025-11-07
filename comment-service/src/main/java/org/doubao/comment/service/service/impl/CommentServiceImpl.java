@@ -13,6 +13,7 @@ import org.doubao.comment.service.feign.UserClient;
 import org.doubao.comment.service.mapper.CommentMapper;
 import org.doubao.comment.service.messaging.CommentEventPublisher;
 import org.doubao.comment.service.service.CommentService;
+import org.doubao.comment.service.vo.CommentCountVo;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
 import org.doubao.mall.common.constant.Constants;
@@ -84,7 +85,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		Comment comment = new Comment();
 		comment.setContent(dto.getContent());
 		comment.setPostId(dto.getPostId());
-		comment.setUserId(Long.valueOf(userId));
+		comment.setUserId(userId);
 		comment.setParentId(dto.getParentId());
 
 		// 设置根评论ID
@@ -315,6 +316,20 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		if (keys != null && !keys.isEmpty()) {
 			redisTemplate.delete(keys);
 		}
+	}
+
+	@Override
+	public Map<Long, Long> batchCounts(List<Long> contentIds) {
+		if (CollectionUtils.isEmpty(contentIds)) {
+			return Collections.emptyMap();
+		}
+		Map<Long, Long> result = new HashMap<>(contentIds.size());
+		List<String> quoteIds = contentIds.stream().map(Object::toString).collect(Collectors.toList());
+		List<CommentCountVo> commentCountVos = commentMapper.countCommentsByPostIds(quoteIds);
+		for (CommentCountVo commentCountVo : commentCountVos) {
+			result.put(Long.valueOf(commentCountVo.getPostId()), commentCountVo.getCommentCount());
+		}
+		return result;
 	}
 
 	/**

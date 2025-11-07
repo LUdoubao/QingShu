@@ -40,4 +40,19 @@
         ORDER BY
         c.created_time DESC
     </select>
+    <!-- 查询正常状态且非删除的评论数（考虑BaseDel逻辑删除） -->
+    <select id="countCommentsByPostIds" resultType="org.doubao.comment.service.vo.CommentCountVo">
+        SELECT
+        post_id as postId,
+        COUNT(*) as commentCount
+        FROM comments
+        WHERE post_id IN
+        <foreach collection="postIds" item="postId" open="(" close=")" separator=",">
+            #{postId}
+        </foreach>
+        AND status = 0
+        AND deleted = 0
+        AND (parent_id IS NULL OR parent_id = '')
+        GROUP BY post_id
+    </select>
 </mapper>

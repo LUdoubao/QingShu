@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.apache.ibatis.annotations.Param;
 import org.doubao.comment.service.entity.Comment;
+import org.doubao.comment.service.vo.CommentCountVo;
 
 import java.util.List;
 
@@ -23,4 +24,8 @@ public interface CommentMapper extends BaseMapper<Comment> {
 			Page<Comment> page,
 			@Param("rootId") String rootId
 	);
+	/**
+	 * 根据postIds查询评论数
+	 */
+	List<CommentCountVo> countCommentsByPostIds(@Param("postIds") List<String> postIds);
 }
