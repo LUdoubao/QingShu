@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface NotificationService {
 	void sendNotification(Notification notification);
+
+	/**
+	 * 获取用户通知信息（不包含私信通知）
+	 */
 	Page<NotificationDTO> getUserNotifications(NotificationQueryDto queryDto);
 	UnreadCountDTO markAsRead(Long id);
 	void batchMarkAsRead(List<Long> ids);

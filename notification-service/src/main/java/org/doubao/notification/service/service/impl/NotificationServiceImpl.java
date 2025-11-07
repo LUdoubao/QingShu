@@ -50,6 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
 	public Page<NotificationDTO> getUserNotifications(NotificationQueryDto notificationQueryDto) {
 		LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
 		query.eq(Notification::getUserId, notificationQueryDto.getUserId())
+				.ne(Notification::getType,"CHAT")
 				.orderByDesc(Notification::getCreatedTime);
 
 		if (StringUtils.isNotBlank(notificationQueryDto.getStatus())) {
