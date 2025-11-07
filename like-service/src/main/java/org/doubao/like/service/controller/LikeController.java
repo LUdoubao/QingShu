@@ -46,4 +46,9 @@ public class LikeController {
 			@RequestParam(defaultValue = "20") int size) {
 		return Result.success(likeService.likeList(userId, page, size));
 	}
+	@PostMapping("/count/batch")
+	public Result<Map<Long, Long>> batchGetCounts(@RequestBody List<Long> contentIds) {
+		Map<Long, Long> counts = likeService.batchCounts(contentIds);
+		return Result.success(counts);
+	}
 }

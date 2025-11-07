@@ -8,10 +8,7 @@ import org.doubao.like.service.dto.LikeCountDTO;
 import org.doubao.like.service.dto.LikeQueryDto;
 import org.doubao.like.service.dto.request.BatchLikeStatusRequest;
 import org.doubao.like.service.dto.request.ToggleLikeRequest;
-import org.doubao.like.service.dto.response.BatchLikeStatusResponse;
-import org.doubao.like.service.dto.response.HotContentResponse;
-import org.doubao.like.service.dto.response.LikeQuoteVo;
-import org.doubao.like.service.dto.response.ToggleLikeResponse;
+import org.doubao.like.service.dto.response.*;
 import org.doubao.like.service.entity.LikeCount;
 import org.doubao.like.service.entity.LikeRecord;
 import org.doubao.like.service.enums.EntityTypeEnum;
@@ -564,6 +561,22 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 			}).collect(Collectors.toList()));
 		}
 		return favoritePage;
+	}
+
+	@Override
+	public Map<Long, Long> batchCounts(List<Long> contentIds) {
+		if (CollectionUtils.isEmpty(contentIds)) {
+			return Collections.emptyMap();
+		}
+
+		Map<Long, Long> result = new HashMap<>(contentIds.size());
+		List<String> quoteIds = contentIds.stream().map(Object::toString).collect(Collectors.toList());
+		List<LikeCountVo> likeCountVos = likeRecordMapper.countLikesByEntityIds(quoteIds);
+
+		for (LikeCountVo likeCountVo : likeCountVos) {
+			result.put(Long.parseLong(likeCountVo.getQuoteId()), likeCountVo.getLikeCount());
+		}
+		return result;
 	}
 
 	/**

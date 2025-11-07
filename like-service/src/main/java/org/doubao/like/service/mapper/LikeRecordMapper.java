@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.doubao.like.service.dto.LikeCountDTO;
+import org.doubao.like.service.dto.response.LikeCountVo;
 import org.doubao.like.service.entity.LikeRecord;
 
 import java.util.List;
@@ -23,4 +24,9 @@ public interface LikeRecordMapper extends BaseMapper<LikeRecord> {
 	);
 
 	void insertOrUpdate(@Param("likeRecord") LikeRecord likeRecord);
+
+	/**
+	 * 查询指定entityIds的点赞数
+	 */
+	List<LikeCountVo> countLikesByEntityIds(@Param("entityIds") List<String> entityIds);
 }

@@ -22,4 +22,6 @@ public interface LikeService extends IService<LikeRecord> {
 	List<HotContentResponse> getHotContents(int limit);
 
 	Page<LikeQuoteVo> likeList(Long userId, int page, int size);
+
+	Map<Long, Long> batchCounts(List<Long> contentIds);
 }

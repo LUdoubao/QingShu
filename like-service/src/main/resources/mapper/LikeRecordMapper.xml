@@ -54,5 +54,18 @@
         </if>
         updated_time = NOW()
     </insert>
-
+    <!-- 基础查询，只返回有点赞记录的entityId -->
+    <select id="countLikesByEntityIds" resultType="org.doubao.like.service.dto.response.LikeCountVo">
+        SELECT
+        entity_id as quoteId,
+        COUNT(*) as likeCount
+        FROM like_records
+        WHERE entity_id IN
+        <foreach collection="entityIds" item="entityId" open="(" close=")" separator=",">
+            #{entityId}
+        </foreach>
+        AND liked = 1
+        AND entity_type = 0
+        GROUP BY entity_id
+    </select>
 </mapper>
