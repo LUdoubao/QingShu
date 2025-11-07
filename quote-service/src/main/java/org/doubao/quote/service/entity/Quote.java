@@ -12,6 +12,8 @@ public class Quote extends BaseDel {
 	private Long id;
 	@TableField(value = "content")
 	private String content;
+	@TableField(value = "title")
+	private String title;
 	@TableField(value = "author")
 	private String author;
 	@TableField(value = "source")
@@ -22,6 +24,14 @@ public class Quote extends BaseDel {
 	private int status;
 	@TableField("original")
 	private int original;
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
 	public int getStatus() {
 		return status;

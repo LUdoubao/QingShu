@@ -13,17 +13,22 @@ import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.quote.service.dto.PageDto;
+import org.doubao.quote.service.dto.QueryDataPageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.duplicate.check.CitationCheckService;
 import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
+import org.doubao.quote.service.feign.CommentClient;
+import org.doubao.quote.service.feign.LikeClient;
 import org.doubao.quote.service.feign.UserClient;
+import org.doubao.quote.service.feign.ViewCountClient;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
 import org.doubao.quote.service.service.*;
 import org.doubao.quote.service.vo.CategoryCountVO;
+import org.doubao.quote.service.vo.QuoteDataVo;
 import org.doubao.quote.service.vo.QuoteVo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +63,12 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 	@Resource
 	private UserClient userClient;
+	@Resource
+	private ViewCountClient viewCountClient;
+	@Resource
+	private LikeClient likeClient;
+	@Resource
+	private CommentClient commentClient;
 	@Resource
 	private CitationCheckService citationCheckService;
 	@Override
@@ -221,7 +232,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	private Result<Page<QuoteVo>> query(PageDto pageDto) {
-		Long currentUserId = UserContext.getUser() == null ? pageDto.getCurrentUserId() : Long.valueOf(UserContext.getUser().getId());
+		Long currentUserId = UserContext.getUser() == null ? pageDto.getCurrentUserId() : UserContext.getUser().getId();
 		int page = pageDto.getPage();
 		int size = pageDto.getSize();
 		Long categoryId = pageDto.getCategoryId();
@@ -551,6 +562,71 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		updateWrapper.set(Quote::getStatus, status)
 				.eq(Quote::getId, quoteId);
 		this.update(updateWrapper);
+	}
+
+	@Override
+	public Page<QuoteDataVo> queryQuoteData(QueryDataPageDto queryDataPageDto) {
+		Integer page = queryDataPageDto.getPage();
+		Integer size = queryDataPageDto.getSize();
+		Integer original = queryDataPageDto.getOriginal();
+		String quoteKeyword = queryDataPageDto.getQuoteKeyword();
+		Long userId = UserContext.getUserId();
+		// 1. 查询总数
+		long total = quoteMapper.countByTagIdsAndCategory(null, null, 0,
+				userId, original,quoteKeyword);
+
+		// 2. 查询分页数据
+		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
+				null,
+				null,
+				0,
+				size,
+				(page - 1) * size,
+				userId,
+				original,
+				quoteKeyword
+		);
+
+		Page<QuoteDataVo> pageVo = new Page<>(page, size, total);
+		if (!records.isEmpty()) {
+			List<QuoteDataVo> quoteVoList = records.stream().map(quote -> {
+				QuoteDataVo quoteDataVo = new QuoteDataVo();
+				BeanUtils.copyProperties(quote, quoteDataVo);
+				return quoteDataVo;
+			}).collect(Collectors.toList());
+
+			List<Long> quoteIds = quoteVoList.stream().map(QuoteDataVo::getId).collect(Collectors.toList());
+
+			// 标签
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+
+			// 浏览量
+			Map<Long, Long> batchGetViewCounts = viewCountClient.batchGetViewCounts(quoteIds).getData();
+			// 点赞量
+			Map<Long, Long> likeCounts = likeClient.batchGetCounts(quoteIds).getData();
+			// 评论量
+			Map<Long, Long> commentCounts = commentClient.batchGetCounts(quoteIds).getData();
+			for (QuoteDataVo quoteVo : quoteVoList) {
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+				quoteVo.setViewCount(batchGetViewCounts.getOrDefault(quoteVo.getId(), 0L));
+				quoteVo.setLikeCount(likeCounts.getOrDefault(quoteVo.getId(), 0L));
+				quoteVo.setCommentCount(commentCounts.getOrDefault(quoteVo.getId(), 0L));
+			}
+			pageVo.setRecords(quoteVoList);
+		}
+		return pageVo;
 	}
 
 	public List<CategoryCountVO> getTopCategoriesByKeyword(String keyword) {

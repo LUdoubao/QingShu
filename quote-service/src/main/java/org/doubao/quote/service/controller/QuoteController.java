@@ -3,10 +3,12 @@ package org.doubao.quote.service.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.PageDto;
+import org.doubao.quote.service.dto.QueryDataPageDto;
 import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.service.QuoteService;
+import org.doubao.quote.service.vo.QuoteDataVo;
 import org.doubao.quote.service.vo.QuoteVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -104,6 +106,10 @@ public class QuoteController {
 	Result<Void> updateStatus(@RequestBody Map<String, String> request) {
 		quoteService.updateStatus(request);
 		return Result.success();
+	}
+	@PostMapping("/queryQuoteData")
+	public Result<Page<QuoteDataVo>> queryQuoteData(@RequestBody QueryDataPageDto queryDataPageDto) {
+		return Result.success(quoteService.queryQuoteData(queryDataPageDto));
 	}
 }
 

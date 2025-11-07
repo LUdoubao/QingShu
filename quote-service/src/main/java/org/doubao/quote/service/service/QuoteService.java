@@ -3,12 +3,10 @@ package org.doubao.quote.service.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.quote.service.dto.PageDto;
-import org.doubao.quote.service.dto.QuoteDTO;
-import org.doubao.quote.service.dto.QuoteUpdateDto;
+import org.doubao.quote.service.dto.*;
 import org.doubao.quote.service.entity.Quote;
+import org.doubao.quote.service.vo.QuoteDataVo;
 import org.doubao.quote.service.vo.QuoteVo;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 import java.util.Map;
@@ -47,4 +45,6 @@ public interface QuoteService extends IService<Quote> {
 	Result<Map<String, Object>> search(String keyword, int page, int size, String type, Long currentUserId);
 
 	void updateStatus(Map<String, String> request);
+
+	Page<QuoteDataVo> queryQuoteData(QueryDataPageDto queryDataPageDto);
 }
