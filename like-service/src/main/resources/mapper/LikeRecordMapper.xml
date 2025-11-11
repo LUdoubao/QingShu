@@ -68,4 +68,23 @@
         AND entity_type = 0
         GROUP BY entity_id
     </select>
+
+    <select id="selectDailyLikeCounts" resultType="java.util.Map">
+        SELECT
+        DATE(created_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM like_records
+        WHERE
+        entity_id IN
+        <foreach collection="entityIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND entity_type = #{entityType}
+        AND liked = 1
+        AND DATE(created_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(created_time)
+    </select>
 </mapper>

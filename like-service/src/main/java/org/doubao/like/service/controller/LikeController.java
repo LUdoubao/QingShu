@@ -13,6 +13,7 @@ import org.doubao.mall.common.entity.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -50,5 +51,10 @@ public class LikeController {
 	public Result<Map<Long, Long>> batchGetCounts(@RequestBody List<Long> contentIds) {
 		Map<Long, Long> counts = likeService.batchCounts(contentIds);
 		return Result.success(counts);
+	}
+
+	@PostMapping("/count/sum")
+	public Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params) {
+		return Result.success(likeService.batchSumDailyCounts(params));
 	}
 }
