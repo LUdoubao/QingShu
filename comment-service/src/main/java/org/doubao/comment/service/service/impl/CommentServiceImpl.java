@@ -21,7 +21,10 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.ConvertUtil;
 import org.doubao.mall.common.util.UserContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -37,6 +41,7 @@ import java.util.stream.Collectors;
 @Service
 @Transactional
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
+	private static final Logger log = LoggerFactory.getLogger(CommentServiceImpl.class);
 	@Autowired
 	private CommentMapper commentMapper;
 
@@ -330,6 +335,58 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			result.put(Long.valueOf(commentCountVo.getPostId()), commentCountVo.getCommentCount());
 		}
 		return result;
+	}
+
+	@Override
+	public Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params) {
+		if (params == null || params.isEmpty()) {
+			log.error("批量查询每日评论数参数为空");
+			return Collections.emptyMap();
+		}
+
+		// 1. 解析参数：获取文章ID列表和日期列表
+		List<Long> contentIds = ConvertUtil.safeConvertToListOfLong(params.get("quoteIds"));
+		List<LocalDate> dates = ConvertUtil.safeConvertToListOfLocalDate(params.get("dates"));
+
+
+		// 参数校验：文章ID和日期列表不可为空
+		if (CollectionUtils.isEmpty(contentIds) || CollectionUtils.isEmpty(dates)) {
+			log.error("批量查询每日评论数参数不完整：contentIds={}, dates={}", contentIds, dates);
+			return Collections.emptyMap();
+		}
+
+		// 2. 转换文章ID为字符串（因为Comment中postId是String类型）
+		List<String> postIds = contentIds.stream()
+				.map(String::valueOf)
+				.collect(Collectors.toList());
+
+		// 3. 调用Mapper查询指定日期和文章的有效评论数总和（按日期分组）
+		List<Map<String, Object>> dailyCounts = commentMapper.selectDailyCommentCounts(postIds, dates);
+
+		// 4. 转换查询结果为Map<LocalDate, Long>（日期→当日总评论数）
+		Map<LocalDate, Long> resultMap = new HashMap<>(dates.size());
+
+		// 先初始化所有日期的计数为0（确保每个日期都有返回值）
+		for (LocalDate date : dates) {
+			resultMap.put(date, 0L);
+		}
+
+		// 填充查询到的实际计数（覆盖初始值）
+		for (Map<String, Object> countMap : dailyCounts) {
+			// 从查询结果中提取日期和计数（数据库字段与Java类型映射）
+			LocalDate statDate = ConvertUtil.safeParseLocalDate(countMap.get("stat_date"));
+			Long totalCount = ConvertUtil.safeParseLong(countMap.get("total_count"));
+
+
+			// 仅更新输入日期列表中存在的日期
+			if (statDate != null && resultMap.containsKey(statDate)) {
+				resultMap.put(statDate, totalCount);
+			}
+		}
+
+		log.info("批量查询每日评论数完成：日期范围={}至{}, 文章数量={}, 结果={}",
+				dates.get(0), dates.get(dates.size() - 1), contentIds.size(), resultMap);
+		return resultMap;
 	}
 
 	/**

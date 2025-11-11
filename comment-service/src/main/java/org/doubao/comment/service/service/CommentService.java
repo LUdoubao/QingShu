@@ -10,6 +10,7 @@ import org.doubao.comment.service.entity.Comment;
 import org.doubao.comment.service.vo.CommentVO;
 import org.doubao.comment.service.vo.ReplyVO;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -35,4 +36,6 @@ public interface CommentService extends IService<Comment> {
 	void updateStatus(Map<String, String> request);
 
 	Map<Long, Long> batchCounts(List<Long> contentIds);
+
+	Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params);
 }

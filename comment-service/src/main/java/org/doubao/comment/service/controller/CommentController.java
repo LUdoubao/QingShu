@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -94,6 +95,12 @@ public class CommentController {
 	@PostMapping("/count/batch")
 	public Result<Map<Long, Long>> batchGetCounts(@RequestBody List<Long> contentIds) {
 		Map<Long, Long> counts = commentService.batchCounts(contentIds);
+		return Result.success(counts);
+	}
+
+	@PostMapping("/count/sum")
+	public Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params) {
+		Map<LocalDate, Long> counts = commentService.batchSumDailyCounts(params);
 		return Result.success(counts);
 	}
 }
