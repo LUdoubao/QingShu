@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.view.count.service.dto.ViewRecordDTO;
 import org.doubao.view.count.service.entity.ContentView;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -41,4 +42,6 @@ public interface ViewCountService extends IService<ContentView> {
 	 * 执行数据清洗与校正
 	 */
 	void cleanAndCorrectData();
+
+	Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params);
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.doubao.mall.common.util.ConvertUtil;
 import org.doubao.view.count.service.dto.ViewRecordDTO;
 import org.doubao.view.count.service.entity.ContentView;
 import org.doubao.view.count.service.entity.UserViewLog;
@@ -342,6 +343,51 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		} catch (Exception e) {
 			log.error("数据清洗与校正任务执行失败", e);
 		}
+	}
+
+	@Override
+	public Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params) {
+		if (params == null || params.isEmpty()) {
+			log.error("批量查询每日浏览量参数为空");
+			return Collections.emptyMap();
+		}
+
+		// 1. 解析参数：获取文章ID列表和日期列表
+		List<Long> contentIds = ConvertUtil.safeConvertToListOfLong(params.get("quoteIds"));
+		List<LocalDate> dates = ConvertUtil.safeConvertToListOfLocalDate(params.get("dates"));
+
+		// 参数校验：文章ID列表和日期列表不可为空
+		if (CollectionUtils.isEmpty(contentIds) || CollectionUtils.isEmpty(dates)) {
+			log.error("批量查询每日浏览量参数不完整：contentIds={}, dates={}", contentIds, dates);
+			return Collections.emptyMap();
+		}
+
+		// 2. 调用Mapper查询指定日期和文章的有效浏览量总和（按日期分组）
+		List<Map<String, Object>> dailyCounts = userViewLogMapper.selectDailyViewCounts(contentIds, dates);
+
+		// 3. 转换查询结果为Map<LocalDate, Long>（日期→当日总浏览量）
+		Map<LocalDate, Long> resultMap = new HashMap<>(dates.size());
+
+		// 先初始化所有日期的计数为0
+		for (LocalDate date : dates) {
+			resultMap.put(date, 0L);
+		}
+
+		// 填充查询到的计数（覆盖初始的0）
+		for (Map<String, Object> countMap : dailyCounts) {
+			// 从查询结果中提取日期和计数
+
+			LocalDate statDate = ConvertUtil.safeParseLocalDate(countMap.get("stat_date"));
+			Long totalCount = ConvertUtil.safeParseLong(countMap.get("total_count"));
+
+			if (statDate != null && resultMap.containsKey(statDate)) {
+				resultMap.put(statDate, totalCount);
+			}
+		}
+
+		log.info("批量查询每日浏览量完成：日期范围={}至{}, 文章数量={}, 结果={}",
+				dates.get(0), dates.get(dates.size() - 1), contentIds.size(), resultMap);
+		return resultMap;
 	}
 
 	// 批量同步Redis数据到数据库

@@ -6,6 +6,7 @@ import org.doubao.view.count.service.service.ViewCountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -34,11 +35,9 @@ public class ViewCountController {
 		return Result.success(counts);
 	}
 
-	// @GetMapping("/trend/{contentId}")
-	// public Result<List<ViewTrendDTO>> getViewTrend(
-	// 		@PathVariable Long contentId,
-	// 		@RequestParam(defaultValue = "7") int days) {
-	// 	List<ViewTrendDTO> trend = viewCountService.getViewTrend(contentId, days);
-	// 	return Result.success(trend);
-	// }
+
+	@PostMapping("/count/sum")
+	public Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params) {
+		return Result.success(viewCountService.batchSumDailyCounts(params));
+	}
 }
