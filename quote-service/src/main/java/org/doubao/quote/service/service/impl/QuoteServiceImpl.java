@@ -76,7 +76,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public Result<Quote> addQuote(QuoteDTO dto) {
+	public Result<Void> addQuote(QuoteDTO dto) {
 		// 检查引文是否重复
 		DecisionEngine.DuplicationResult duplicationResult = citationCheckService.checkCitation(dto.getContent(), dto.getAuthor(), dto.getSource(), dto.getOriginal() == 1);
 		if (duplicationResult.getStatus() == DecisionEngine.DuplicationStatus.DUPLICATE) {
@@ -88,12 +88,15 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setSource(dto.getSource());
 		q.setCategoryId(dto.getCategoryId());
 		q.setOriginal(dto.getOriginal());
-		q.setStatus(1);
+		// 默认引文状态为待审核
+		q.setStatus(0);
 		this.save(q);
 		Long qId = q.getId();
 		List<Long> tagIds = dto.getTagIds();
+		List<Tag> tags = new ArrayList<>();
 		List<QuoteTag> quoteTags = new ArrayList<>();
 		if (tagIds != null && !tagIds.isEmpty()) {
+			tags = tagService.listByIds(tagIds);
 			for (Long tagId : tagIds) {
 				QuoteTag qt = new QuoteTag();
 				qt.setQuoteId(qId);
@@ -103,10 +106,21 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quoteTagMapper.insertBatch(quoteTags);
 		}
 
-		// 推送到分发服务更新动态流
-		quoteEventPublisher.pushFanoutFeedPublish(q);
-
-		return Result.success(q);
+		// 同步到审核表
+		QuoteVerify quoteVerify = new QuoteVerify();
+		BeanUtils.copyProperties(q,quoteVerify);
+		quoteVerify.setUpdatedTime(LocalDateTime.now());
+		if (tags != null && !tags.isEmpty()) {
+			String tag = tags.stream().map(Tag::getId)
+					.map(String::valueOf)
+					.collect(Collectors.joining(","));
+			quoteVerify.setTag(tag);
+		}
+		quoteVerifyService.save(quoteVerify);
+		// 推送待审核消息到管理员消息中心
+		quoteEventPublisher.pushQuoteUpdateNotification(1L,
+				q.getId(), dto.getContent(), q.getCreatedId());
+		return Result.success();
 	}
 
 	@Override
@@ -170,7 +184,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	@SuppressWarnings("unchecked")
 	public Result<QuoteVo> getDetailById(Long id) {
-		QuoteVo quoteVo = publicGetDetailById(id).getData();
+		QuoteVo quoteVo = publicGetDetailById(id, null).getData();
 		if (quoteVo == null) {
 			throw new BusinessException(ErrorCode.NOT_FOUND);
 		}
@@ -183,11 +197,15 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return Result.success(quoteVo);
 	}
 	@Override
-	public Result<QuoteVo> publicGetDetailById(Long id) {
+	public Result<QuoteVo> publicGetDetailById(Long id, List<Integer> statusList) {
+		if (statusList == null || statusList.isEmpty()) {
+			statusList = Collections.singletonList(1);
+			LOGGER.info("statusList is empty, use default statusList: {}", statusList);
+		}
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getDeleted, 0)
 				.eq(Quote::getId, id)
-				.eq(Quote::getStatus,1);
+				.in(Quote::getStatus,statusList);
 		Quote quote = this.getOne(queryWrapper);
 		if (quote == null) {
 			// 引文不存在或待审核
@@ -777,6 +795,13 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 
 		return trendVos;
+	}
+
+	@Override
+	public QuoteVo getUpdateDetail(Long id) {
+		// 仅获取已发布, 未通过, 草稿,下架的文章
+		List<Integer> statusList = Arrays.asList(1, 3, 4, 5);
+		return publicGetDetailById(id, statusList).getData();
 	}
 
 	/**

@@ -38,7 +38,7 @@ public class QuoteController {
 	}
 
 	@PostMapping("/create")
-	public Result<Quote> create(@RequestBody QuoteDTO dto) {
+	public Result<Void> create(@RequestBody QuoteDTO dto) {
 		return quoteService.addQuote(dto);
 	}
 
@@ -55,6 +55,10 @@ public class QuoteController {
 	@GetMapping("/detail/{id}")
 	public Result<QuoteVo> detail(@PathVariable Long id) {
 		return quoteService.getDetailById(id);
+	}
+	@GetMapping("/updateDetail/{id}")
+	public Result<QuoteVo> updateDetail(@PathVariable Long id) {
+		return Result.success(quoteService.getUpdateDetail(id));
 	}
 
 	@PostMapping("/verify")

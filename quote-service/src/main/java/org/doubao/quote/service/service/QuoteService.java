@@ -13,7 +13,7 @@ import java.util.Map;
 public interface QuoteService extends IService<Quote> {
 	Result<Page<QuoteVo>> page(PageDto pageDto);
 
-	Result<Quote> addQuote(QuoteDTO dto);
+	Result<Void> addQuote(QuoteDTO dto);
 
 	Result<String> deleteQuote(List<Long> quoteIds);
 
@@ -21,7 +21,7 @@ public interface QuoteService extends IService<Quote> {
 
 	Result<QuoteVo> getDetailById(Long id);
 
-	Result<QuoteVo> publicGetDetailById(Long id);
+	Result<QuoteVo> publicGetDetailById(Long id, List<Integer> statusList);
 
 	Result<Page<QuoteVo>> pageManager(PageDto pageDto);
 
@@ -52,4 +52,6 @@ public interface QuoteService extends IService<Quote> {
 	ContentOverviewVo queryContentOverview();
 
 	List<ContentTrendVo> queryContentTrend(int days, List<String> metrics);
+
+	QuoteVo getUpdateDetail(Long id);
 }

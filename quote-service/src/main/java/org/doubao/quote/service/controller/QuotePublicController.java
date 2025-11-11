@@ -16,7 +16,7 @@ public class QuotePublicController {
 	private QuoteService quoteService;
 	@GetMapping("/detail/{id}")
 	public Result<QuoteVo> detail(@PathVariable Long id) {
-		QuoteVo data = quoteService.publicGetDetailById(id).getData();
+		QuoteVo data = quoteService.publicGetDetailById(id,  null).getData();
 		if (data != null && data.getUserInfo() != null) {
 			UserInfoDes userInfo = data.getUserInfo();
 			// 脱敏
