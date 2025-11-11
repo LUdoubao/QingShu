@@ -18,6 +18,7 @@ import org.doubao.favorite.service.utils.FavoriteComponent;
 import org.doubao.favorite.service.vo.FavoriteContentVo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.ConvertUtil;
 import org.doubao.mall.common.util.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +26,10 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -195,5 +198,51 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 		}
 		favoriteMapper.batchDelete(folderId, quoteIds, userId);
 		LOGGER.info("删除收藏夹中的内容成功: {}", folderId);
+	}
+
+	@Override
+	public Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params) {
+		if (params == null || params.isEmpty()) {
+			LOGGER.error("批量查询每日收藏数参数为空");
+			return Collections.emptyMap();
+		}
+
+		// 1. 解析参数：获取文章ID列表和日期列表
+		List<Long> quoteIds = ConvertUtil.safeConvertToListOfLong(params.get("quoteIds"));
+		List<LocalDate> dates = ConvertUtil.safeConvertToListOfLocalDate(params.get("dates"));
+
+
+		// 参数校验：文章ID和日期列表不可为空
+		if (CollectionUtils.isEmpty(quoteIds) || CollectionUtils.isEmpty(dates)) {
+			LOGGER.error("批量查询每日收藏数参数不完整：quoteIds={}, dates={}", quoteIds, dates);
+			return Collections.emptyMap();
+		}
+
+		// 2. 调用Mapper查询指定日期和文章的有效收藏数总和（按日期分组）
+		List<Map<String, Object>> dailyCounts = favoriteMapper.selectDailyFavoriteCounts(quoteIds, dates);
+
+		// 3. 转换查询结果为Map<LocalDate, Long>（日期→当日总收藏数）
+		Map<LocalDate, Long> resultMap = new HashMap<>(dates.size());
+
+		// 先初始化所有日期的计数为0（确保每个日期都有返回值）
+		for (LocalDate date : dates) {
+			resultMap.put(date, 0L);
+		}
+
+		// 填充查询到的实际计数（覆盖初始值）
+		for (Map<String, Object> countMap : dailyCounts) {
+			// 从查询结果中提取日期和计数（数据库字段与Java类型映射）
+			LocalDate statDate = ConvertUtil.safeParseLocalDate(countMap.get("stat_date"));
+			Long totalCount = ConvertUtil.safeParseLong(countMap.get("total_count"));
+
+			// 仅更新输入日期列表中存在的日期
+			if (statDate != null && resultMap.containsKey(statDate)) {
+				resultMap.put(statDate, totalCount);
+			}
+		}
+
+		LOGGER.info("批量查询每日收藏数完成：日期范围={}至{}, 文章数量={}, 结果={}",
+				dates.get(0), dates.get(dates.size() - 1), quoteIds.size(), resultMap);
+		return resultMap;
 	}
 }

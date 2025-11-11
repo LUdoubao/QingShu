@@ -9,6 +9,7 @@ import org.doubao.mall.common.entity.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -84,5 +85,9 @@ public class FavoriteController {
 	) {
 		Page<FavoriteContentVo> favorites = favoriteService.getUserFavoritesInFolder(folderId, page, size);
 		return Result.success(favorites);
+	}
+	@PostMapping("/quote/sum")
+	public Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params) {
+		return Result.success(favoriteService.batchSumDailyCounts(params));
 	}
 }

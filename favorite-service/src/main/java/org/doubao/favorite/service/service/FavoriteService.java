@@ -8,6 +8,7 @@ import org.doubao.favorite.service.dto.BatchDelDto;
 import org.doubao.favorite.service.entity.FavoriteContent;
 import org.doubao.favorite.service.vo.FavoriteContentVo;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -22,4 +23,6 @@ public interface FavoriteService extends IService<FavoriteContent> {
 	Map<Long, Long> countQuotes(List<Long> quoteIds);
 
 	void batchDelete(BatchDelDto batchDelDto);
+
+	Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params);
 }

@@ -87,4 +87,25 @@
             #{id}
         </foreach>
     </update>
+    <select id="selectDailyFavoriteCounts" resultType="java.util.Map">
+        SELECT
+        DATE(fc.created_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM favorite_content fc
+        INNER JOIN favorite_folder ff ON fc.folder_id = ff.id
+        WHERE
+        fc.quote_id IN
+        <foreach collection="quoteIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND fc.deleted = 0
+        AND ff.deleted = 0
+        AND ff.is_default = 1
+        AND DATE(fc.created_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(fc.created_time)
+    </select>
+
 </mapper>
