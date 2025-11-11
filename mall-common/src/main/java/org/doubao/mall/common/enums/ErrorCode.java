@@ -20,6 +20,7 @@ public enum ErrorCode {
 
 	CONTENT_LIMIT_REACHED("CONTENT_003", "内容创建达上限"),
 	CONTENT_EXISTS("CONTENT_001", "本站该引文已存在, 请检查"),
+	CONTENT_STATISTICS_DAYS_INVALID("CONTENT_002", "统计天数必须为正数"),
 
 	TAG_NAME_EMPTY("TAG_001", "标签名称不能为空"),
 	TAG_NAME_EXIST( "TAG_002", "标签名称已存在"),
