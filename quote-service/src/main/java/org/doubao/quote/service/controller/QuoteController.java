@@ -8,8 +8,7 @@ import org.doubao.quote.service.dto.QuoteDTO;
 import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.service.QuoteService;
-import org.doubao.quote.service.vo.QuoteDataVo;
-import org.doubao.quote.service.vo.QuoteVo;
+import org.doubao.quote.service.vo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -110,6 +109,22 @@ public class QuoteController {
 	@PostMapping("/queryQuoteData")
 	public Result<Page<QuoteDataVo>> queryQuoteData(@RequestBody QueryDataPageDto queryDataPageDto) {
 		return Result.success(quoteService.queryQuoteData(queryDataPageDto));
+	}
+
+	@GetMapping("/queryStatusCount")
+	public Result<QuoteStatusCountVo> queryStatusCount() {
+		return Result.success(quoteService.queryStatusCount());
+	}
+	@GetMapping("/queryContentOverview")
+	public Result<ContentOverviewVo> queryContentOverview() {
+		return Result.success(quoteService.queryContentOverview());
+	}
+
+	@GetMapping("/queryContentTrend")
+	public Result<List<ContentTrendVo>> queryContentTrend(
+			@RequestParam int days,  // 最近天数：7/14/30
+			@RequestParam(required = false) List<String> metrics) {  // 可选指标：views/likes/comments/collections
+		return Result.success(quoteService.queryContentTrend(days, metrics));
 	}
 }
 

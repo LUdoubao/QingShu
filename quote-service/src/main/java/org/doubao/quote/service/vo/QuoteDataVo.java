@@ -8,6 +8,7 @@ import java.util.List;
 public class QuoteDataVo {
 	private Long id;
 	private String title;
+	private String content;
 	private int status;
 	private int original;
 	private List<Tag> tags;
@@ -16,6 +17,14 @@ public class QuoteDataVo {
 	private Long viewCount;
 	private Long likeCount;
 	private Long commentCount;
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
 
 	public List<Tag> getTags() {
 		return tags;

@@ -19,17 +19,12 @@ import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.duplicate.check.CitationCheckService;
 import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
-import org.doubao.quote.service.feign.CommentClient;
-import org.doubao.quote.service.feign.LikeClient;
-import org.doubao.quote.service.feign.UserClient;
-import org.doubao.quote.service.feign.ViewCountClient;
+import org.doubao.quote.service.feign.*;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
 import org.doubao.quote.service.messaging.QuoteEventPublisher;
 import org.doubao.quote.service.service.*;
-import org.doubao.quote.service.vo.CategoryCountVO;
-import org.doubao.quote.service.vo.QuoteDataVo;
-import org.doubao.quote.service.vo.QuoteVo;
+import org.doubao.quote.service.vo.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -37,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -69,6 +65,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	private LikeClient likeClient;
 	@Resource
 	private CommentClient commentClient;
+	@Resource
+	 private FavoriteClient favoriteClient;
 	@Resource
 	private CitationCheckService citationCheckService;
 	@Override
@@ -242,7 +240,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		String quoteKeyword = pageDto.getQuoteKeyword();
 
 		// 1. 查询总数
-		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(), userId, original,quoteKeyword);
+		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(),
+				userId, original, 1, quoteKeyword);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
@@ -253,6 +252,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				(page - 1) * size,
 				userId,
 				original,
+				1,
 				quoteKeyword
 		);
 
@@ -570,10 +570,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		Integer size = queryDataPageDto.getSize();
 		Integer original = queryDataPageDto.getOriginal();
 		String quoteKeyword = queryDataPageDto.getQuoteKeyword();
+		Integer status = queryDataPageDto.getStatus();
 		Long userId = UserContext.getUserId();
 		// 1. 查询总数
 		long total = quoteMapper.countByTagIdsAndCategory(null, null, 0,
-				userId, original,quoteKeyword);
+				userId, original, status, quoteKeyword);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
@@ -584,6 +585,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				(page - 1) * size,
 				userId,
 				original,
+				status,
 				quoteKeyword
 		);
 
@@ -627,6 +629,247 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			pageVo.setRecords(quoteVoList);
 		}
 		return pageVo;
+	}
+
+	@Override
+	public QuoteStatusCountVo queryStatusCount() {
+		Long userId = UserContext.getUserId();
+		return quoteMapper.queryStatusCount(userId);
+	}
+
+	@Override
+	public ContentOverviewVo queryContentOverview() {
+		// 获取当前用户ID（数据权限：仅统计当前用户的内容）
+		Long userId = UserContext.getUserId();
+
+		// 1. 查询当前用户的所有文章ID（排除已删除的）
+		LambdaQueryWrapper<Quote> quoteQuery = new LambdaQueryWrapper<Quote>()
+				.eq(Quote::getCreatedId, userId)
+				.eq(Quote::getDeleted, 0) // 未删除
+				.select(Quote::getId); // 仅查询ID，优化性能
+		List<Quote> userQuotes = this.list(quoteQuery);
+		List<Long> quoteIds = userQuotes.stream()
+				.map(Quote::getId)
+				.collect(Collectors.toList());
+
+		// 2. 计算总文章数
+		long totalArticles = userQuotes.size();
+
+		// 3. 计算总浏览量（通过ViewCountClient获取）
+		long totalViews = 0;
+		if (!quoteIds.isEmpty()) {
+			Map<Long, Long> viewCountMap = viewCountClient.batchGetViewCounts(quoteIds).getData();
+			if (viewCountMap != null) {
+				totalViews = viewCountMap.values().stream().mapToLong(Long::longValue).sum();
+			}
+		}
+
+		// 4. 计算总点赞数（通过LikeClient获取）
+		long totalLikes = 0;
+		if (!quoteIds.isEmpty()) {
+			Map<Long, Long> likeCountMap = likeClient.batchGetCounts(quoteIds).getData();
+			if (likeCountMap != null) {
+				totalLikes = likeCountMap.values().stream().mapToLong(Long::longValue).sum();
+			}
+		}
+
+		// 5. 计算总评论数（通过CommentClient获取）
+		long totalComments = 0;
+		if (!quoteIds.isEmpty()) {
+			Map<Long, Long> commentCountMap = commentClient.batchGetCounts(quoteIds).getData();
+			if (commentCountMap != null) {
+				totalComments = commentCountMap.values().stream().mapToLong(Long::longValue).sum();
+			}
+		}
+
+		// 6. 计算总收藏数
+		long totalFavorites = 0;
+		if (!quoteIds.isEmpty()) {
+			Map<Long, Long> favoriteCountMap = favoriteClient.countQuotes(quoteIds).getData();
+			if (favoriteCountMap != null) {
+				totalFavorites = favoriteCountMap.values().stream().mapToLong(Long::longValue).sum();
+			}
+		}
+
+		// 组装结果VO
+		ContentOverviewVo overviewVo = new ContentOverviewVo();
+		overviewVo.setTotalArticles(totalArticles);
+		overviewVo.setTotalViews(totalViews);
+		overviewVo.setTotalLikes(totalLikes);
+		overviewVo.setTotalComments(totalComments);
+		overviewVo.setTotalFavorites(totalFavorites);
+
+		return overviewVo;
+	}
+
+	@Override
+	public List<ContentTrendVo> queryContentTrend(int days, List<String> metrics) {
+		// 1. 参数校验
+		if (days <= 0) {
+			throw new BusinessException(ErrorCode.CONTENT_STATISTICS_DAYS_INVALID);
+		}
+		// 处理空指标列表（默认统计所有指标）
+		if (metrics == null || metrics.isEmpty()) {
+			metrics = Arrays.asList("views", "likes", "comments", "favorites");
+		} else {
+			// 过滤无效指标
+			metrics = metrics.stream()
+					.filter(metric -> Arrays.asList("views", "likes", "comments", "favorites").contains(metric))
+					.collect(Collectors.toList());
+		}
+
+		// 2. 获取当前用户ID（仅统计当前用户的内容数据）
+		Long userId = UserContext.getUserId();
+
+		// 3. 计算日期范围（包含今天在内的最近days天）
+		LocalDate endDate = LocalDate.now();
+		LocalDate startDate = endDate.minusDays(days - 1); // 起始日期 = 今天 - (天数-1)
+		List<LocalDate> dateList = generateDateList(startDate, endDate); // 生成连续日期列表
+
+		List<Long> quoteIds = getQuoteIdsInDateRange(userId, startDate, endDate);
+		if (quoteIds.isEmpty()) {
+			// 无文章数据时，返回全0趋势
+			return dateList.stream().map(date -> {
+				ContentTrendVo vo = new ContentTrendVo();
+				vo.setDate(date);
+				vo.setViews(0L);
+				vo.setLikes(0L);
+				vo.setComments(0L);
+				vo.setFavorites(0L);
+				return vo;
+			}).collect(Collectors.toList());
+		}
+
+		// 4. 批量查询所有日期的指标数据（核心优化：按指标批量查询，而非按日期逐个查询）
+		Map<LocalDate, Long> dailyViews = new HashMap<>();
+		Map<LocalDate, Long> dailyLikes = new HashMap<>();
+		Map<LocalDate, Long> dailyComments = new HashMap<>();
+		Map<LocalDate, Long> dailyFavorites = new HashMap<>();
+
+		// 4.1 批量查询浏览量（一次调用获取所有日期数据）
+		if (metrics.contains("views")) {
+			dailyViews = batchSumDailyViewCounts(quoteIds, dateList);
+		}
+		// 4.2 批量查询点赞数
+		if (metrics.contains("likes")) {
+			dailyLikes = batchSumDailyLikeCounts(quoteIds, dateList);
+		}
+		// 4.3 批量查询评论数
+		if (metrics.contains("comments")) {
+			dailyComments = batchSumDailyCommentCounts(quoteIds, dateList);
+		}
+		// 4.4 批量查询收藏数
+		if (metrics.contains("favorites")) {
+			dailyFavorites = batchSumDailyCollectionCounts(quoteIds, dateList);
+		}
+
+		// 5. 组装每日趋势数据（从批量结果中取值）
+		List<ContentTrendVo> trendVos = new ArrayList<>();
+		for (LocalDate date : dateList) {
+			ContentTrendVo trendVo = new ContentTrendVo();
+			trendVo.setDate(date);
+			// 从批量结果中获取对应日期的数据，无数据则为0
+			trendVo.setViews(metrics.contains("views") ? dailyViews.getOrDefault(date, 0L) : 0L);
+			trendVo.setLikes(metrics.contains("likes") ? dailyLikes.getOrDefault(date, 0L) : 0L);
+			trendVo.setComments(metrics.contains("comments") ? dailyComments.getOrDefault(date, 0L) : 0L);
+			trendVo.setFavorites(metrics.contains("favorites") ? dailyFavorites.getOrDefault(date, 0L) : 0L);
+			trendVos.add(trendVo);
+		}
+
+		return trendVos;
+	}
+
+	/**
+	 * 生成从startDate到endDate的连续日期列表（包含首尾）
+	 */
+	private List<LocalDate> generateDateList(LocalDate startDate, LocalDate endDate) {
+		List<LocalDate> dates = new ArrayList<>();
+		LocalDate currentDate = startDate;
+		while (!currentDate.isAfter(endDate)) {
+			dates.add(currentDate);
+			currentDate = currentDate.plusDays(1);
+		}
+		return dates;
+	}
+
+	/**
+	 * 获取指定日期范围内用户创建的文章ID（未删除）
+	 */
+	private List<Long> getQuoteIdsInDateRange(Long userId, LocalDate startDate, LocalDate endDate) {
+		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
+				.eq(Quote::getCreatedId, userId) // 仅当前用户的文章
+				.eq(Quote::getDeleted, 0) // 未删除
+				.eq(Quote::getStatus, 1) // 已发布
+				.select(Quote::getId); // 仅查询ID，优化性能
+
+		return this.list(queryWrapper).stream()
+				.map(Quote::getId)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * 批量查询指定文章在多个日期的总浏览量
+	 * @return key:日期，value:当日总浏览量
+	 */
+	private Map<LocalDate, Long> batchSumDailyViewCounts(List<Long> quoteIds, List<LocalDate> dates) {
+		try {
+			Map<String, Object> params = new HashMap<>();
+			params.put("quoteIds", quoteIds);
+			params.put("dates", dates); // 一次性传入所有日期
+			Result<Map<LocalDate, Long>> result = viewCountClient.batchSumDailyCounts(params);
+			return result.isSuccess() ? result.getData() : new HashMap<>();
+		} catch (Exception e) {
+			LOGGER.error("批量统计浏览量异常", e);
+			return new HashMap<>();
+		}
+	}
+
+	/**
+	 * 批量查询指定文章在多个日期的总点赞数
+	 */
+	private Map<LocalDate, Long> batchSumDailyLikeCounts(List<Long> quoteIds, List<LocalDate> dates) {
+		try {
+			Map<String, Object> params = new HashMap<>();
+			params.put("quoteIds", quoteIds);
+			params.put("dates", dates);
+			Result<Map<LocalDate, Long>> result = likeClient.batchSumDailyCounts(params);
+			return result.isSuccess() ? result.getData() : new HashMap<>();
+		} catch (Exception e) {
+			LOGGER.error("批量统计点赞数异常", e);
+			return new HashMap<>();
+		}
+	}
+
+	/**
+	 * 批量查询指定文章在多个日期的总评论数
+	 */
+	private Map<LocalDate, Long> batchSumDailyCommentCounts(List<Long> quoteIds, List<LocalDate> dates) {
+		try {
+			Map<String, Object> params = new HashMap<>();
+			params.put("quoteIds", quoteIds);
+			params.put("dates", dates);
+			Result<Map<LocalDate, Long>> result = commentClient.batchSumDailyCounts(params);
+			return result.isSuccess() ? result.getData() : new HashMap<>();
+		} catch (Exception e) {
+			LOGGER.error("批量统计评论数异常", e);
+			return new HashMap<>();
+		}
+	}
+
+	/**
+	 * 批量查询指定文章在多个日期的总收藏数
+	 */
+	private Map<LocalDate, Long> batchSumDailyCollectionCounts(List<Long> quoteIds, List<LocalDate> dates) {
+		try {
+			Map<String, Object> params = new HashMap<>();
+			params.put("quoteIds", quoteIds);
+			params.put("dates", dates);
+			Result<Map<LocalDate, Long>> result = favoriteClient.batchSumDailyCounts(params);
+			return result.isSuccess() ? result.getData() : new HashMap<>();
+		} catch (Exception e) {
+			LOGGER.error("批量统计收藏数异常", e);
+			return new HashMap<>();
+		}
 	}
 
 	public List<CategoryCountVO> getTopCategoriesByKeyword(String keyword) {

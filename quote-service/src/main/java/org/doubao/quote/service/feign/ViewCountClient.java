@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,4 +17,7 @@ import java.util.Set;
 public interface ViewCountClient {
 	@PostMapping("/views/count/batch")
 	Result<Map<Long, Long>> batchGetViewCounts(@RequestBody List<Long> contentIds);
+
+	@PostMapping("/views/count/sum")
+	Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params);
 }

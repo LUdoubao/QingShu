@@ -5,8 +5,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.*;
 import org.doubao.quote.service.entity.Quote;
-import org.doubao.quote.service.vo.QuoteDataVo;
-import org.doubao.quote.service.vo.QuoteVo;
+import org.doubao.quote.service.vo.*;
 
 import java.util.List;
 import java.util.Map;
@@ -47,4 +46,10 @@ public interface QuoteService extends IService<Quote> {
 	void updateStatus(Map<String, String> request);
 
 	Page<QuoteDataVo> queryQuoteData(QueryDataPageDto queryDataPageDto);
+
+	QuoteStatusCountVo queryStatusCount();
+
+	ContentOverviewVo queryContentOverview();
+
+	List<ContentTrendVo> queryContentTrend(int days, List<String> metrics);
 }

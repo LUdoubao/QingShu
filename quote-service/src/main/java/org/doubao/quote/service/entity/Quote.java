@@ -20,6 +20,9 @@ public class Quote extends BaseDel {
 	private String source;
 	@TableField("category_id")
 	private Long categoryId;
+	/**
+	 * 状态，0:审核中1:已发布 2:屏蔽 3:草稿 4:未通过 5:下架
+	 */
 	@TableField("status")
 	private int status;
 	@TableField("original")

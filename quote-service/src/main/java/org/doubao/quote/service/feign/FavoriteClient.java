@@ -9,11 +9,11 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-@FeignClient(name = "like-service")
-public interface LikeClient {
-	@PostMapping("/like/count/batch")
-	Result<Map<Long, Long>> batchGetCounts(@RequestBody List<Long> contentIds);
+@FeignClient(name = "favorite-service")
+public interface FavoriteClient {
+	@PostMapping("/favorite/quote/count")
+	Result<Map<Long, Long>> countQuotes(@RequestBody List<Long> contentIds);
 
-	@PostMapping("/like/count/sum")
+	@PostMapping("/favorite/quote/sum")
 	Result<Map<LocalDate, Long>> batchSumDailyCounts(@RequestBody Map<String, Object> params);
 }

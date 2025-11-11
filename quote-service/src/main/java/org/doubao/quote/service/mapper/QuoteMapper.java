@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.doubao.quote.service.entity.Quote;
 import org.doubao.quote.service.vo.CategoryCountVO;
+import org.doubao.quote.service.vo.QuoteStatusCountVo;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,7 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 			@Param("tagIdsSize") Integer tagIdsSize,
 			@Param("userId") Long userId,
 			@Param("original") Integer original,
+			@Param("status") Integer status,
 			@Param("quoteKeyword") String quoteKeyword
 	);
 
@@ -28,6 +30,7 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 										   @Param("pageNum") int pageNum,
 										   @Param("userId") Long userId,
 										   @Param("original") Integer original,
+										   @Param("status") Integer status,
 										   @Param("quoteKeyword") String quoteKeyword
 	);
 
@@ -38,4 +41,6 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 	List<CategoryCountVO> selectTopCategoriesByKeyword(@Param("keyword")  String keyword);
 
 	List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount);
+
+	QuoteStatusCountVo queryStatusCount(@Param("userId") Long userId);
 }
