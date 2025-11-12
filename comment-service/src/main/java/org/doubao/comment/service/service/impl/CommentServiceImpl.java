@@ -452,8 +452,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 			// 3.3 统计回复数
 			LambdaQueryWrapper<Comment> replyQuery = new LambdaQueryWrapper<Comment>()
 					.eq(Comment::getPostId, postId)
-					.eq(Comment::getParentId, comment.getCommentId())
-					.eq(Comment::getStatus, 0);
+					.eq(Comment::getRootId, comment.getCommentId())
+					.isNotNull(Comment::getParentId)
+					.in(Comment::getStatus, 0,1);
 			int count = this.count(replyQuery);
 			vo.setReplyCount((long) count);
 
