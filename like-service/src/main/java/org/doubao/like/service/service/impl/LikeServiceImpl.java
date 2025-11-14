@@ -543,25 +543,34 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 				.eq(LikeRecord::getLiked, 1)
 				.eq(LikeRecord::getEntityType, EntityTypeEnum.CONTENT.getType())
 				.orderByDesc(LikeRecord::getCreatedTime);
-		Page<LikeRecord> favorites = likeRecordMapper.selectPage(pageParam, queryWrapper);
-		Page<LikeQuoteVo> favoritePage = new Page<>(page, size, favorites.getTotal());
-		if (favorites.getRecords().isEmpty()) {
-			return favoritePage;
+		Page<LikeRecord> likes = likeRecordMapper.selectPage(pageParam, queryWrapper);
+		Page<LikeQuoteVo> likeQuoteVoPage = new Page<>(page, size, likes.getTotal());
+		if (likes.getRecords().isEmpty()) {
+			return likeQuoteVoPage;
 		}
-		List<Long> quoteIds =  favorites.getRecords().stream().map(LikeRecord::getEntityId).map(Long::parseLong).collect(Collectors.toList());
+		List<Long> quoteIds =  likes.getRecords().stream().map(LikeRecord::getEntityId).map(Long::parseLong).collect(Collectors.toList());
 		List<Map<String, Object>> data = quoteServiceClient.getQuotesByIds(quoteIds).getData();
 		List<LikeCountDTO> likeCountDTOS = likeRecordMapper.countByEntities(EntityTypeEnum.CONTENT.getType(), quoteIds);
 		if (data != null && !data.isEmpty()) {
-			favoritePage.setRecords(favorites.getRecords().stream().map(favorite -> {
-				LikeQuoteVo favoriteVo = new LikeQuoteVo();
-				Optional<Map<String, Object>> first = data.stream().filter(d -> String.valueOf(d.get("id")).equals(favorite.getEntityId())).findFirst();
-				favoriteVo.setQuote(first.orElse(null));
-				Optional<LikeCountDTO> countDTO = likeCountDTOS.stream().filter(d -> String.valueOf(d.getEntityId()).equals(favorite.getEntityId())).findFirst();
-				favoriteVo.setLikeCount(countDTO.isPresent() ? countDTO.get().getCount() : 0L);
-				return favoriteVo;
-			}).collect(Collectors.toList()));
+			List<LikeQuoteVo> delList = new ArrayList<>();
+			List<LikeQuoteVo> collected = likes.getRecords().stream().map(like -> {
+				LikeQuoteVo likeVo = new LikeQuoteVo();
+				Optional<Map<String, Object>> first = data.stream().filter(d -> String.valueOf(d.get("id")).equals(like.getEntityId())).findFirst();
+				boolean present = first.isPresent();
+				if (present) {
+					likeVo.setQuote(first.get());
+				} else {
+					delList.add(likeVo);
+				}
+				Optional<LikeCountDTO> countDTO = likeCountDTOS.stream().filter(d -> String.valueOf(d.getEntityId()).equals(like.getEntityId())).findFirst();
+				likeVo.setLikeCount(countDTO.isPresent() ? countDTO.get().getCount() : 0L);
+				return likeVo;
+			}).collect(Collectors.toList());
+			// 删除已失效的数据
+			collected.removeAll(delList);
+			likeQuoteVoPage.setRecords(collected);
 		}
-		return favoritePage;
+		return likeQuoteVoPage;
 	}
 
 	@Override
