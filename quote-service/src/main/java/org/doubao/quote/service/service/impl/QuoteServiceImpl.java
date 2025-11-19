@@ -19,6 +19,7 @@ import org.doubao.quote.service.dto.QuoteUpdateDto;
 import org.doubao.quote.service.duplicate.check.CitationCheckService;
 import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
+import org.doubao.quote.service.enums.QuoteStatus;
 import org.doubao.quote.service.feign.*;
 import org.doubao.quote.service.mapper.QuoteMapper;
 import org.doubao.quote.service.mapper.QuoteTagMapper;
@@ -89,7 +90,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setCategoryId(dto.getCategoryId());
 		q.setOriginal(dto.getOriginal());
 		// 默认引文状态为待审核
-		q.setStatus(0);
+		q.setStatus(QuoteStatus.AUDITING.getCode());
 		this.save(q);
 		Long qId = q.getId();
 		List<Long> tagIds = dto.getTagIds();
@@ -142,7 +143,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		List<Tag> tags = afterQuoteVo.getTags();
 		if (userInfo.getId() == 1 && userInfo.getUsername().equals("admin")) {
 			// 管理员直接保存
-			quote.setStatus(1);
+			quote.setStatus(QuoteStatus.PUBLISHED.getCode());
 			this.updateById(quote);
 			List<QuoteTag> quoteTags = new ArrayList<>();
 			if (tags != null && !tags.isEmpty()) {
@@ -159,7 +160,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			Long quoteId = dto.getQuoteId();
 			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<Quote>();
 			updateWrapper.eq(Quote::getId, quoteId);
-			updateWrapper.set(Quote::getStatus, 0);
+			updateWrapper.set(Quote::getStatus, QuoteStatus.AUDITING.getCode());
 			this.update(updateWrapper);
 			// 同步到审核表
 			QuoteVerify quoteVerify = new QuoteVerify();
@@ -343,7 +344,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			// 引文表状态恢复1
 			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
 			updateWrapper.eq(Quote::getId, quoteId)
-					.set(Quote::getStatus, 1);
+					.set(Quote::getStatus, QuoteStatus.PUBLISHED.getCode());
 			this.update(updateWrapper);
 
 			quoteEventPublisher.pushQuoteVerifyNotification(
@@ -356,7 +357,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			);
 		} else {
 			Quote quote = this.getById(quoteId);
-			quote.setStatus(1);
+			quote.setStatus(QuoteStatus.PUBLISHED.getCode());
 			QuoteVerify quoteVerify = quoteVerifyService.getById(quoteId);
 			String verifyTag = quoteVerify.getTag();
 			List<QuoteTag> quoteTags = new ArrayList<>();
@@ -431,7 +432,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.in(Quote::getId, ids)
 				.eq(Quote::getDeleted, 0)
-				.eq(Quote::getStatus, 1);
+				.eq(Quote::getStatus,  QuoteStatus.PUBLISHED.getCode());
 		List<Quote> quotes = this.list(queryWrapper);
 
 		List<Map<String, Object>> mapList = new ArrayList<>();
@@ -800,7 +801,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	public QuoteVo getUpdateDetail(Long id) {
 		// 仅获取已发布, 未通过, 草稿,下架的文章
-		List<Integer> statusList = Arrays.asList(1, 3, 4, 5);
+		List<Integer> statusList = Arrays.asList(QuoteStatus.PUBLISHED.getCode(),
+				QuoteStatus.DRAFT.getCode(),
+				QuoteStatus.NOT_PASS.getCode(),
+				QuoteStatus.OFF_SHELF.getCode());
 		return publicGetDetailById(id, statusList).getData();
 	}
 
@@ -824,7 +828,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getCreatedId, userId) // 仅当前用户的文章
 				.eq(Quote::getDeleted, 0) // 未删除
-				.eq(Quote::getStatus, 1) // 已发布
+				.eq(Quote::getStatus, QuoteStatus.PUBLISHED.getCode()) // 已发布
 				.select(Quote::getId); // 仅查询ID，优化性能
 
 		return this.list(queryWrapper).stream()
