@@ -127,7 +127,7 @@ public class QuoteController {
 	@GetMapping("/queryContentTrend")
 	public Result<List<ContentTrendVo>> queryContentTrend(
 			@RequestParam int days,  // 最近天数：7/14/30
-			@RequestParam(required = false) List<String> metrics) {  // 可选指标：views/likes/comments/collections
+			@RequestParam(required = false) List<String> metrics) {
 		return Result.success(quoteService.queryContentTrend(days, metrics));
 	}
 }

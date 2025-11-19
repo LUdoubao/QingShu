@@ -24,7 +24,7 @@ public class TagController {
 
 	@PostMapping("/create")
 	public Result<Tag> add(@RequestBody Tag tag) {
-		return tagService.save(tag) ? Result.success(tag) : Result.error("添加失败");
+		return tagService.add(tag);
 	}
 
 }
