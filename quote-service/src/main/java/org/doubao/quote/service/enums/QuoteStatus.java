@@ -12,6 +12,7 @@ public enum QuoteStatus {
 	OFF_SHELF(5, "下架");
 	private final int code;
 	private final String name;
+	// 状态集合
 	QuoteStatus(int code, String name) {
 		this.code = code;
 		this.name = name;

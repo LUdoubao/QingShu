@@ -26,4 +26,8 @@
         </foreach>
     </select>
 
+    <!-- void deleteByQuoteId(@Param("id") Long id); -->
+    <delete id="deleteByQuoteId">
+        DELETE FROM quote_tag WHERE quote_id = #{id}
+    </delete>
 </mapper>

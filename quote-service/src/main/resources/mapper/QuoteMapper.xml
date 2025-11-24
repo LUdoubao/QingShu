@@ -135,4 +135,10 @@
         AND created_id = #{userId}
     </select>
 
+    <!-- void updateQuoteStatus(@Param("quoteId")Long quoteId,@Param("code") int code); -->
+    <update id="updateQuoteStatus">
+        UPDATE quote
+        SET status = #{code}
+        WHERE id = #{quoteId}
+    </update>
 </mapper>

@@ -808,6 +808,80 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return publicGetDetailById(id, statusList).getData();
 	}
 
+	@Override
+	public void updateQuoteStatus(Long quoteId, Integer status) {
+		if (status == null || QuoteStatus.getQuoteStatus(status) == null) {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+		QuoteStatus quoteStatus = QuoteStatus.getQuoteStatus(status);
+		switch (Objects.requireNonNull(quoteStatus)) {
+			case OFF_SHELF:
+				// 下架
+				quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
+				break;
+			default:
+				throw new BusinessException(ErrorCode.BAD_REQUEST);
+		}
+	}
+
+	@Override
+	public Long saveAsDraft(QuoteDTO dto) {
+		Long id = dto.getId();
+		if (id != null) {
+			Quote quote = this.getById(id);
+			if (quote == null) {
+				throw new BusinessException(ErrorCode.NOT_FOUND);
+			}
+			if (quote.getStatus() != QuoteStatus.DRAFT.getCode()) {
+				throw new BusinessException(ErrorCode.BAD_REQUEST);
+			}
+			quote.setContent(dto.getContent());
+			quote.setAuthor(dto.getAuthor());
+			quote.setSource(dto.getSource());
+			quote.setCategoryId(dto.getCategoryId());
+			quote.setOriginal(dto.getOriginal());
+			this.updateById(quote);
+
+
+			// 删除旧标签
+			quoteTagMapper.deleteByQuoteId(id);
+			// 添加新标签
+			List<Long> tagIds = dto.getTagIds();
+			List<QuoteTag> quoteTags = new ArrayList<>();
+			if (tagIds != null && !tagIds.isEmpty()) {
+				for (Long tagId : tagIds) {
+					QuoteTag qt = new QuoteTag();
+					qt.setQuoteId(id);
+					qt.setTagId(tagId);
+					quoteTags.add(qt);
+				}
+				quoteTagMapper.insertBatch(quoteTags);
+			}
+			return id;
+		}
+		Quote q = new Quote();
+		q.setContent(dto.getContent());
+		q.setAuthor(dto.getAuthor());
+		q.setSource(dto.getSource());
+		q.setCategoryId(dto.getCategoryId());
+		q.setOriginal(dto.getOriginal());
+		q.setStatus(QuoteStatus.DRAFT.getCode());
+		this.save(q);
+		Long qId = q.getId();
+		List<Long> tagIds = dto.getTagIds();
+		List<QuoteTag> quoteTags = new ArrayList<>();
+		if (tagIds != null && !tagIds.isEmpty()) {
+			for (Long tagId : tagIds) {
+				QuoteTag qt = new QuoteTag();
+				qt.setQuoteId(qId);
+				qt.setTagId(tagId);
+				quoteTags.add(qt);
+			}
+			quoteTagMapper.insertBatch(quoteTags);
+		}
+		return qId;
+	}
+
 	/**
 	 * 生成从startDate到endDate的连续日期列表（包含首尾）
 	 */

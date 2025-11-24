@@ -171,4 +171,16 @@ public interface QuoteService extends IService<Quote> {
 	 * @return 引文详情视图对象（用于更新操作）
 	 */
 	QuoteVo getUpdateDetail(Long id);
+
+	/**
+	 * 更新引文状态
+	 * @param quoteId 引文ID
+	 * @param status 引文状态
+	 */
+	void updateQuoteStatus(Long quoteId, Integer status);
+
+	/**
+	 * 保存为草稿
+	 */
+	Long saveAsDraft(QuoteDTO dto);
 }

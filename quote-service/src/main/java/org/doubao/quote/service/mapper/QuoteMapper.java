@@ -43,4 +43,6 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 	List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount);
 
 	QuoteStatusCountVo queryStatusCount(@Param("userId") Long userId);
+
+	void updateQuoteStatus(@Param("quoteId")Long quoteId,@Param("code") int code);
 }

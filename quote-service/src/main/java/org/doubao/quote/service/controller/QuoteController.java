@@ -130,5 +130,16 @@ public class QuoteController {
 			@RequestParam(required = false) List<String> metrics) {
 		return Result.success(quoteService.queryContentTrend(days, metrics));
 	}
+
+	@PostMapping("/updateStatus")
+	public Result<Void> updateQuoteStatus(@RequestParam Long quoteId, @RequestParam Integer status) {
+		quoteService.updateQuoteStatus(quoteId, status);
+		return Result.success();
+	}
+
+	@PostMapping("/saveAsDraft")
+	public Result<Long> saveAsDraft(@RequestBody QuoteDTO dto) {
+		return Result.success(quoteService.saveAsDraft(dto));
+	}
 }
 
