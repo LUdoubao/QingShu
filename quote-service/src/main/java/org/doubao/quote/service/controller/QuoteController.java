@@ -131,9 +131,9 @@ public class QuoteController {
 		return Result.success(quoteService.queryContentTrend(days, metrics));
 	}
 
-	@PostMapping("/updateStatus")
-	public Result<Void> updateQuoteStatus(@RequestParam Long quoteId, @RequestParam Integer status) {
-		quoteService.updateQuoteStatus(quoteId, status);
+	@PostMapping("/offOrOnShelf")
+	public Result<Void> offOrOnShelf(@RequestParam Long quoteId, @RequestParam Integer status) {
+		quoteService.offOrOnShelf(quoteId, status);
 		return Result.success();
 	}
 

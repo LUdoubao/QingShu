@@ -218,21 +218,25 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
 
 		List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
+		Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+		if (tagMappings != null && !tagMappings.isEmpty()) {
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+		}
+
 		Long categoryId = quoteVo.getCategoryId();
 		Category category = categoryService.getById(categoryId);
-		Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
-		for (Map<String, Object> map : tagMappings) {
-			Long quoteId = ((Number) map.get("quote_id")).longValue();
-			Long tagId = ((Number) map.get("tag_id")).longValue();
-			String tagName = (String) map.get("tag_name");
 
-			Tag tag = new Tag();
-			tag.setId(tagId);
-			tag.setName(tagName);
-
-			quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
-		}
-		quoteVo.setCategoryName(category.getName());
+		quoteVo.setCategoryName(category == null ? "" : category.getName());
 		quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
 		Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
 		first.ifPresent(quoteVo::setUserInfo);
@@ -809,7 +813,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public void updateQuoteStatus(Long quoteId, Integer status) {
+	public void offOrOnShelf(Long quoteId, Integer status) {
 		if (status == null || QuoteStatus.getQuoteStatus(status) == null) {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
@@ -818,6 +822,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			case OFF_SHELF:
 				// 下架
 				quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
+				break;
+			case PUBLISHED:
+				// 发布
+				quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.PUBLISHED.getCode());
 				break;
 			default:
 				throw new BusinessException(ErrorCode.BAD_REQUEST);

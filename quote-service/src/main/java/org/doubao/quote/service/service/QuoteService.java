@@ -173,11 +173,11 @@ public interface QuoteService extends IService<Quote> {
 	QuoteVo getUpdateDetail(Long id);
 
 	/**
-	 * 更新引文状态
+	 *  引文上下架
 	 * @param quoteId 引文ID
 	 * @param status 引文状态
 	 */
-	void updateQuoteStatus(Long quoteId, Integer status);
+	void offOrOnShelf(Long quoteId, Integer status);
 
 	/**
 	 * 保存为草稿
