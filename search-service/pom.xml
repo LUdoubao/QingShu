@@ -84,6 +84,35 @@
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- 单体模式 -->
+        <profile>
+            <id>monolith</id>
+            <activation>
+                <activeByDefault>true</activeByDefault> <!-- 默认激活 -->
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>quote-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+            <properties>
+                <service.run-mode>monolith</service.run-mode>
+            </properties>
+        </profile>
+
+        <!-- 微服务模式 -->
+        <profile>
+            <id>microservice</id>
+            <properties>
+                <service.run-mode>microservice</service.run-mode>
+            </properties>
+        </profile>
+    </profiles>
+
     <build>
         <plugins>
             <plugin>

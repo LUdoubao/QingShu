@@ -26,18 +26,6 @@ public class QuoteClientFallbackFactory implements FallbackFactory<QuoteClient> 
 				log.error("[QuoteClient] getContentsByIds fallback, contentIds: {}, cause: {}", ids, cause.getMessage());
 				return Result.success(Collections.emptyList());
 			}
-
-			@Override
-			public Result<ContentStatsDTO> getContentStats(String type, Long id) {
-				log.error("[QuoteClient] getContentStats fallback, type: {}, id: {}, cause: {}", type, id, cause.getMessage());
-				return Result.success(new ContentStatsDTO());
-			}
-
-			@Override
-			public Result<List<String>> getContentTags(Long id) {
-				log.error("[QuoteClient] getContentTags fallback, id: {}, cause: {}", id, cause.getMessage());
-				return Result.success(Collections.emptyList());
-			}
 		};
 	}
 }

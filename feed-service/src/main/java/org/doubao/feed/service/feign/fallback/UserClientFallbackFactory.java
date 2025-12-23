@@ -49,13 +49,6 @@ public class UserClientFallbackFactory implements FallbackFactory<UserClient> {
 				log.error("[UserClient] getUsersByIds fallback, userIds: {}, cause: {}", userIds, cause.getMessage());
 				return Result.success(Collections.emptyList());
 			}
-
-			@Override
-			public Result<Boolean> checkMutualFollow(Long userId, Long otherId) {
-				log.error("[UserClient] checkMutualFollow fallback, userId: {}, otherId: {}, cause: {}",
-						userId, otherId, cause.getMessage());
-				return Result.success(false);
-			}
 		};
 	}
 }

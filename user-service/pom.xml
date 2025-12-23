@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+ <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
@@ -9,6 +9,11 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>user-service</artifactId>
     <name>user-service</name>
+    <packaging>pom</packaging>
+    <modules>
+        <module>user-service-api</module>
+        <module>user-service-server</module>
+    </modules>
     <build>
         <plugins>
             <plugin>
@@ -93,4 +98,47 @@
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <!-- 单体模式 -->
+        <profile>
+            <id>monolith</id>
+            <activation>
+                <activeByDefault>true</activeByDefault> <!-- 默认激活 -->
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>auth-service</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>oss-service</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>comment-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>quote-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+            <properties>
+                <service.run-mode>monolith</service.run-mode>
+            </properties>
+        </profile>
+
+        <!-- 微服务模式 -->
+        <profile>
+            <id>microservice</id>
+            <properties>
+                <service.run-mode>microservice</service.run-mode>
+            </properties>
+        </profile>
+    </profiles>
 </project>

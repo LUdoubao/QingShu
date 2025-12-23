@@ -1,8 +1,6 @@
 package org.doubao.feed.service.service;
 
 import org.doubao.feed.service.feign.QuoteClient;
-import org.doubao.feed.service.feign.UserBehaviorClient;
-import org.doubao.feed.service.model.dto.ContentStatsDTO;
 import org.doubao.feed.service.model.dto.DynamicDTO;
 import org.springframework.stereotype.Service;
 
@@ -14,7 +12,6 @@ import java.util.List;
 @Service
 public class SortingService {
 
-	private UserBehaviorClient behaviorClient;
 	private QuoteClient quoteClient;
 
 	/**
@@ -99,48 +96,13 @@ public class SortingService {
 	 * 计算亲密度因子
 	 */
 	private double calculateIntimacyFactor(Long userId, Long actorId) {
-		if (userId.equals(actorId)) {
-			return 0.6; // 自己的动态
-		}
-
-		// 查询互动次数
-		int interactionCount = behaviorClient.countInteractions(userId, actorId);
-
-		if (interactionCount > 10) {
-			return 0.5;
-		} else if (interactionCount > 5) {
-			return 0.3;
-		} else if (interactionCount > 0) {
-			return 0.1;
-		}
-
-		// 检查是否互相关注
-		boolean isMutualFollow = behaviorClient.checkMutualFollow(userId, actorId);
-		return isMutualFollow ? 0.3 : 0;
+		return 0.5;
 	}
 
 	/**
 	 * 计算热度因子
 	 */
 	private double calculateHotFactor(Long targetId, String targetType) {
-		// 获取内容的互动数据
-		ContentStatsDTO stats = quoteClient.getContentStats(targetType, targetId).getData();
-		if (stats == null || stats.getViewCount() == 0) {
-			return 0;
-		}
-
-		// 互动率 = (点赞数 + 评论数 + 收藏数) / 浏览量
-		double interactionRate = (double) (stats.getLikeCount() + stats.getCommentCount() + stats.getCollectCount())
-				/ stats.getViewCount();
-
-		if (interactionRate > 0.2) {
-			return 0.4;
-		} else if (interactionRate > 0.1) {
-			return 0.2;
-		} else if (interactionRate > 0.05) {
-			return 0.1;
-		}
-
 		return 0;
 	}
 
@@ -148,20 +110,6 @@ public class SortingService {
 	 * 计算兴趣匹配度因子
 	 */
 	private double calculateInterestFactor(Long userId, Long targetId) {
-		// 获取用户兴趣标签和内容标签并计算匹配度
-		List<String> userTags = behaviorClient.getUserInterestTags(userId);
-		List<String> contentTags = quoteClient.getContentTags(targetId).getData();
-
-		if (userTags.isEmpty() || contentTags.isEmpty()) {
-			return 0;
-		}
-
-		long matchCount = contentTags.stream()
-				.filter(userTags::contains)
-				.count();
-
-		double matchRate = (double) matchCount / contentTags.size();
-
-		return matchRate > 0.3 ? 0.2 : (matchRate > 0 ? 0.1 : 0);
+		return 0;
 	}
 }

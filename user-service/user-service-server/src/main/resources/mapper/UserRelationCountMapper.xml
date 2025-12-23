@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.user.service.mapper.relation.UserRelationCountMapper">
+
+    <!-- void incrementFollowingCount(@Param("userId") Long userId, @Param("delta") int delta);-->
+    <update id="incrementFollowingCount">
+        update user_relation_count set following_count = following_count + #{delta} where user_id = #{userId}
+    </update>
+
+    <!-- void incrementFollowerCount(@Param("userId") Long userId, @Param("delta") int delta); -->
+    <update id="incrementFollowerCount">
+        update user_relation_count set follower_count = follower_count + #{delta} where user_id = #{userId}
+    </update>
+
+    <!-- void incrementMutualCount(@Param("userId") Long userId, @Param("delta") int delta); -->
+    <update id="incrementMutualCount">
+        update user_relation_count set mutual_count = mutual_count + #{delta} where user_id = #{userId}
+    </update>
+
+</mapper>

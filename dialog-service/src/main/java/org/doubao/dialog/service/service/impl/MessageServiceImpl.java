@@ -17,7 +17,6 @@ import org.doubao.dialog.service.enums.DialogStatusEnum;
 import org.doubao.dialog.service.enums.MessagePushType;
 import org.doubao.dialog.service.enums.SenderTypeEnum;
 import org.doubao.dialog.service.feign.AIServiceClient;
-import org.doubao.dialog.service.feign.NotificationFeignClient;
 import org.doubao.dialog.service.feign.UserFeignClient;
 import org.doubao.dialog.service.mapper.AssistantDialogMapper;
 import org.doubao.dialog.service.mapper.AssistantMessageMapper;
@@ -85,9 +84,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	@Autowired
 	private UserFeignClient userFeignClient;
-
-	@Autowired
-	private NotificationFeignClient notificationFeignClient;
 
 	@Autowired
 	private RabbitTemplate rabbitTemplate;

@@ -3,6 +3,7 @@ package org.doubao.feed.service.feign;
 import org.doubao.feed.service.feign.fallback.UserClientFallbackFactory;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 @FeignClient(name = "user-service", fallbackFactory = UserClientFallbackFactory.class)
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface UserClient {
 
 	/**
@@ -42,14 +44,4 @@ public interface UserClient {
 	 */
 	@PostMapping("/user/listByIds")
 	Result<List<UserInfoDes>> getUsersByIds(@RequestBody Set<Long> userIds);
-
-	/**
-	 * 检查是否互相关注
-	 */
-	@GetMapping("/user/check-mutual/{userId}/{otherId}")
-	Result<Boolean> checkMutualFollow(
-			@PathVariable("userId") Long userId,
-			@PathVariable("otherId") Long otherId);
-
-
 }

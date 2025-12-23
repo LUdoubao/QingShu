@@ -7,6 +7,7 @@ import org.doubao.dialog.service.dto.AIRequest;
 import org.doubao.dialog.service.dto.AIResponse;
 import org.doubao.dialog.service.dto.MessageRequest;
 import org.doubao.mall.common.entity.Result;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
  * AI服务Feign客户端, , fallback = AIServiceFallback.classconfiguration = FeignErrorDecoderConfig.class
  */
 @FeignClient(name = "ai-service")
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface AIServiceClient {
 
 	/**

@@ -1,0 +1,3 @@
+# 全局运行模式：microservice（微服务，默认）/ monolith（单体）
+service:
+  run-mode: monolith
