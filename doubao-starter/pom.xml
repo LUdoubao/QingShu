@@ -119,7 +119,7 @@
         <!-- OSS服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>oss-service</artifactId>
+            <artifactId>oss-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
     </dependencies>

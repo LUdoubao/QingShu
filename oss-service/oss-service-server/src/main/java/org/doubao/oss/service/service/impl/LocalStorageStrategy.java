@@ -84,13 +84,13 @@ public class LocalStorageStrategy implements StorageStrategy {
 				throw new BusinessException(ErrorCode.LOCAL_URL_ERROR);
 			}
 		}
-		return baseUrl +  fileKey;
+		return baseUrl +  pathEncryptionService.decryptPath(fileKey);
 	}
 
 	@Override
 	public void deleteFile(String fileKey) {
 		try {
-			String decrypt = pathEncryptionService.encryptPath(fileKey);
+			String decrypt = pathEncryptionService.decryptPath(fileKey);
 
 			Path path = Paths.get(rootLocation, decrypt);
 

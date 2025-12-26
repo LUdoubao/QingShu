@@ -91,7 +91,7 @@
                 </dependency>
                 <dependency>
                     <groupId>com.doubao</groupId>
-                    <artifactId>oss-service</artifactId>
+                    <artifactId>oss-service-api</artifactId>
                     <version>0.0.1-SNAPSHOT</version>
                 </dependency>
                 <dependency>

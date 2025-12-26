@@ -1,6 +1,5 @@
 package org.doubao.oss.service.service;
 
-
 import java.io.InputStream;
 
 public interface StorageStrategy {
