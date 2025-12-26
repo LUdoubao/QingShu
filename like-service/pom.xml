@@ -14,6 +14,7 @@
     <modules>
         <module>like-service-api</module>
         <module>like-service-server</module>
+        <module>like-service-starter</module>
     </modules>
 
 </project>

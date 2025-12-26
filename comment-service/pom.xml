@@ -14,6 +14,7 @@
     <modules>
         <module>comment-service-api</module>
         <module>comment-service-server</module>
+        <module>comment-service-starter</module>
     </modules>
     
     <build>

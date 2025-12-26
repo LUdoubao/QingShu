@@ -13,6 +13,7 @@
     <modules>
         <module>auth-service-api</module>
         <module>auth-service-server</module>
+        <module>auth-service-starter</module>
     </modules>
     <build>
         <plugins>

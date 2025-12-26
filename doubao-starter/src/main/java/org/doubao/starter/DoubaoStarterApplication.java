@@ -11,7 +11,24 @@ import org.springframework.context.annotation.FilterType;
 @SpringBootApplication
 @EnableAspectJAutoProxy
 @ComponentScan(
-        basePackages = {"org.doubao"},
+        basePackages = {
+                "org.doubao.ai.service",
+                "org.doubao.auth.service",
+                "org.doubao.comment.service", 
+                "org.doubao.dialog.service",
+                "org.doubao.fanout.service", 
+                "org.doubao.favorite.service", 
+                "org.doubao.feed.service", 
+                "org.doubao.like.service", 
+                "org.doubao.mall.common", 
+                "org.doubao.notification.service",
+                "org.doubao.oss.service", 
+                "org.doubao.quote.service", 
+                "org.doubao.search.service", 
+                "org.doubao.share.service", 
+                "org.doubao.user.service", 
+                "org.doubao.view.count.service"
+        },
         excludeFilters = {
                 @ComponentScan.Filter(
                         type = FilterType.ASSIGNABLE_TYPE,
@@ -23,7 +40,7 @@ import org.springframework.context.annotation.FilterType;
         }
 )
 @MapperScan({
-        "org.doubao.**.mapper"
+        "org.doubao.*.mapper"
 })
 public class DoubaoStarterApplication {
 

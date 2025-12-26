@@ -2,63 +2,89 @@ package org.doubao.auth.service.config;
 
 import org.doubao.auth.service.filter.JwtAuthenticationFilter;
 import org.doubao.auth.service.filter.JwtAuthenticationFilterLocal;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import javax.annotation.PostConstruct;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
+
+	@Autowired
+	private Environment environment;
+
+	@PostConstruct
+	public void init() {
+		LOGGER.info("=== SecurityConfig初始化 ===");
+		LOGGER.info("当前运行模式: {}", environment.getProperty("service.run-mode", "未设置"));
+		LOGGER.info("所有相关属性:");
+		LOGGER.info("  service.run-mode: {}", environment.getProperty("service.run-mode"));
+		LOGGER.info("  spring.profiles.active: {}", environment.getProperty("spring.profiles.active"));
+		LOGGER.info("  logging.level.org.doubao.auth: {}", environment.getProperty("logging.level.org.doubao.auth"));
+		LOGGER.info("=== SecurityConfig初始化结束 ===");
+	}
 
 	@Bean
 	@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 	public JwtAuthenticationFilter jwtAuthenticationFilter() {
+		LOGGER.info("✅ Microservice mode enabled.");
+		LOGGER.info("✅ 创建JwtAuthenticationFilter实例");
 		return new JwtAuthenticationFilter();
 	}
+
 	@Bean
 	@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
 	public JwtAuthenticationFilterLocal jwtAuthenticationFilterLocal() {
+		LOGGER.info("✅ Monolith mode enabled.");
+		LOGGER.info("✅ 创建JwtAuthenticationFilterLocal实例");
 		return new JwtAuthenticationFilterLocal();
 	}
 
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
-		// ⚙️ 禁用 CSRF 防护（跨站请求伪造保护）
-		// 对于 API 网关通常不需要 CSRF，因为通常是前后端分离架构
+		LOGGER.info("⚙️ 配置HttpSecurity");
+
 		http.csrf().disable()
-				// 🔐 配置请求授权规则
 				.authorizeRequests()
-				// ✅ 放行所有以 /auth/ 开头的认证相关接口
-				// 通常包括登录、注册、获取令牌等无需认证的端点
 				.antMatchers("/auth/**", "/user/login", "/user/register", "/user/verify").permitAll()
-				// 🛡️ 其他所有请求都需要认证才能访问
-				// 将强制所有其他请求都需要有效的认证凭据
 				.anyRequest().authenticated()
-				// 结束授权规则配置，连接下一个配置
 				.and()
-				// 🚦 添加自定义 JWT 验证过滤器
-				// 根据运行模式添加对应的过滤器
 				.addFilterBefore(getJwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+
+		LOGGER.info("✅ HttpSecurity配置完成");
 	}
-	
-	// 根据运行模式获取对应的 JWT 认证过滤器
+
 	private org.springframework.web.filter.OncePerRequestFilter getJwtAuthenticationFilter() {
+		LOGGER.info("🔄 获取JWT认证过滤器");
+
 		try {
-			// 尝试获取微服务模式的过滤器
+			LOGGER.info("尝试获取微服务模式过滤器...");
 			JwtAuthenticationFilter microserviceFilter = jwtAuthenticationFilter();
 			if (microserviceFilter != null) {
+				LOGGER.info("✅ 使用微服务过滤器");
 				return microserviceFilter;
 			}
 		} catch (Exception e) {
-			// 如果微服务模式的过滤器不存在，忽略异常，尝试单体模式
+			LOGGER.warn("创建微服务过滤器失败: {}", e.getMessage());
 		}
-		
-		// 返回单体模式的过滤器（默认）
-		return jwtAuthenticationFilterLocal();
+
+		LOGGER.info("使用单体模式过滤器");
+		try {
+			return jwtAuthenticationFilterLocal();
+		} catch (Exception e) {
+			LOGGER.error("创建单体模式过滤器失败", e);
+			throw e;
+		}
 	}
 }

@@ -14,6 +14,7 @@
     <modules>
         <module>oss-service-api</module>
         <module>oss-service-server</module>
+        <module>oss-service-starter</module>
     </modules>
 
     <build>

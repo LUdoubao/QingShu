@@ -10,6 +10,7 @@
     <artifactId>auth-service-server</artifactId>
     <name>auth-service-server</name>
     <description>Auth Service Server module</description>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
@@ -52,16 +53,4 @@
             <version>0.9.1</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>org.doubao.auth.service.AuthServiceApplication</mainClass>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

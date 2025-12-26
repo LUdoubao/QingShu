@@ -25,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.*;
 
-// @Order(Ordered.HIGHEST_PRECEDENCE)
 public class JwtAuthenticationFilterLocal extends OncePerRequestFilter {
 	private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilterLocal.class);
 	@Autowired
@@ -53,6 +52,7 @@ public class JwtAuthenticationFilterLocal extends OncePerRequestFilter {
 		// 检查请求路径是否在排除列表(不需要JWT验证的路径)
 		// 使用流操作检测路径前缀匹配，若匹配则跳过验证直接放行
 		if (EXCLUDE_URLS.stream().anyMatch(path::startsWith)) {
+			logger.info("请求路径：{}，不需要JWT验证", path);
 			filterChain.doFilter(request, response);
 			return;
 		}

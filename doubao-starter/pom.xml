@@ -70,7 +70,7 @@
         <!-- 对话服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>dialog-service</artifactId>
+            <artifactId>dialog-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         
@@ -91,7 +91,7 @@
         <!-- 消息推送服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>notification-service</artifactId>
+            <artifactId>notification-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         
@@ -105,14 +105,14 @@
         <!-- 信息流服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>feed-service</artifactId>
+            <artifactId>feed-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         
         <!-- 扇出服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>fanout-service</artifactId>
+            <artifactId>fanout-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         

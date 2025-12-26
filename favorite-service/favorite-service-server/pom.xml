@@ -10,6 +10,8 @@
     
     <artifactId>favorite-service-server</artifactId>
     <name>favorite-service-server</name>
+    <description>Favorite Service Server Module</description>
+    <packaging>jar</packaging>
     
     <dependencies>
         <!-- RabbitMQ Binder -->
@@ -93,22 +95,6 @@
                     <target>1.8</target>
                     <encoding>UTF-8</encoding>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
-                <configuration>
-                    <mainClass>org.doubao.favorite.service.FavoriteServiceApplication</mainClass>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>repackage</id>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

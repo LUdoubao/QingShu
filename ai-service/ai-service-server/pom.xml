@@ -10,20 +10,13 @@
     <artifactId>ai-service-server</artifactId>
     <name>ai-service-server</name>
     <description>AI Service Server module</description>
+    <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>com.doubao</groupId>
             <artifactId>ai-service-api</artifactId>
             <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -72,16 +65,4 @@
             <version>4.4.15</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>org.doubao.ai.service.AiServiceApplication</mainClass>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>
