@@ -38,7 +38,7 @@ public class LogRecordAspect {
 	@Value("${spring.application.name}")
 	private String serviceName;
 
-	@Pointcut("@annotation(org.doubao.user.service.log.annotation.LogRecord)")
+	@Pointcut("@annotation(org.doubao.user.service.annotation.LogRecord)")
 	public void logPointCut() {
 	}
 

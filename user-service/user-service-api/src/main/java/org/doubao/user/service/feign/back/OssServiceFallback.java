@@ -5,11 +5,13 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.user.service.feign.core.OssServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 // Feign降级处理
 @Component
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public class OssServiceFallback implements OssServiceClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(OssServiceFallback.class);
 

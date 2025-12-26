@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 // 评论服务中定义Feign客户端，适配点赞服务接口
 @FeignClient(name = "like-service", fallback = LikeServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface LikeClient {
 
 	/**

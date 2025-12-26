@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Map;
 
-import static org.doubao.share.service.config.RabbitMQConfig.ACCESS_RECORD_QUEUE;
+import static org.doubao.share.service.config.ShareRabbitMQConfig.ACCESS_RECORD_QUEUE;
 
 @Service
 public class MessageConsumer {

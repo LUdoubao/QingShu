@@ -1,0 +1,191 @@
+server:
+  port: 1017  # 默认端口，可根据需要修改
+  run-mode: monolith
+
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
+spring:
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  main:
+    allow-bean-definition-overriding: true
+  data:
+    mongodb:
+      host: 192.168.179.130
+      port: 27017
+      database: doubao_db
+      username: root
+      password: MongoDB@123456
+      authentication-database: admin
+  rabbitmq:
+    host: 192.168.179.130
+    port: 5672
+    username: doubao
+    password: 123456
+    publisher-confirm-type: correlated
+    publisher-returns: true
+  mail:
+    host: smtp.qq.com
+    port: 465
+    username: 3411426617@qq.com
+    password: bojwesxvnloecjdi
+    protocol: smtps
+    properties:
+      mail:
+        smtp:
+          ssl:
+            enable: true
+  application:
+    name: doubao-starter
+  datasource:
+    url: jdbc:mysql://192.168.179.130:3306/doubao_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: Lg101799.
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  redis:
+    host: 192.168.179.130
+    port: 6379
+    password: 123456
+    database: 0
+
+
+view-count:
+  valid-duration: 5 # 详情页有效浏览时长(秒)
+  list-valid-duration: 3 # 列表页有效浏览时长(秒)
+  duplicate-time-window: 86400 # 去重时间窗口(秒) 24*60*60
+  hot-content-threshold: 1000 # 热点内容阈值(1小时内浏览量)
+  ip-limit-count: 10 # 单IP段每分钟最大有效请求数
+  ip-limit-period: 60 # IP限制周期(秒)
+  correction-notify-threshold: 10 # 数据校正通知阈值(百分比)
+share:
+  aes:
+    key: 2b7e151628aed2a6abf7158809cf4f3c
+  base:
+    url: http://localhost:5173/public/share/
+oss:
+  encryption:
+    current-key-id: k2025
+    key-retention-days: 365
+    keys:
+      k2025: "heSu75QlSY7yG2i1qZdFCg=="
+      k2026: "GaaDwO8zw7l9bXgrvKTMCg=="
+      k2027: "kksqqi/N6Gt1f57fjI83Tg=="
+  storage:
+    type: local # aliyun or local
+  # 阿里云配置
+  aliyun:
+    endpoint: oss-cn-beijing.aliyuncs.com
+    access-key-id: LTAI5tRJLT1Lr5fHLycXq9YW
+    access-key-secret: o5BT9TkluD3esZIYaChrk11F1t8Lhk
+    bucket-name: doubao-1017
+  # 本地存储配置
+  local:
+    storage-path: /home/java/doubao/file/uploads
+    base-url: http://localhost:5173/api/public/oss/files?fileKey=
+    default-avatar: defaultAvatar.png
+    aes-key: doubao2b7e151628aed2a6abf7158809
+# 动态流配置
+feed:
+  vip-threshold: 10000  # 大V粉丝数阈值
+  page:
+    max-size: 50         # 最大分页大小
+  cache:
+    follows-ttl: 3600    # 关注列表缓存过期时间(秒)
+    vip-timeline-ttl: 604800  # 大V动态缓存过期时间(秒，7天)
+    filter-ttl: 3600     # 过滤设置缓存过期时间(秒)
+api:
+  baidu:
+    url: https://qianfan.baidubce.com/v2/chat/completions
+    key: bce-v3/ALTAK-QjIUJiQHeiq0ChgFXhTVg/c183d631ea14675aab70a10f5231e3714b4ab222
+    model: ernie-3.5-8k
+  deepseek :
+    url: https://api.deepseek.com/chat/completions
+    key: sk-7385b5bcbaca45ae950b56c64b3bb10f
+    model: deepseek-reasoner
+# Fanout服务自定义配置
+fanout:
+  event:
+    queue: fanout.event.queue
+    processed-ttl: 86400  # 已处理事件缓存时间（秒）
+
+  fans:
+    batch-size: 1000       # 粉丝查询批次大小
+    vip-threshold: 50000   # 大V粉丝量阈值
+
+  retry:
+    max-times: 3           # 最大重试次数
+    interval: 300000       # 重试间隔（毫秒）
+
+  rules:
+    - message-type: DYNAMIC_PUBLISH
+      targets:
+        - type: QUEUE
+          name: dynamic.exchange
+          routingKey: dynamic.storage.key
+    - message-type: DYNAMIC_TOPLIST
+      targets:
+        - type: QUEUE
+          name: notification.queue
+          routingKey: notification.toplist.key
+        - type: QUEUE
+          name: dynamic.statistics.queue
+          routingKey: statistics.toplist.key
+
+    - message-type: DYNAMIC_DELETE
+      targets:
+        - type: QUEUE
+          name: dynamic.storage.queue
+          routingKey: dynamic.delete.key
+
+    - message-type: LIKE_CANCEL
+      targets:
+        - type: QUEUE
+          name: dynamic.storage.queue
+          routingKey: dynamic.like.cancel.key
+        - type: QUEUE
+          name: notification.queue
+          routingKey: notification.like.cancel.key
+
+    - message-type: USER_REGISTER
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.register.key
+    - message-type: COMMENT_EVENT
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.user.comment
+    - message-type: LIKE_EVENT
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.user.like
+    - message-type: QUOTE_EVENT
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.user.quote
+    - message-type: NEW_MESSAGE
+      targets:
+        - type: QUEUE
+          name: notification.exchange
+          routingKey: notification.user.message
+
+  cache:
+    redis:
+      fans-key-prefix: "follow:fans:"        # 粉丝列表缓存前缀
+      count-key-prefix: "follow:count:"      # 粉丝数量缓存前缀
+      user-info-prefix: "user:info:"         # 用户信息缓存前缀
+      processed-key-prefix: "fanout:processed:"  # 已处理事件缓存前缀
+      mute-key-prefix: "user:mute:"          # 用户屏蔽列表缓存前缀
+      ttl: 3600           # 缓存有效期（秒）

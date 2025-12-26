@@ -2,6 +2,8 @@ package org.doubao.mall.common.handler;
 
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 @Component
+// @Order(Ordered.HIGHEST_PRECEDENCE + 1)
 public class UserContextFilter extends OncePerRequestFilter {
 
 	@Override
@@ -19,9 +22,18 @@ public class UserContextFilter extends OncePerRequestFilter {
 									HttpServletResponse response,
 									FilterChain filterChain)
 			throws ServletException, IOException {
-
 		String userId = request.getHeader("X-User-Id");
+		if (userId == null) {
+			if (request.getAttribute("X-User-Id") != null) {
+				userId = String.valueOf(request.getAttribute("X-User-Id"));
+			}
+		}
 		String username = request.getHeader("X-User-Name");
+		if (username == null) {
+			if (request.getAttribute("X-User-Name") != null) {
+				username = String.valueOf(request.getAttribute("X-User-Name"));
+			}
+		}
 
 		if (userId != null && username != null) {
 			UserLoginVo user = new UserLoginVo();

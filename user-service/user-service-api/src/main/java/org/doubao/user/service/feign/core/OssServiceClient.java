@@ -2,7 +2,7 @@ package org.doubao.user.service.feign.core;
 
 import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.user.service.config.FeignErrorDecoderConfig;
+import org.doubao.user.service.config.UserFeignErrorDecoderConfig;
 import org.doubao.user.service.feign.back.OssServiceFallback;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 // 在用户服务中调用OSS服务
-@FeignClient(name = "oss-service", path = "/oss", fallback = OssServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
+@FeignClient(name = "oss-service", path = "/oss", fallback = OssServiceFallback.class, configuration = UserFeignErrorDecoderConfig.class)
 @ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface OssServiceClient {
 

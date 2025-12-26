@@ -1,0 +1,25 @@
+api:
+  baidu:
+    url: https://qianfan.baidubce.com/v2/chat/completions
+    key: bce-v3/ALTAK-QjIUJiQHeiq0ChgFXhTVg/c183d631ea14675aab70a10f5231e3714b4ab222
+    model: ernie-speed-128k
+  deepseek :
+    url: https://api.deepseek.com/chat/completions
+    key: sk-7385b5bcbaca45ae950b56c64b3bb10f
+    model: deepseek-reasoner
+
+server:
+  port: 9400
+spring:
+  application:
+    name: ai-service
+  profiles:
+    active: dev
+  config:
+    import: "optional:configserver:"  # 关键修复！必须添加！
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka

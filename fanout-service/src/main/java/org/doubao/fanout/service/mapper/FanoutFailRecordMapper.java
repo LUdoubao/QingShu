@@ -14,7 +14,7 @@ public interface FanoutFailRecordMapper extends BaseMapper<FanoutFailRecord> {
 	 * 查询需要重试的失败记录
 	 */
 	List<FanoutFailRecord> findByRetryCountLessThanAndLastRetryTimeBeforeOrLastRetryTimeIsNull(
-			@Param("maxRetryTimes") int maxRetryCount, @Param("timeThreshold") LocalDateTime timeThreshold);
+			@Param("maxRetryCount") int maxRetryCount, @Param("timeThreshold") LocalDateTime timeThreshold);
 
 	/**
 	 * 根据事件ID查询记录

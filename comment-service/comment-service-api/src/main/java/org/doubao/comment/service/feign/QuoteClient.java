@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @FeignClient(name = "quote-service", fallback = QuoteServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface QuoteClient {
 	@GetMapping("/public/quote/detail/{id}")
 	Result<QuoteVo> detail(@PathVariable("id")  Long id);

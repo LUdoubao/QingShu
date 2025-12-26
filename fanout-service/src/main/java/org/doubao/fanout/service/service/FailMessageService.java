@@ -71,8 +71,8 @@ public class FailMessageService {
 	/**
 	 * 定时重试失败消息
 	 */
-	@Scheduled(fixedRateString = "${fanout.retry.interval:300000}")
-	@Async("retryExecutor")
+	// @Scheduled(fixedRateString = "${fanout.retry.interval:300000}")
+	// @Async("retryExecutor")
 	public void retryFailedMessages() {
 		log.info("[retryFailedMessages] Starting to retry failed messages");
 

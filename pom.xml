@@ -29,7 +29,8 @@
 		<module>fanout-service</module>
 		<module>feed-service</module>
 		<module>search-service</module>
-	</modules>
+        <module>doubao-starter</module>
+    </modules>
 
 	<properties>
 		<java.version>1.8</java.version>

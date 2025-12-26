@@ -5,10 +5,12 @@ import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.service.feign.core.AuthServiceClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 // Feign降级处理
 @Component
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public class AuthServiceFallback implements AuthServiceClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceFallback.class);
 

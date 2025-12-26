@@ -4,6 +4,7 @@ import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.feign.FavoriteClient;
 import org.doubao.favorite.service.service.FavoriteService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class FavoriteClientLocalImpl implements FavoriteClient {
 
 	@Resource
+	@Lazy
 	private FavoriteService favoriteService;
 
 	@Override

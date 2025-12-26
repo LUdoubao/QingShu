@@ -8,10 +8,12 @@ import org.doubao.comment.service.feign.LikeClient;
 import org.doubao.mall.common.entity.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 // Feign降级处理
 @Component
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public class LikeServiceFallback implements LikeClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LikeServiceFallback.class);
 

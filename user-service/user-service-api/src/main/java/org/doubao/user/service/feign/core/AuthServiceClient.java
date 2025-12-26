@@ -2,7 +2,7 @@ package org.doubao.user.service.feign.core;
 
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.vo.UserLoginVo;
-import org.doubao.user.service.config.FeignErrorDecoderConfig;
+import org.doubao.user.service.config.UserFeignErrorDecoderConfig;
 import org.doubao.user.service.feign.back.AuthServiceFallback;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 // AuthServiceClient.java
-@FeignClient(name = "auth-service", path = "/auth", fallback = AuthServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
+@FeignClient(name = "auth-service", path = "/auth", fallback = AuthServiceFallback.class, configuration = UserFeignErrorDecoderConfig.class)
 @ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface AuthServiceClient {
 

@@ -10,6 +10,10 @@ import org.springframework.data.mongodb.core.index.IndexOperations;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @Configuration
 public class MongoConfig {
 
@@ -35,7 +39,7 @@ public class MongoConfig {
 	private String authDatabase;
 
 	@Bean
-	public MongoClient mongoClient() {
+	public MongoClient mongoClient() throws UnsupportedEncodingException {
 		// 优先使用URI连接
 		if (!mongoUri.isEmpty()) {
 			return MongoClients.create(mongoUri);
@@ -44,8 +48,12 @@ public class MongoConfig {
 		// 使用分项配置创建连接
 		String connectionString;
 		if (!username.isEmpty() && !password.isEmpty()) {
+			// 对用户名和密码进行 URL 编码
+			String encodedUsername = URLEncoder.encode(username, StandardCharsets.UTF_8.toString());
+			String encodedPassword = URLEncoder.encode(password, StandardCharsets.UTF_8.toString());
+
 			connectionString = String.format("mongodb://%s:%s@%s:%d/%s?authSource=%s",
-					username, password, host, port, database, authDatabase);
+					encodedUsername, encodedPassword, host, port, database, authDatabase);
 		} else {
 			connectionString = String.format("mongodb://%s:%d/%s", host, port, database);
 		}
@@ -54,7 +62,7 @@ public class MongoConfig {
 	}
 
 	@Bean
-	public MongoTemplate mongoTemplate() {
+	public MongoTemplate mongoTemplate() throws UnsupportedEncodingException {
 		MongoTemplate mongoTemplate = new MongoTemplate(mongoClient(), database);
 		createIndexes(mongoTemplate);
 		return mongoTemplate;
