@@ -99,8 +99,8 @@ public class AIServiceImpl implements AIService{
 		String finalKey = key;
 		return executeWithTimeout(() -> {
 			RequestBody requestBody = RequestBody.create(
-					objectMapper.writeValueAsString(request),
-					MediaType.parse("application/json; charset=utf-8")
+					MediaType.parse("application/json; charset=utf-8"),
+					objectMapper.writeValueAsString(request)
 			);
 
 			Request httpRequest = new Request.Builder()
@@ -213,8 +213,8 @@ public class AIServiceImpl implements AIService{
 
 		LOGGER.info("=============chatRequest: " + JSON.toJSONString(chatRequest));
 		RequestBody requestBody = RequestBody.create(
-				objectMapper.writeValueAsString(chatRequest),
-				MediaType.parse("application/json; charset=utf-8")
+				MediaType.parse("application/json; charset=utf-8"),
+				objectMapper.writeValueAsString(chatRequest)
 		);
 
 		Request httpRequest = new Request.Builder()
@@ -242,7 +242,7 @@ public class AIServiceImpl implements AIService{
 						(response.body() != null ? response.body().string() : ""));
 				return aiResponse;
 			} else {
-				LOGGER.info("=============response: " + JSON.toJSONString(response));
+				LOGGER.info("=============response: " + response.toString());
 				aiResponse.setSuccess(false);
 				aiResponse.setErrorMsg("API request failed. Status: " + response.code() + ", Body: " +
 						(response.body() != null ? response.body().string() : ""));
