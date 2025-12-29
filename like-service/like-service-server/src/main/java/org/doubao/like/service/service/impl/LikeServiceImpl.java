@@ -72,6 +72,10 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	@Autowired
 	private CommonTaskExecutor taskExecutor;
 
+	/**
+	 * 点赞热度权重
+	 */
+	private static final Integer LIKE_HEAT_VALUE_WEIGHT = 100;
 	@Override
 	@Transactional
 	public ToggleLikeResponse toggleLike(ToggleLikeRequest request) {
@@ -427,8 +431,8 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 			// 5. 回填Redis缓存
 			dbResults.forEach((id, count) -> {
-				String key = RedisKeyUtil.getEntityLikeCountKey(String.valueOf(entityType), String.valueOf(id));
-				redisTemplate.opsForValue().set(key, count.toString(), 1, TimeUnit.DAYS);
+				String key = RedisKeyUtil.getEntityLikeCountKey(EntityTypeEnum.getNameByType(entityType), String.valueOf(id));
+				redisTemplate.opsForValue().set(key, count, 1, TimeUnit.DAYS);
 			});
 		}
 
@@ -517,6 +521,7 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 					Long quoteId = Long.parseLong(quote.get("id").toString());
 					Map<String, Object> item = new HashMap<>(quote);
 					item.put("likeCount", contentScoreMap.getOrDefault(quoteId, 0));
+					item.put("heatValue", contentScoreMap.getOrDefault(quoteId, 0) * LIKE_HEAT_VALUE_WEIGHT);
 					item.put("rankChange", rankChangeMap.getOrDefault(quoteId, null));
 					return item;
 				})

@@ -57,6 +57,9 @@ public class SyncLikeTask {
 			try {
 				// 解析实体信息
 				String[] parts = key.split(":");
+				String part = parts[1];
+				// 数字类型跳过
+				if (part.matches("\\d+")) continue;
 				EntityTypeEnum entityType = EntityTypeEnum.getByName(parts[1]);
 				String entityId = parts[2];
 
@@ -76,7 +79,7 @@ public class SyncLikeTask {
 
 				updateList.add(likeCount);
 			} catch (Exception e) {
-				LOGGER.error("同步计数异常 key: {}, error: {}", key, e.getMessage());
+				LOGGER.error("同步计数异常 key: {}, error", key, e);
 			}
 		}
 
