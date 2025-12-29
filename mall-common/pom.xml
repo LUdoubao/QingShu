@@ -91,6 +91,13 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- ========================中间件依赖 ======================== -->
+        <!-- RabbitMQ支持 - 消息队列支持 -->
+        <dependency>
+            <groupId>org.springframework.amqp</groupId>
+            <artifactId>spring-rabbit</artifactId>
+        </dependency>
+
         <!-- ======================== API文档依赖 ======================== -->
         <!-- Swagger 2.x - API文档生成工具 -->
         <dependency>

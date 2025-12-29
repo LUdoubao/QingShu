@@ -70,7 +70,7 @@ share:
   aes:
     key: 2b7e151628aed2a6abf7158809cf4f3c
   base:
-    url: http://localhost:5173/public/share/
+    url: http://localhost/public/share/
 oss:
   encryption:
     current-key-id: k2025
@@ -90,7 +90,7 @@ oss:
   # 本地存储配置
   local:
     storage-path: /home/java/doubao/file/uploads
-    base-url: http://localhost:5173/api/public/oss/files?fileKey=
+    base-url: http://localhost/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
 # 动态流配置

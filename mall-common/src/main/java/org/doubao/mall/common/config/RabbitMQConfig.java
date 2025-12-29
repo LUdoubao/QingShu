@@ -1,7 +1,9 @@
-package org.doubao.like.service.config;
+package org.doubao.mall.common.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -9,7 +11,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class LikeRabbitMQConfig {
+public class RabbitMQConfig {
+	private static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQConfig.class);
 	// 配置生产者消息转换器
 	@Bean
 	public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
@@ -18,6 +21,7 @@ public class LikeRabbitMQConfig {
 		objectMapper.registerModule(new JavaTimeModule());
 		Jackson2JsonMessageConverter jackson2JsonMessageConverter = new Jackson2JsonMessageConverter(objectMapper);
 		template.setMessageConverter(jackson2JsonMessageConverter);
+		LOGGER.info("配置生产者消息转换器完成");
 		return template;
 	}
 }

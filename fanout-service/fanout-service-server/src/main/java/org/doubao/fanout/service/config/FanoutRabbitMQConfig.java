@@ -1,7 +1,5 @@
 package org.doubao.fanout.service.config;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.parser.ParserConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
@@ -13,9 +11,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class RabbitMQConfig {
+public class FanoutRabbitMQConfig {
 
-	private static final Logger logger = LoggerFactory.getLogger(RabbitMQConfig.class);
+	private static final Logger logger = LoggerFactory.getLogger(FanoutRabbitMQConfig.class);
 	// 交换机名称
 	public static final String FANOUT_EVENT_EXCHANGE = "fanout.event.exchange";
 	public static final String FANOUT_FAIL_EXCHANGE = "fanout.fail.exchange";
@@ -162,38 +160,5 @@ public class RabbitMQConfig {
 		return BindingBuilder.bind(fanoutDlqQueue())
 				.to(fanoutDlqExchange())
 				.with("dlq.key.#"); // 匹配所有死信路由键
-	}
-
-	/**
-	 * 消息转换器，使用fastJson序列化
-	 */
-	@Bean
-	public MessageConverter messageConverter() {
-		return new Jackson2JsonMessageConverter();
-	}
-
-	/**
-	 * 配置RabbitTemplate
-	 */
-	@Bean
-	public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
-		RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
-		rabbitTemplate.setMessageConverter(messageConverter());
-
-		// 消息发送确认
-		rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-			if (!ack) {
-				// 处理消息发送失败的情况
-				logger.error("消息发送失败: {}", cause);
-			}
-		});
-
-		// 消息返回处理
-		rabbitTemplate.setReturnsCallback(returnedMessage -> {
-			// 处理消息无法路由的情况
-			logger.error("消息返回: {}", returnedMessage);
-		});
-
-		return rabbitTemplate;
 	}
 }
