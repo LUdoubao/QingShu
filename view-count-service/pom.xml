@@ -13,6 +13,7 @@
     <modules>
         <module>view-count-service-api</module>
         <module>view-count-service-server</module>
+        <module>view-count-service-starter</module>
     </modules>
     <build>
         <plugins>

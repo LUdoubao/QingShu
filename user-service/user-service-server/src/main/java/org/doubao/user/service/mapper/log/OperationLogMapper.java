@@ -1,6 +1,7 @@
 package org.doubao.user.service.mapper.log;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.doubao.user.service.entity.log.OperationLog;
 
@@ -10,6 +11,7 @@ import java.util.List;
 /**
  * 操作日志Mapper
  */
+@Mapper
 public interface OperationLogMapper extends BaseMapper<OperationLog> {
 
 	/**

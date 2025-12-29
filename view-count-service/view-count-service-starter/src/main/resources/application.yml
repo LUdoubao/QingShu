@@ -1,0 +1,5 @@
+# Starter模块的配置
+# 实际配置在server模块中管理
+spring:
+  application:
+    name: view-count-service

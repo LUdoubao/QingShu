@@ -77,7 +77,7 @@
         <!-- 分享服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>share-service</artifactId>
+            <artifactId>share-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         
@@ -98,7 +98,7 @@
         <!-- 搜索服务 -->
         <dependency>
             <groupId>com.doubao</groupId>
-            <artifactId>search-service</artifactId>
+            <artifactId>search-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         

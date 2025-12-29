@@ -1,7 +1,6 @@
 package org.doubao.quote.service.duplicate.check;
 
-import org.doubao.mall.common.enums.ErrorCode;
-import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.quote.service.entity.CitationDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

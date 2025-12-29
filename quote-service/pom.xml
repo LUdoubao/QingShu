@@ -14,6 +14,7 @@
     <modules>
         <module>quote-service-api</module>
         <module>quote-service-server</module>
+        <module>quote-service-starter</module>
     </modules>
 
     <build>

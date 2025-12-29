@@ -1,6 +1,8 @@
 package org.doubao.quote.service.duplicate.check;
 
 import com.alibaba.fastjson.JSON;
+import org.doubao.quote.service.entity.CitationDocument;
+import org.doubao.quote.service.repository.CitationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

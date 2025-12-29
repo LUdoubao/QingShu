@@ -84,7 +84,7 @@ public class LocalStorageStrategy implements StorageStrategy {
 				throw new BusinessException(ErrorCode.LOCAL_URL_ERROR);
 			}
 		}
-		return baseUrl +  pathEncryptionService.decryptPath(fileKey);
+		return baseUrl +  fileKey;
 	}
 
 	@Override

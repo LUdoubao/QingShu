@@ -7,27 +7,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.FilterType;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @SpringBootApplication
 @EnableAspectJAutoProxy
 @ComponentScan(
         basePackages = {
-                "org.doubao.ai.service",
-                "org.doubao.auth.service",
-                "org.doubao.comment.service", 
-                "org.doubao.dialog.service",
-                "org.doubao.fanout.service", 
-                "org.doubao.favorite.service", 
-                "org.doubao.feed.service", 
-                "org.doubao.like.service", 
-                "org.doubao.mall.common", 
-                "org.doubao.notification.service",
-                "org.doubao.oss.service", 
-                "org.doubao.quote.service", 
-                "org.doubao.search.service", 
-                "org.doubao.share.service", 
-                "org.doubao.user.service", 
-                "org.doubao.view.count.service"
+                "org.doubao"
         },
         excludeFilters = {
                 @ComponentScan.Filter(
@@ -40,8 +26,11 @@ import org.springframework.context.annotation.FilterType;
         }
 )
 @MapperScan({
-        "org.doubao.*.mapper"
+        "org.doubao.**.mapper"
 })
+@EnableMongoRepositories(basePackages =
+        "org.doubao.**.repository"
+)
 public class DoubaoStarterApplication {
 
     public static void main(String[] args) {

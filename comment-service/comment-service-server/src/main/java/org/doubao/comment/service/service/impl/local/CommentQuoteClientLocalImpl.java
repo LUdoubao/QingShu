@@ -6,6 +6,7 @@ import org.doubao.quote.service.service.QuoteService;
 import org.doubao.quote.service.vo.QuoteVo;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -15,6 +16,7 @@ import javax.annotation.Resource;
 public class CommentQuoteClientLocalImpl implements QuoteClient {
 
 	@Resource
+	@Lazy
 	private QuoteService quoteService;
 
 	@Override

@@ -62,7 +62,7 @@ public class JwtAuthenticationFilterLocal extends OncePerRequestFilter {
 		if (token == null || !token.startsWith("Bearer ")) {
 			// 设置401状态
 			response.setStatus(HttpStatus.UNAUTHORIZED.value());
-			logger.error("JWT 解析失败");
+			logger.error("JWT 解析失败, 请求路径：{}",  path);
 			// 立即结束响应
 			return;
 		}
