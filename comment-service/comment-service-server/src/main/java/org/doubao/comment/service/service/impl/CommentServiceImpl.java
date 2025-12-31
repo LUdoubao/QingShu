@@ -37,6 +37,12 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * 评论服务实现类
+ * <p>
+ * 实现评论服务接口，提供评论创建、查询、点赞、回复、状态管理等核心业务功能
+ * 集成了缓存、消息队列、远程调用等机制，确保高并发场景下的性能和可靠性
+ */
 @Service
 @Transactional
 public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {

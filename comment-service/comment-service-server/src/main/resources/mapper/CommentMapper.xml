@@ -4,7 +4,11 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.doubao.comment.service.mapper.CommentMapper">
 
-    <!-- List<Comment> selectByPostId(String postId); -->
+    <!-- 
+        根据文章ID查询评论列表
+        查询指定文章下的所有评论，按创建时间倒序排列
+        用于获取文章下的主评论列表
+    -->
     <select id="selectByPostId" resultType="org.doubao.comment.service.entity.Comment">
         SELECT
         *
@@ -13,7 +17,11 @@
         ORDER BY created_time DESC
     </select>
 
-    <!-- 查前count条回复 List<Comment> selectReplies(String commentId, int count); -->
+    <!-- 
+        查询评论的回复
+        查询指定评论的前N条回复，按创建时间倒序排列
+        用于在评论详情中展示部分回复内容
+    -->
     <select id="selectReplies" resultType="org.doubao.comment.service.entity.Comment">
         SELECT
         *
@@ -26,7 +34,11 @@
         LIMIT #{count}
     </select>
 
-    <!-- 根据主评论ID分页查询回复列表 -->
+    <!-- 
+        根据主评论ID分页查询回复列表
+        分页查询指定主评论下的所有回复
+        用于评论详情页的回复列表分页展示
+    -->
     <select id="selectRepliesByCommentId" resultType="org.doubao.comment.service.entity.Comment">
         SELECT
         *
@@ -40,7 +52,12 @@
         ORDER BY
         c.created_time DESC
     </select>
-    <!-- 查询正常状态且非删除的评论数（考虑BaseDel逻辑删除） -->
+    
+    <!-- 
+        根据文章ID列表查询评论数
+        统计指定文章ID列表中每个文章的评论数量
+        用于批量获取文章评论数的场景
+    -->
     <select id="countCommentsByPostIds" resultType="org.doubao.comment.service.vo.CommentCountVo">
         SELECT
         post_id as postId,
@@ -56,7 +73,11 @@
         GROUP BY post_id
     </select>
 
-
+    <!-- 
+        查询指定文章在多个日期的每日有效评论数总和
+        统计指定文章在给定日期范围内每日的评论总数
+        用于数据统计和报表功能
+    -->
     <select id="selectDailyCommentCounts" resultType="java.util.Map">
         SELECT
         DATE(created_time) AS stat_date,
