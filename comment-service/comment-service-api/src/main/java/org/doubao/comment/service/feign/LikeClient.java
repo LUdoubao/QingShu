@@ -5,7 +5,7 @@ import org.doubao.comment.service.dto.BatchLikeStatusRequest;
 import org.doubao.comment.service.dto.BatchLikeStatusResponse;
 import org.doubao.comment.service.dto.CommentLikeRequest;
 import org.doubao.comment.service.dto.ToggleLikeResponse;
-import org.doubao.comment.service.feign.back.LikeServiceFallback;
+import org.doubao.comment.service.feign.back.LikeClientFallback;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 // 评论服务中定义Feign客户端，适配点赞服务接口
-@FeignClient(name = "like-service", fallback = LikeServiceFallback.class, configuration = FeignErrorDecoderConfig.class)
+@FeignClient(name = "like-service", fallbackFactory = LikeClientFallback.class,
+		configuration = FeignErrorDecoderConfig.class)
+@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface LikeClient {
 
 	/**

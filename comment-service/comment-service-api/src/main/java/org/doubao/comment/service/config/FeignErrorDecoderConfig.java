@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.net.UnknownHostException;
 
-// 配置类，使 Feign 所有异常触发熔断
 @Configuration
 public class FeignErrorDecoderConfig {
 	private static final Logger LOGGER = LoggerFactory.getLogger(FeignErrorDecoderConfig.class);
@@ -20,13 +19,19 @@ public class FeignErrorDecoderConfig {
 		return new ErrorDecoder.Default() {
 			@Override
 			public Exception decode(String methodKey, Response response) {
-				LOGGER.error("feign error: {}", response);
+				LOGGER.error("Feign error: method={}, status={}, url={}",
+						methodKey, response.status(), response.request().url());
+
 				Exception exception = super.decode(methodKey, response);
-				// 如果是不可达/UnknownHost，包裹为RuntimeException
-				if (exception != null && (exception instanceof RetryableException ||
-						(exception.getCause() != null && exception.getCause() instanceof UnknownHostException))) {
-					LOGGER.error("feign error exception: {}", exception.getMessage());
-					return new RuntimeException("like-service服务不可用", exception);
+
+				if (exception != null) {
+					if (exception instanceof RetryableException) {
+						LOGGER.error("Network connection error: {}", exception.getMessage());
+						return new RuntimeException("服务网络连接超时，请稍后重试", exception);
+					} else if (exception.getCause() instanceof UnknownHostException) {
+						LOGGER.error("Service host unreachable: {}", exception.getMessage());
+						return new RuntimeException("服务不可达，请检查网络连接", exception);
+					}
 				}
 				return exception;
 			}
