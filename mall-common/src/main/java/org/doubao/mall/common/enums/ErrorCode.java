@@ -70,7 +70,7 @@ public enum ErrorCode {
 	COMMENT_NOT_IN_RANGE("COMMENT_1003", "评论字数需在10-500之间"),
 	COMMENT_LIMIT_REACHED("COMMENT_1002", "操作过于频繁，请稍后再试"),
 	COMMENT_NOT_FOUND("COMMENT_1005", "评论不存在"),
-	COMMENT_LIKE_ERROR("COMMENT_1006", "调用点赞服务异常"),
+	COMMENT_LIKE_ERROR("COMMENT_1006", "点赞服务暂时不可用，请稍后重试"),
 	COMMENT_PAGE_SIZE_LIMIT("COMMENT_1004", "每页最大支持50条评论"),
 
 	LOCAL_FILE_ERROR("FILE_1001", "本地文件上传失败"),
