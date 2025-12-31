@@ -84,6 +84,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			throw new BusinessException(ErrorCode.CONTENT_EXISTS);
 		}
 		Quote q = new Quote();
+		Long quoteId = null;
+		if (dto.getId() != null) {
+			quoteId = dto.getId();
+			q.setId(dto.getId());
+		}
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
@@ -91,8 +96,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setOriginal(dto.getOriginal());
 		// 默认引文状态为待审核
 		q.setStatus(QuoteStatus.AUDITING.getCode());
-		this.save(q);
+		this.saveOrUpdate(q);
 		Long qId = q.getId();
+		if (quoteId != null) {
+			quoteTagMapper.deleteByQuoteId(quoteId);
+		}
 		List<Long> tagIds = dto.getTagIds();
 		List<Tag> tags = new ArrayList<>();
 		List<QuoteTag> quoteTags = new ArrayList<>();
@@ -348,7 +356,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			// 引文表状态恢复1
 			LambdaUpdateWrapper<Quote> updateWrapper = new LambdaUpdateWrapper<>();
 			updateWrapper.eq(Quote::getId, quoteId)
-					.set(Quote::getStatus, QuoteStatus.PUBLISHED.getCode());
+					.set(Quote::getStatus, QuoteStatus.NOT_PASS.getCode());
 			this.update(updateWrapper);
 
 			quoteEventPublisher.pushQuoteVerifyNotification(
