@@ -10,6 +10,7 @@ import java.util.List;
  * 批量点赞状态查询响应DTO
  * <p>
  * 包含多个实体的点赞状态和计数信息
+ * 用于返回批量查询点赞状态的响应结果
  */
 @ApiModel(description = "批量点赞状态响应结果")
 public class BatchLikeStatusResponse {
@@ -20,6 +21,8 @@ public class BatchLikeStatusResponse {
 	 * 按请求顺序返回每个实体的：
 	 * - 点赞状态（是否已点赞）
 	 * - 当前点赞总数
+	 * <p>
+	 * 列表中的结果顺序与请求中的实体顺序一致
 	 */
 	@ApiModelProperty(
 			value = "查询结果列表",
@@ -38,6 +41,8 @@ public class BatchLikeStatusResponse {
 
 	/**
 	 * 单个实体的点赞状态结果
+	 * <p>
+	 * 封装单个实体的点赞状态详情，包括实体类型、ID、点赞状态和计数
 	 */
 	@ApiModel(description = "单个实体的点赞状态详情")
 	public static class LikeStatusResult {
@@ -45,6 +50,7 @@ public class BatchLikeStatusResponse {
 		/**
 		 * 实体类型
 		 * <p>
+		 * 0-内容/引文，1-评论
 		 */
 		@ApiModelProperty(
 				value = "实体类型",
@@ -55,7 +61,7 @@ public class BatchLikeStatusResponse {
 		/**
 		 * 实体ID
 		 * <p>
-		 * 对应文案ID或评论ID
+		 * 对应内容ID或评论ID，用于标识具体的实体
 		 */
 		@ApiModelProperty(
 				value = "实体ID",
@@ -126,7 +132,9 @@ public class BatchLikeStatusResponse {
 
 	/**
 	 * 快速构建响应对象
-	 *
+	 * <p>
+	 * 根据结果列表构建批量点赞状态响应对象
+	 * 
 	 * @param results 结果列表
 	 * @return 构建好的响应对象
 	 */
@@ -138,7 +146,9 @@ public class BatchLikeStatusResponse {
 
 	/**
 	 * 构建单个实体的结果对象
-	 *
+	 * <p>
+	 * 快速构建单个实体的点赞状态结果对象
+	 * 
 	 * @param entityType 实体类型
 	 * @param entityId 实体ID
 	 * @param isLiked 是否点赞

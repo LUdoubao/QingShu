@@ -2,29 +2,46 @@ package org.doubao.comment.service.vo;
 
 import org.doubao.mall.common.entity.BaseEntity;
 
+/**
+ * 引文视图对象
+ * <p>
+ * 用于封装引文的详细信息，包括内容、作者、来源和分类等
+ */
 public class QuoteVo extends BaseEntity {
 	/**
-	 * 引文id
+	 * 引文ID
+	 * <p>
+	 * 引文的唯一标识符
 	 */
 	private Long id;
 	/**
 	 * 引文内容
+	 * <p>
+	 * 引文的文本内容
 	 */
 	private String content;
 	/**
 	 * 引文作者
+	 * <p>
+	 * 引文的作者姓名
 	 */
 	private String author;
 	/**
 	 * 引文来源
+	 * <p>
+	 * 引文的出处或来源信息
 	 */
 	private String source;
 	/**
 	 * 分类名称
+	 * <p>
+	 * 引文所属分类的名称
 	 */
 	private String categoryName;
 	/**
-	 * 分类id
+	 * 分类ID
+	 * <p>
+	 * 引文所属分类的唯一标识符
 	 */
 	private Long categoryId;
 
