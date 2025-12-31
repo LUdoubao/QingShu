@@ -119,11 +119,9 @@ public class RedisCacheUtil {
 		String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
 		// 2. 查询Hash中指定会话的未读数量
 		Integer unreadCount = hGet(unreadCountHashKey, sessionId.toString(), Integer.class);
-		// 3. 空值处理（默认返回0）
-		int result = ObjectUtil.isNull(unreadCount) ? 0 : unreadCount;
-		log.debug("Redis getSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
-				userId, sessionId, result);
-		return result;
+		log.info("Redis getSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
+				userId, sessionId, unreadCount);
+		return unreadCount;
 	}
 
 	private Integer hGet(String unreadCountHashKey, String string, Class<Integer> integerClass) {
@@ -131,7 +129,7 @@ public class RedisCacheUtil {
 		if (integerClass == Integer.class && object != null) {
 			return (Integer) object;
 		}
-		return 0;
+		return null;
 	}
 
 	/**
