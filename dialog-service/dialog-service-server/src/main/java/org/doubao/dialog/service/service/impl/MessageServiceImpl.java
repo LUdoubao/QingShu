@@ -157,7 +157,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public MessageDTO handleUserMessage(MessageRequest request) {
-		log.info("处理用户消息: {}", request);
 
 		// 1. 获取或创建对话
 		Long dialogId = request.getDialogId();
@@ -305,7 +304,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 */
 	private AssistantDialog createNewDialog(MessageRequest  request) {
 		String title = callAiService(null, request);
-		log.info("==============AI服务返回的标题：{}", title);
 		AssistantDialog dialog = new AssistantDialog();
 		dialog.setUserId(request.getUserId());
 		dialog.setTitle(title);
@@ -665,15 +663,11 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				: currentUserSession.getUserId();
 		// 查询对方用户的会话（对方作为userId，当前用户作为targetId）
 		DialogSession targetUserSession = getTargetUserSession(targetId, userId);
-		log.info("targetUserSession: {}", JSONObject.toJSONString(targetUserSession));
 
 		// 3. 收集双方会话ID（过滤null，避免空指针）
 		List<Long> sessionIds = new ArrayList<>();
 		sessionIds.add(currentUserSession.getId());
-		if (targetUserSession != null) {
-			sessionIds.add(targetUserSession.getId());
-		}
-		log.info("sessionIds: {}", JSONObject.toJSONString(sessionIds));
+		sessionIds.add(targetUserSession.getId());
 
 		// 4. 构建MongoDB分页查询条件（查询双方会话下的所有消息，按发送时间倒序）
 		long skip = (long) (pageNum - 1) * pageSize; // 计算跳过条数（MongoDB分页从0开始）
@@ -687,16 +681,13 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 		// 5. 执行查询（统计总数 + 查询消息列表）
 		long total = mongoTemplate.count(Query.query(criteria), DialogMessage.class); // 修正：查询消息表（DialogMessage）
-		log.info("total: {}", total);
 
 		List<DialogMessage> messagePOList = mongoTemplate.find(query, DialogMessage.class);
-		log.info("messagePOList: {}", JSONObject.toJSONString(messagePOList));
 
 		// 6. 转换为VO并补充发送者信息（保持原有逻辑，新增消息方向判断）
 		List<MessageVO> messageVOList = messagePOList.stream()
 				.map(messagePO -> convertToMessageVO(messagePO, userId, sessionId))
 				.collect(Collectors.toList());
-		log.info("messageVOList: {}", JSONObject.toJSONString(messageVOList));
 
 		// 7. 构建分页结果
 		Page<MessageVO> resultPage = new Page<>(pageNum, pageSize);
@@ -723,7 +714,6 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 				.filter(msg -> Objects.equals(msg.getStatus(), DialogMessage.MessageStatusEnum.SENT))
 				.map(DialogMessage::getId)
 				.collect(Collectors.toList());
-		log.info("-----------------------unreadMsgIds: {}", JSONObject.toJSONString(unreadMsgIds));
 		if (unreadMsgIds.isEmpty()) {
 			return;
 		}
@@ -906,7 +896,7 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		DialogSession sessionPO = sessionService.getSessionByIdAndReceiverId(sessionId, receiverId);
 		if (sessionPO == null) {
 			log.warn("会话不存在");
-			throw new BusinessException(ErrorCode.DIALOG_SESSION_NOT_EXIST);
+			return;
 		}
 		DialogSession mySession = getTargetUserSession(receiverId, sessionPO.getUserId());
 		// 2. 构建MongoDB查询条件

@@ -798,6 +798,9 @@ public class SessionServiceImpl implements SessionService {
 
         // 1小时内：XX分钟前
         if (minutesDiff < 60) {
+            if (minutesDiff == 0) {
+                return "刚刚";
+            }
             return minutesDiff + "分钟前";
         }
 
