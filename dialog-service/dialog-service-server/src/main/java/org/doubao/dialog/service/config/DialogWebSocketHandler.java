@@ -201,11 +201,8 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	@Override
 	protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
-		log.info("处理文本消息-WebSocket接收消息 | 用户ID: {}", object);
 		Long userId = Long.valueOf(String.valueOf(object));
 		String msgContent = message.getPayload();
-		log.info("WebSocket接收消息 | 用户ID: {}, 会话ID: {}, 消息内容: {}",
-				userId, session.getId(), msgContent);
 
 		// 1. 校验消息格式（非空+JSON格式）
 		if (StrUtil.isBlank(msgContent)) {
@@ -604,7 +601,6 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				data.put("sessionType", dialogSession.getSessionType().getValue());
 				pushMessage(dialogSession.getUserId(), MessagePushType.USER_ONLINE, data);
 			}
-			log.info("用户上线消息已推送 | 用户ID: {}", userId);
 			log.info("心跳处理成功 | 用户ID: {}, 会话ID: {}", userId, session.getId());
 		} catch (IOException e) {
 			for (DialogSession dialogSession : sessions) {
@@ -613,7 +609,6 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				data.put("sessionType", dialogSession.getSessionType().getValue());
 				pushMessage(dialogSession.getUserId(), MessagePushType.USER_OFFLINE, data);
 			}
-			log.info("用户下线消息已推送 | 用户ID: {}", userId);
 			log.error("心跳响应发送失败 | 用户ID: {}, 会话ID: {}, 错误信息: {}",
 					userId, session.getId(), e.getMessage(), e);
 		}
@@ -641,7 +636,6 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object sessionIdObj = jsonData.get("sessionId");
 		Object sendIdObj = jsonData.get("sendId");
 		Object msgId = jsonData.get("msgId");
-		log.info("处理消息已读确认 | 发送方ID: {}, 会话ID: {}, 消息ID: {}", sendIdObj, sessionIdObj, msgId);
 
 		Long sessionId = null;
 		Long sendId = null;
@@ -704,7 +698,6 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 				.set("readTime", LocalDateTime.now())
 				.set("updatedAt", LocalDateTime.now());
 		mongoTemplate.updateMulti(query, update, DialogMessage.class);
-		log.info("消息标记为已读成功 | 会话ID: {}, 接收者ID: {}, 消息ID列表: {}", sessionId, receiverId, msgIds);
 	}
 
 	// ========================= 在线状态查询工具方法 =========================
@@ -781,8 +774,6 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		try {
 			session.sendMessage(new TextMessage(jsonMsg));
-			log.info("消息状态推送成功 | 发送者ID: {}, 消息类型: {}, 已读数据: {}",
-					senderId, messagePushType.getName(), readData);
 		} catch (IOException e) {
 			log.error("消息状态推送失败 | 发送者ID: {}, 消息类型: {}, 已读数据: {}, 错误信息: {}",
 					senderId, messagePushType.getName(), readData, e.getMessage(), e);

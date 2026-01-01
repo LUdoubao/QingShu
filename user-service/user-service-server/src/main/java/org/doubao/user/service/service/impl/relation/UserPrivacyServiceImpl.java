@@ -46,7 +46,6 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 		}
 		// 1. 获取目标用户的隐私设置（默认公开）
 		PrivacySettings settings = getSettings(targetUserId);
-		LOGGER.info("=============getSettings settings: {} " , JSON.toJSONString(settings));
 		Integer visibility;
 		switch (seeAccessType) {
 			case PrivacySettings.SeeAccessType.PROFILE:

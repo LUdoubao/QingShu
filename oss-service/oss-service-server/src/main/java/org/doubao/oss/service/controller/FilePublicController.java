@@ -25,7 +25,6 @@ public class FilePublicController {
 	@GetMapping("/files")
 	public ResponseEntity<org.springframework.core.io.Resource> serveFile(@RequestParam("fileKey") String fileKey) {
 		try {
-			LOGGER.info("Get file Key: {}", fileKey);
 			// 本地存储专用访问接口
 			InputStreamResource resource = new InputStreamResource(
 					storageService.downloadFile(fileKey)

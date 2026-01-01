@@ -24,22 +24,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@Autowired
 	private Environment environment;
 
-	@PostConstruct
-	public void init() {
-		LOGGER.info("=== SecurityConfig初始化 ===");
-		LOGGER.info("当前运行模式: {}", environment.getProperty("service.run-mode", "未设置"));
-		LOGGER.info("所有相关属性:");
-		LOGGER.info("  service.run-mode: {}", environment.getProperty("service.run-mode"));
-		LOGGER.info("  spring.profiles.active: {}", environment.getProperty("spring.profiles.active"));
-		LOGGER.info("  logging.level.org.doubao.auth: {}", environment.getProperty("logging.level.org.doubao.auth"));
-		LOGGER.info("=== SecurityConfig初始化结束 ===");
-	}
-
 	@Bean
 	@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 	public JwtAuthenticationFilter jwtAuthenticationFilter() {
 		LOGGER.info("✅ Microservice mode enabled.");
-		LOGGER.info("✅ 创建JwtAuthenticationFilter实例");
 		return new JwtAuthenticationFilter();
 	}
 
@@ -47,7 +35,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
 	public JwtAuthenticationFilterLocal jwtAuthenticationFilterLocal() {
 		LOGGER.info("✅ Monolith mode enabled.");
-		LOGGER.info("✅ 创建JwtAuthenticationFilterLocal实例");
 		return new JwtAuthenticationFilterLocal();
 	}
 
@@ -66,10 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	}
 
 	private org.springframework.web.filter.OncePerRequestFilter getJwtAuthenticationFilter() {
-		LOGGER.info("🔄 获取JWT认证过滤器");
-
 		try {
-			LOGGER.info("尝试获取微服务模式过滤器...");
 			JwtAuthenticationFilter microserviceFilter = jwtAuthenticationFilter();
 			if (microserviceFilter != null) {
 				LOGGER.info("✅ 使用微服务过滤器");

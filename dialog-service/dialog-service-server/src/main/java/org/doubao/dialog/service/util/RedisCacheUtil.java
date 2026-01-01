@@ -152,10 +152,7 @@ public class RedisCacheUtil {
 		// 1. 构建未读消息数Hash Key
 		String unreadCountHashKey = DIALOG_UNREAD_COUNT_PREFIX + userId;
 		// 2. 查询Hash中指定会话的未读数量
-		Integer unreadCount = hGet(unreadCountHashKey, sessionId.toString(), Integer.class);
-		log.info("Redis getSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
-				userId, sessionId, unreadCount);
-		return unreadCount;
+		return hGet(unreadCountHashKey, sessionId.toString(), Integer.class);
 	}
 
 	/**
@@ -210,8 +207,7 @@ public class RedisCacheUtil {
 		hSet(unreadCountHashKey, sessionId.toString(), unreadCount);
 		// 3. 刷新Hash缓存过期时间（7天，用户长期不活跃自动清理）
 		expire(unreadCountHashKey, 7, TimeUnit.DAYS);
-		log.info("Redis setSessionUnreadCount success | userId: {}, sessionId: {}, unreadCount: {}",
-				userId, sessionId, unreadCount);
+
 	}
 
 	/**
@@ -276,8 +272,7 @@ public class RedisCacheUtil {
 		String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
 		// 2. 存储会话缓存（带过期时间）
 		setSession(sessionSingleKey, sessionPO, sessionCacheExpireSec, TimeUnit.SECONDS);
-		log.info("Redis setSessionCache success | userId: {}, sessionId: {}, expireSec: {}",
-				userId, sessionId, sessionCacheExpireSec);
+
 
 		// 3. 同步更新会话列表ZSet（若会话列表存在，更新排序分数）
 		if (ObjectUtil.isNotNull(sessionPO.getLastMsgTime())) {
@@ -333,8 +328,7 @@ public class RedisCacheUtil {
 		zSetOperations.add(sessionListZSetKey, sessionId.toString(), score);
 		// 3. 刷新ZSet缓存过期时间
 		expire(sessionListZSetKey, sessionCacheExpireSec, TimeUnit.SECONDS);
-		log.info("Redis addSessionToListCache success | userId: {}, sessionId: {}, score: {}, expireSec: {}",
-				userId, sessionId, score, sessionCacheExpireSec);
+
 	}
 
 
@@ -490,8 +484,7 @@ public class RedisCacheUtil {
 		Long newUnreadCount = hIncrement(unreadCountHashKey, sessionId.toString(), 1);
 		// 3. 刷新Hash缓存过期时间（7天）
 		expire(unreadCountHashKey, 7, TimeUnit.DAYS);
-		log.info("Redis incrementSessionUnreadCount success | receiverId: {}, sessionId: {}, newCount: {}",
-				receiverId, sessionId, newUnreadCount);
+
 	}
 
 	/**

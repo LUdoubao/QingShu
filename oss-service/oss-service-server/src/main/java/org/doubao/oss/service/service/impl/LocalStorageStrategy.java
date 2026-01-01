@@ -76,7 +76,6 @@ public class LocalStorageStrategy implements StorageStrategy {
 	}
 	@Override
 	public String getFileUrl(String fileKey, String storageType) {
-		LOGGER.info("Get file Key: {}", fileKey);
 		if (fileKey == null || storageType == null || !storageType.equals("local")) {
 			try {
 				return baseUrl  + pathEncryptionService.encryptPath(defaultAvatar);
