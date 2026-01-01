@@ -87,9 +87,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 		// 	throw new BusinessException("内容包含敏感词", ErrorCode.COMMENT_HAS_NOT_ALLOWED);
 		// }
 
-		// 2: 字数校验（评论内容必须在10-500字符之间）
+		// 2: 字数校验（评论内容必须在500字符之间）
 		int contentLength = dto.getContent().length();
-		if (contentLength < 10 || contentLength > 500) {
+		if (contentLength > 500) {
 			throw new BusinessException(ErrorCode.COMMENT_NOT_IN_RANGE);
 		}
 

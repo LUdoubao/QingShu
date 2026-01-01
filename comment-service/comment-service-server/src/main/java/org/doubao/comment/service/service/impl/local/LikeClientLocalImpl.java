@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * 评论服务本地点赞客户端实现
@@ -64,13 +66,40 @@ public class LikeClientLocalImpl implements LikeClient {
 	@Override
 	public Result<org.doubao.comment.service.dto.BatchLikeStatusResponse> batchGetLikeStatus(org.doubao.comment.service.dto.BatchLikeStatusRequest request) {
 		// 将评论服务的请求对象转换为点赞服务的请求对象
-		BatchLikeStatusRequest likeRequest = new BatchLikeStatusRequest();
-		BeanUtils.copyProperties(request, likeRequest);
+		BatchLikeStatusRequest likeRequest = convertRequest(request);
 		// 调用本地点赞服务
 		BatchLikeStatusResponse response = likeService.batchGetLikeStatus(likeRequest);
 		// 将点赞服务的响应对象转换回评论服务的响应对象
-		org.doubao.comment.service.dto.BatchLikeStatusResponse likeResponse = new org.doubao.comment.service.dto.BatchLikeStatusResponse();
-		BeanUtils.copyProperties(response, likeResponse);
+		org.doubao.comment.service.dto.BatchLikeStatusResponse likeResponse = convertResponse(response);
 		return Result.success(likeResponse);
+	}
+	public BatchLikeStatusRequest convertRequest(org.doubao.comment.service.dto.BatchLikeStatusRequest request) {
+		BatchLikeStatusRequest likeRequest = new BatchLikeStatusRequest();
+		likeRequest.setUserId(request.getUserId());
+		if (request.getEntities() != null) {
+			likeRequest.setEntities(new ArrayList<>());
+			request.getEntities().forEach(entity -> {
+				likeRequest.getEntities().add(new BatchLikeStatusRequest.EntityRequest(entity.getEntityType(), entity.getEntityId()));
+			});
+		}
+		likeRequest.setQueryCount(request.isQueryCount());
+		likeRequest.setQueryStatus(request.isQueryStatus());
+
+		return likeRequest;
+	}
+
+	public org.doubao.comment.service.dto.BatchLikeStatusResponse convertResponse(BatchLikeStatusResponse response) {
+		org.doubao.comment.service.dto.BatchLikeStatusResponse likeResponse = new org.doubao.comment.service.dto.BatchLikeStatusResponse();
+		if (response.getResults() != null) {
+			likeResponse.setResults(response.getResults().stream().map(result -> {
+				org.doubao.comment.service.dto.BatchLikeStatusResponse.LikeStatusResult likeStatusResult = new org.doubao.comment.service.dto.BatchLikeStatusResponse.LikeStatusResult();
+				likeStatusResult.setEntityType(result.getEntityType());
+				likeStatusResult.setEntityId(result.getEntityId());
+				likeStatusResult.setLiked(result.getLiked());
+				likeStatusResult.setCount(result.getCount());
+				return likeStatusResult;
+			}).collect(Collectors.toList()));
+		}
+		return likeResponse;
 	}
 }
