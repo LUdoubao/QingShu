@@ -58,7 +58,12 @@ import java.util.stream.Collectors;
 
 /**
  * 消息管理服务实现类
+ * 业务说明：处理对话消息的发送、接收、存储、推送等功能，支持AI助手对话和用户间私信
  * 核心逻辑：1. 消息存储（MongoDB）与会话同步（MySQL）2. 实时推送（WebSocket）与离线通知（MQ）3. 消息状态管理
+ * 适用场景：
+ * 1. AI助手对话功能
+ * 2. 用户间私信系统
+ * 3. 消息历史记录管理
  */
 @Service
 public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, AssistantMessage> implements MessageService {
@@ -71,53 +76,83 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	private static final Integer MSG_CACHE_EXPIRE_SEC = 1800;
 
 	// ===================== 依赖注入 =====================
+	/** MongoDB操作模板，用于存储消息历史记录 */
 	@Autowired
 	private MongoTemplate mongoTemplate;
 
+	/** 对话事件发布器，用于发送离线通知 */
 	@Resource
 	private DialogEventPublisher dialogEventPublisher;
+	
+	/** 会话Mapper，用于会话信息的持久化存储 */
 	@Autowired
 	private DialogSessionMapper sessionMapper;
 
+	/** 会话服务，用于会话的创建、查询等操作 */
 	@Autowired
 	private SessionService sessionService;
 
+	/** 用户Feign客户端，用于获取用户信息和检查聊天权限 */
 	@Autowired
 	private UserFeignClient userFeignClient;
 
+	/** RabbitMQ模板，用于消息队列操作 */
 	@Autowired
 	private RabbitTemplate rabbitTemplate;
 
+	/** WebSocket处理器，用于实时消息推送 */
 	@Autowired
 	private DialogWebSocketHandler webSocketHandler;
 
+	/** Redis缓存工具，用于会话和消息的缓存管理 */
 	@Autowired
 	private RedisCacheUtil redisCacheUtil;
 
+	/** 日志记录器 */
 	private static final Logger log = LoggerFactory.getLogger(MessageServiceImpl.class);
+	
+	/** 对话Mapper，用于AI对话信息的持久化存储 */
 	@Autowired
 	private AssistantDialogMapper dialogMapper;
 
+	/** 消息Mapper，用于AI消息的持久化存储 */
 	@Autowired
 	private AssistantMessageMapper messageMapper;
 
+	/** 知识库服务，用于匹配用户问题并提供预设回复 */
 	@Autowired
 	private KnowledgeService knowledgeService;
 
+	/** AI服务客户端，用于调用AI生成回复 */
 	@Autowired
 	private AIServiceClient aiServiceClient;
 
+	/** WebSocket服务，用于消息推送 */
 	@Autowired
 	private WebSocketService webSocketService;
 
+	/** AI服务最大token数配置 */
 	@Value("${ai.max-tokens:200}")
 	private Integer maxTokens;
 
+	/** AI服务温度参数配置 */
 	@Value("${ai.temperature:0.7}")
 	private Double temperature;
 
 	/**
 	 * 处理用户消息并生成回复
+	 * 业务说明：处理用户发送的消息，通过知识库匹配或AI调用生成回复，然后推送给用户
+	 * 业务流程：
+	 * 1. 检查是否需要创建新对话（无对话ID）
+	 * 2. 保存用户消息到数据库
+	 * 3. 优先匹配知识库获取预设回复
+	 * 4. 知识库无匹配时检查是否需要人工接管
+	 * 5. 不需要人工接管时调用AI服务生成回复
+	 * 6. 保存AI回复并推送给用户
+	 * 事务说明：使用事务确保消息保存和对话状态的一致性
+	 * 异常处理：发生异常时回滚所有操作
+	 * @param request 用户消息请求，包含用户ID、对话ID、消息内容等信息
+	 * @return 回复消息对象，包含回复内容、发送时间等信息
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -166,6 +201,14 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 获取用户的对话历史列表
+	 * 业务说明：分页获取指定用户的对话历史记录，用于展示用户与AI的对话列表
+	 * 业务流程：调用数据库查询方法按用户ID分页获取对话记录
+	 * 参数校验：用户ID不能为空
+	 * 数据处理：按创建时间倒序排列，每页返回指定数量的记录
+	 * @param userId 用户ID，标识需要查询的用户
+	 * @param pageNum 页码，从1开始
+	 * @param pageSize 每页大小
+	 * @return 分页的对话列表，包含对话ID、标题、状态等信息
 	 */
 	@Override
 	public IPage<DialogVO> getUserDialogHistory(Long userId, int pageNum, int pageSize) {
@@ -175,6 +218,15 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 获取对话详情
+	 * 业务说明：获取指定对话的详细信息，包括基本信息和最后一条消息
+	 * 业务流程：
+	 * 1. 根据对话ID查询对话基本信息
+	 * 2. 查询该对话的最后一条消息
+	 * 3. 封装为VO对象返回
+	 * 参数校验：对话ID不能为空
+	 * 数据处理：若对话不存在返回null，若存在则补充最后一条消息信息
+	 * @param dialogId 对话ID，标识需要查询的对话
+	 * @return 对话详情对象，包含基本信息和最后消息
 	 */
 	@Override
 	public DialogVO getDialogDetail(Long dialogId) {
@@ -200,6 +252,14 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 管理员获取对话列表
+	 * 业务说明：分页获取需要处理的对话列表，支持按状态、用户、时间等条件筛选
+	 * 业务流程：调用数据库查询方法按管理员查询条件分页获取对话记录
+	 * 参数校验：查询条件、页码、页大小需符合基本规范
+	 * 数据处理：按最后消息时间倒序排列，支持多种筛选条件
+	 * @param query 查询条件，包含状态、用户ID、时间范围、关键词等筛选条件
+	 * @param pageNum 页码，从1开始
+	 * @param pageSize 每页大小
+	 * @return 分页的对话列表，包含对话ID、用户信息、状态、最后消息等
 	 */
 	@Override
 	public IPage<DialogVO> getAdminDialogList(DialogQuery query, int pageNum, int pageSize) {
@@ -209,6 +269,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 更新对话状态
+	 * 业务说明：更新指定对话的状态（如活跃、已解决、待跟进等）
+	 * 业务流程：
+	 * 1. 构建对话更新对象，设置新状态和更新时间
+	 * 2. 调用数据库更新方法修改对话状态
+	 * 3. 返回操作结果
+	 * 事务说明：使用事务确保状态更新的一致性
+	 * 异常处理：发生异常时回滚操作
+	 * @param dialogId 对话ID，标识需要更新状态的对话
+	 * @param status 新的状态值，参考DialogStatusEnum
+	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -222,6 +292,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 创建新对话
+	 * 业务说明：为用户创建新的AI对话记录，包括生成对话标题和保存对话信息
+	 * 业务流程：
+	 * 1. 调用AI服务根据用户消息内容生成对话标题
+	 * 2. 构建对话对象，设置用户ID、标题、状态等信息
+	 * 3. 保存对话记录到数据库
+	 * 4. 返回创建的对话对象
+	 * 参数校验：用户请求不能为空
+	 * 数据处理：对话状态默认设为活跃，创建和更新时间设为当前时间
+	 * @param request 用户消息请求，包含用户ID、消息内容等信息
+	 * @return 创建的对话对象，包含对话ID、标题等信息
 	 */
 	private AssistantDialog createNewDialog(MessageRequest  request) {
 		String title = callAiService(null, request);
@@ -238,6 +318,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 保存消息
+	 * 业务说明：将消息保存到数据库，用于记录对话历史
+	 * 业务流程：
+	 * 1. 构建消息对象，设置对话ID、发送者ID、内容、发送者类型等信息
+	 * 2. 设置消息发送时间为当前时间
+	 * 3. 保存消息记录到数据库
+	 * 参数校验：对话ID、内容不能为空
+	 * 数据处理：消息发送时间设为当前时间
+	 * @param dialogId 对话ID，标识消息所属对话
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @param content 消息内容，存储实际的消息文本
+	 * @param senderType 发送者类型，标识是用户还是AI发送
 	 */
 	private void saveMessage(Long dialogId, Long senderId, String content, int senderType) {
 		AssistantMessage message = new AssistantMessage();
@@ -251,6 +342,19 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 构建回复消息
+	 * 业务说明：构建用于返回给前端的回复消息对象
+	 * 业务流程：
+	 * 1. 创建消息DTO对象，设置对话ID、内容、是否为管理员回复、发送时间、发送者类型
+	 * 2. 若标题不为空则设置到消息对象
+	 * 3. 返回构建的消息对象
+	 * 参数校验：对话ID、内容不能为空
+	 * 数据处理：发送时间设为当前时间，标题可选设置
+	 * @param dialogId 对话ID，标识消息所属对话
+	 * @param content 消息内容，存储实际的消息文本
+	 * @param isAdmin 是否为管理员回复
+	 * @param senderType 发送者类型，标识消息发送方类型
+	 * @param title 对话标题，可选参数
+	 * @return 构建的消息DTO对象
 	 */
 	private MessageDTO buildReplyMessage(Long dialogId, String content, boolean isAdmin, int senderType, String  title) {
 		MessageDTO messageDTO = new MessageDTO(
@@ -268,6 +372,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 判断是否需要人工接管
+	 * 业务说明：根据用户消息内容和对话历史判断是否需要人工（管理员）介入处理
+	 * 业务流程：
+	 * 1. 检查消息内容是否包含人工、管理员等关键词
+	 * 2. 检查AI是否连续多次无法提供有效回复
+	 * 3. 返回是否需要人工接管的判断结果
+	 * 参数校验：消息内容和对话ID不能为空
+	 * 智能判断：结合关键词匹配和AI回复质量进行综合判断
+	 * @param content 用户发送的消息内容
+	 * @param dialogId 对话ID，用于查询对话历史
+	 * @return 是否需要人工接管，true=需要，false=不需要
 	 */
 	private boolean needAdminIntervene(String content, Long dialogId) {
 		// 1. 包含关键词（人工、管理员等）
@@ -303,6 +417,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 调用AI服务生成回复
+	 * 业务说明：构建对话上下文并调用AI服务生成回复内容
+	 * 业务流程：
+	 * 1. 构建AI对话上下文（包含系统提示、历史消息、当前消息）
+	 * 2. 设置AI请求参数（用户ID、消息、AI类型、模型等）
+	 * 3. 调用AI服务客户端生成回复
+	 * 4. 处理AI服务响应或异常情况
+	 * 异常处理：AI服务调用失败时返回默认提示语
+	 * 参数校验：消息请求不能为空
+	 * @param dialogId 对话ID，用于获取对话历史，可为空（创建标题时）
+	 * @param messageRequest 消息请求对象，包含用户ID、内容、AI类型等信息
+	 * @return AI生成的回复内容，调用失败时返回默认提示
 	 */
 	private String callAiService(Long dialogId, MessageRequest messageRequest) {
 		try {
@@ -334,6 +459,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 构建AI对话上下文
+	 * 业务说明：根据对话历史和当前消息构建AI服务所需的对话上下文
+	 * 业务流程：
+	 * 1. 确定对话模块类型（诗词、标题、帮助等）
+	 * 2. 设置系统提示词（根据模块类型）
+	 * 3. 添加历史消息（倒序排列，最新的在前）
+	 * 4. 添加当前用户消息
+	 * 参数校验：消息请求不能为空
+	 * 数据处理：历史消息最多取最近6条，按时间倒序排列
+	 * @param dialogId 对话ID，用于获取历史消息，可为空（创建标题时）
+	 * @param messageRequest 消息请求对象，包含模块类型、内容等信息
+	 * @return 构建的对话上下文列表
 	 */
 	private List<ChatMessage> buildAIChatContext(Long dialogId,  MessageRequest messageRequest) {
 		List<ChatMessage> context = new ArrayList<>();
@@ -417,6 +553,19 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * 3. 更新会话最后消息信息（MySQL）
 	 * 4. 更新接收方未读计数（Redis+MySQL）
 	 * 5. 推送消息：在线用WebSocket，离线用MQ触发系统通知
+	 * 业务说明：处理用户间私信消息的发送，包括校验、存储、推送等完整流程
+	 * 业务流程：
+	 * 1. 校验会话和发送者合法性
+	 * 2. 校验消息内容合规性
+	 * 3. 构建消息对象并保存到MongoDB
+	 * 4. 更新会话的最后消息信息
+	 * 5. 增加接收方未读计数
+	 * 6. 推送消息给接收者
+	 * 事务说明：使用事务确保数据一致性
+	 * 参数校验：会话ID、内容等必须符合规范
+	 * @param sendReq 消息发送请求，包含会话ID、内容、类型等信息
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @return 保存的消息ID，用于后续操作
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -424,6 +573,12 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 		// 1. 解析请求参数
 		Long sessionId = sendReq.getSessionId();
 		String content = sendReq.getContent();
+		String extInfo = sendReq.getExtInfo();
+		String tmpId = "";
+		if (extInfo != null && !extInfo.isEmpty()) {
+			JSONObject parse = (JSONObject) JSONObject.parse(extInfo);
+			tmpId = parse.getString("tempId");
+		}
 		DialogMessage.ContentTypeEnum contentType = DialogMessage.ContentTypeEnum.valueOf(sendReq.getContentType());
 
 		// 2. 校验会话合法性（发送者是否为会话参与者）
@@ -453,7 +608,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 			incrementReceiverUnreadCount(receiverId, sessionId);
 		}
 
-		// 8. 推送消息给接收者（异步处理，避免阻塞主流程）
+		// 8.通知发送方消息已发送成功
+		if (tmpId != null && !tmpId.isEmpty()) {
+			webSocketHandler.sendMsgSuccess(
+					messagePO.getSenderId(),
+					messagePO.getId(),
+					tmpId
+			);
+		}
+
+		// 推送消息给接收者
 		pushMessageToReceiver(savedMsg, receiverId, sessionPO);
 
 		// 9. 返回消息ID（MongoDB的ObjectId）
@@ -467,6 +631,21 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * 3. MongoDB分页查询双方会话下的所有消息（按发送时间倒序）
 	 * 4. 转换为VO并补充发送者信息（头像、昵称）
 	 * 5. 返回分页结果
+	 * 业务说明：查询用户与对方的私信历史记录，支持分页获取
+	 * 业务流程：
+	 * 1. 校验当前用户与会话的关联关系
+	 * 2. 获取双方独立会话ID
+	 * 3. 构建MongoDB分页查询条件
+	 * 4. 执行查询并统计总数
+	 * 5. 转换为VO并补充发送者信息
+	 * 6. 标记当前用户接收的消息为已读
+	 * 参数校验：会话ID、用户ID不能为空
+	 * 数据处理：按发送时间倒序排列，支持分页查询
+	 * @param sessionId 会话ID，标识需要查询的会话
+	 * @param userId 用户ID，标识当前操作用户
+	 * @param pageNum 页码，从1开始
+	 * @param pageSize 每页大小
+	 * @return 分页的消息列表，包含消息详情和发送者信息
 	 */
 	@Override
 	public Page<MessageVO> getMessageHistory(Long sessionId, Long userId, Integer pageNum, Integer pageSize) {
@@ -560,9 +739,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 查询对方用户与当前用户的独立会话
+	 * 业务说明：查询对方用户与当前用户之间的独立会话，用于构建双方消息查询条件
+	 * 业务流程：
+	 * 1. 根据对方用户ID和当前用户ID构建查询条件
+	 * 2. 查询数据库获取对方用户的会话记录
+	 * 3. 若会话不存在则自动创建
+	 * 4. 返回会话对象
+	 * 参数校验：对方用户ID和当前用户ID不能为空
+	 * 数据处理：若会话不存在则创建新的会话记录并更新缓存
 	 * @param targetUserId 对方用户ID（会话所有者）
 	 * @param currentUserId 当前用户ID（会话目标）
-	 * @return 对方用户的会话（可能为null，如对方未创建会话）
+	 * @return 对方用户的会话对象，若不存在则创建并返回
 	 */
 	private DialogSession getTargetUserSession(Long targetUserId, Long currentUserId) {
 		LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
@@ -593,6 +780,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * 2. 校验消息状态（必须是FAILED）
 	 * 3. 更新消息状态为SENT（MongoDB）
 	 * 4. 重新推送消息给接收者
+	 * 业务说明：重新发送之前发送失败的消息，确保消息可靠传递
+	 * 业务流程：
+	 * 1. 校验消息归属和状态
+	 * 2. 更新消息状态为已发送
+	 * 3. 重新查询消息信息
+	 * 4. 重新推送消息给接收者
+	 * 事务说明：使用事务确保状态更新和推送的一致性
+	 * 参数校验：消息ID和发送者ID不能为空，消息状态必须为FAILED
+	 * @param msgId 消息ID，标识需要重发的消息
+	 * @param senderId 发送者ID，标识消息的原始发送者
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -641,6 +838,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * 2. 物理删除MongoDB中该会话的所有消息
 	 * 3. 重置会话最后消息信息（MySQL）
 	 * 4. 删除消息缓存
+	 * 业务说明：清空指定会话的所有消息记录，用于用户清理聊天记录
+	 * 业务流程：
+	 * 1. 校验会话归属（当前用户是否为会话参与者）
+	 * 2. 物理删除MongoDB中该会话的所有消息
+	 * 3. 重置会话的最后消息信息
+	 * 4. 同步缓存和未读计数
+	 * 事务说明：使用事务确保数据一致性
+	 * 参数校验：会话ID和用户ID不能为空
+	 * @param sessionId 会话ID，标识需要清空消息的会话
+	 * @param userId 用户ID，标识操作用户
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -678,6 +885,19 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	 * 3. 更新消息状态为READ（MongoDB）
 	 * 4. 推送已读状态给发送者（WebSocket）
 	 * 5. 同步未读计数（清零）
+	 * 业务说明：将指定消息标记为已读状态，更新未读计数
+	 * 业务流程：
+	 * 1. 校验会话归属和接收者身份
+	 * 2. 构建MongoDB查询条件
+	 * 3. 统计未读消息数量
+	 * 4. 更新消息状态为已读
+	 * 5. 同步未读计数
+	 * 6. 推送已读状态给发送者
+	 * 事务说明：使用事务确保状态更新的一致性
+	 * 参数校验：会话ID、接收者ID不能为空
+	 * @param sessionId 会话ID，标识消息所属会话
+	 * @param receiverId 接收者ID，标识消息接收方
+	 * @param msgIds 消息ID列表，为空表示标记所有未读消息
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -727,6 +947,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 根据消息ID和发送者ID查询消息（用于重发校验）
 	 * 优先从缓存查询，缓存不存在则从MongoDB查询并同步到缓存
+	 * 业务说明：根据消息ID和发送者ID查询消息记录，用于重发消息校验
+	 * 业务流程：
+	 * 1. 优先从缓存查询消息
+	 * 2. 缓存不存在则从MongoDB查询
+	 * 3. MongoDB查询结果同步到缓存
+	 * 4. 返回查询结果
+	 * 参数校验：消息ID和发送者ID不能为空
+	 * 数据处理：查询结果会同步到缓存以提高后续查询效率
+	 * @param msgId 消息ID，标识需要查询的消息
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @return 消息对象，若不存在返回null
 	 */
 	@Override
 	public DialogMessage getMessageByIdAndSenderId(String msgId, Long senderId) {
@@ -759,9 +990,17 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 校验会话和发送者合法性（发送者是否为会话参与者）
-	 * @param sessionId 会话ID
-	 * @param senderId 发送者ID
-	 * @return 会话PO（校验通过）
+	 * 业务说明：校验发送者是否为指定会话的合法参与者，防止非法发送消息
+	 * 业务流程：
+	 * 1. 从SessionService获取会话信息（包含缓存逻辑）
+	 * 2. 若未找到，尝试查询发送者为targetId的会话
+	 * 3. 检查会话是否存在且未删除
+	 * 4. 检查发送者是否为会话参与者
+	 * 参数校验：会话ID和发送者ID不能为空
+	 * 异常处理：不合法时抛出业务异常
+	 * @param sessionId 会话ID，标识消息所属会话
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @return 会话PO对象，校验通过时返回
 	 */
 	private DialogSession validateSessionAndSender(Long sessionId, Long senderId) {
 		// 1. 查询会话（从SessionService获取，已包含缓存逻辑）
@@ -790,8 +1029,15 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 校验消息内容合法性
-	 * @param content 消息内容
-	 * @param contentType 消息类型
+	 * 业务说明：校验消息内容是否符合业务规范，包括非空、长度、格式等
+	 * 业务流程：
+	 * 1. 校验内容是否为空或仅包含空白字符
+	 * 2. 校验文字消息长度（最大500字）
+	 * 3. 校验表情消息格式（需符合[表情名]格式）
+	 * 参数校验：内容和消息类型不能为空
+	 * 异常处理：不符合规范时抛出业务异常
+	 * @param content 消息内容，需要校验的内容
+	 * @param contentType 消息类型，标识消息内容类型
 	 */
 	private void validateMessageContent(String content, DialogMessage.ContentTypeEnum contentType) {
 		// 1. 内容非空校验
@@ -814,12 +1060,21 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 构建消息PO对象
-	 * @param sessionId 会话ID
-	 * @param senderId 发送者ID
-	 * @param receiverId 接收者ID
+	 * 业务说明：根据参数构建消息持久化对象，用于保存到数据库
+	 * 业务流程：
+	 * 1. 创建消息对象实例
+	 * 2. 设置会话ID、发送者ID、接收者ID
+	 * 3. 设置内容、类型、状态等属性
+	 * 4. 设置时间字段
+	 * 5. 返回构建的消息对象
+	 * 参数校验：会话ID、发送者ID、接收者ID、内容不能为空
+	 * 数据处理：状态默认设为已发送，时间设为当前时间
+	 * @param sessionId 会话ID，标识消息所属会话
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @param receiverId 接收者ID，标识消息接收方
 	 * @param content 消息内容
-	 * @param contentType 消息类型
-	 * @return 消息PO
+	 * @param contentType 消息类型，标识内容类型
+	 * @return 构建的消息PO对象
 	 */
 	private DialogMessage buildMessagePO(Long sessionId, Long senderId, Long receiverId, String content, DialogMessage.ContentTypeEnum contentType) {
 		DialogMessage messagePO = new DialogMessage();
@@ -838,8 +1093,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 更新会话最后消息信息（MySQL）
-	 * @param sessionPO 会话PO
-	 * @param messagePO 消息PO
+	 * 业务说明：更新会话记录中的最后消息信息，包括内容、时间等
+	 * 业务流程：
+	 * 1. 根据消息类型生成消息预览
+	 * 2. 更新会话PO的最后消息相关信息
+	 * 3. 保存到MySQL数据库
+	 * 4. 同步会话缓存
+	 * 参数校验：会话PO和消息PO不能为空
+	 * 数据处理：消息预览限制为20字，超过则截断并添加省略号
+	 * @param sessionPO 会话PO对象
+	 * @param messagePO 消息PO对象
 	 * @param content 消息内容
 	 * @param contentType 消息类型
 	 */
@@ -873,8 +1136,14 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 增加接收者未读计数（Redis+MySQL）
-	 * @param receiverId 接收者ID
-	 * @param sessionId 会话ID
+	 * 业务说明：增加接收者的未读消息计数，用于消息提醒
+	 * 业务流程：
+	 * 1. 更新Redis中的未读计数（优先更新缓存）
+	 * 2. 更新MySQL中的未读计数（最终一致性）
+	 * 参数校验：接收者ID和会话ID不能为空
+	 * 数据处理：Redis和MySQL数据保持一致性
+	 * @param receiverId 接收者ID，标识消息接收方
+	 * @param sessionId 会话ID，标识消息所属会话
 	 */
 	private void incrementReceiverUnreadCount(Long receiverId, Long sessionId) {
 		// 1. Redis未读计数自增（优先更新缓存）
@@ -892,9 +1161,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 	/**
 	 * 推送消息给接收者（异步）
 	 * 逻辑：在线→WebSocket推送，离线→MQ触发系统通知
-	 * @param messagePO 消息PO
-	 * @param receiverId 接收者ID
-	 * @param sessionPO 会话PO
+	 * 业务说明：将消息推送给接收者，根据在线状态选择推送方式
+	 * 业务流程：
+	 * 1. 检查接收者是否在线（WebSocket会话是否存在）
+	 * 2. 在线则通过WebSocket实时推送
+	 * 3. 离线则通过MQ发送系统通知
+	 * 4. 更新对方会话未读数
+	 * 异常处理：推送失败时更新消息状态为FAILED
+	 * @param messagePO 消息PO对象
+	 * @param receiverId 接收者ID，标识消息接收方
+	 * @param sessionPO 会话PO对象
 	 */
 	@Async // 异步处理，避免阻塞消息发送主流程
 	protected void pushMessageToReceiver(DialogMessage messagePO, Long receiverId, DialogSession sessionPO) {
@@ -938,9 +1214,16 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 推送已读状态给发送者（WebSocket）
-	 * @param senderId 发送者ID
-	 * @param sessionId 会话ID
-	 * @param msgIds 已读消息ID列表（为空则表示所有消息）
+	 * 业务说明：向消息发送者推送消息已读状态，实现消息回执功能
+	 * 业务流程：
+	 * 1. 检查发送者是否在线
+	 * 2. 构建已读状态推送数据
+	 * 3. 通过WebSocket推送已读状态
+	 * 参数校验：发送者ID和会话ID不能为空
+	 * 数据处理：若发送者离线则不推送
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @param sessionId 会话ID，标识消息所属会话
+	 * @param msgIds 已读消息ID列表，为空表示所有消息已读
 	 */
 	private void pushReadStatusToSender(Long senderId, Long sessionId, List<String> msgIds) {
 		// 1. 检查发送者是否在线
@@ -964,7 +1247,14 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 更新消息状态为FAILED（MongoDB）
-	 * @param msgId 消息ID
+	 * 业务说明：将消息状态更新为失败，用于标记发送失败的消息
+	 * 业务流程：
+	 * 1. 构建MongoDB更新对象
+	 * 2. 更新指定消息的状态为FAILED
+	 * 3. 同步缓存中的消息状态
+	 * 参数校验：消息ID不能为空
+	 * 数据处理：状态更新为FAILED，更新时间设为当前时间
+	 * @param msgId 消息ID，标识需要更新状态的消息
 	 */
 	private void updateMessageStatusToFailed(String msgId) {
 		Update update = new Update();
@@ -986,9 +1276,19 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 将消息PO转换为VO（补充发送者信息、内容预览、时间格式化）
-	 * @param messagePO 消息PO
-	 * @param currentUserId 当前用户ID（用于判断消息方向：自己发送/对方发送）
-	 * @return 消息VO
+	 * 业务说明：将消息持久化对象转换为视图对象，补充发送者信息、内容预览、格式化时间等
+	 * 业务流程：
+	 * 1. 复制消息PO的基本属性到VO
+	 * 2. 设置消息状态和内容类型值
+	 * 3. 补充消息方向（自己发送/对方发送）
+	 * 4. 补充发送者信息（头像、昵称）
+	 * 5. 补充内容预览
+	 * 6. 格式化发送时间
+	 * 参数校验：消息PO和当前用户ID不能为空
+	 * 数据处理：根据发送者ID判断消息方向，获取发送者信息
+	 * @param messagePO 消息PO对象
+	 * @param currentUserId 当前用户ID，用于判断消息方向
+	 * @return 转换后的消息VO对象
 	 */
 	private MessageVO convertToMessageVO(DialogMessage messagePO, Long currentUserId, Long sessionId) {
 		MessageVO messageVO = new MessageVO();
@@ -1034,6 +1334,13 @@ public class MessageServiceImpl extends ServiceImpl<AssistantMessageMapper, Assi
 
 	/**
 	 * 格式化发送时间（抖音风格）
+	 * 业务说明：将日期时间格式化为用户友好的时间显示格式
+	 * 业务流程：
+	 * 1. 判断发送时间与当前时间的关系
+	 * 2. 根据不同时间范围选择不同格式
+	 * 3. 返回格式化后的时间字符串
+	 * 数据处理：今天显示HH:mm，昨天显示昨天 HH:mm，一个月内显示MM-dd HH:mm，超过一个月显示yyyy-MM-dd HH:mm
+	 * 参数校验：发送时间可为空，为空时返回空字符串
 	 * @param sendTime 发送时间
 	 * @return 格式化后的时间字符串
 	 */

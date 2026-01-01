@@ -39,11 +39,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 对话业务WebSocket处理器
+ * 业务说明：处理WebSocket连接和消息推送功能，管理用户在线状态和实时通信
  * 核心职责：
  * 1. 维护用户WebSocket连接会话（在线用户映射）
  * 2. 处理客户端发送的实时消息（如心跳、已读确认）
  * 3. 推送消息给指定用户（私信、系统通知）
  * 4. 管理用户在线状态（连接建立=上线，连接关闭=下线）
+ * 适用场景：
+ * 1. AI助手消息实时推送
+ * 2. 用户间私信实时通信
+ * 3. 用户在线状态管理
+ * 4. 消息已读状态处理
  */
 @Component
 public class DialogWebSocketHandler extends TextWebSocketHandler {
@@ -58,20 +64,32 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	/** Redis缓存工具类（用于在线状态、会话信息） */
 	@Resource
 	private RedisCacheUtil redisCacheUtil;
+	/** MongoDB模板，用于消息数据操作 */
 	@Autowired
 	private MongoTemplate mongoTemplate;
+	/** 会话Mapper，用于会话数据操作 */
 	@Autowired
 	private DialogSessionMapper sessionMapper;
+	/** 用户Feign客户端，用于获取用户信息 */
 	@Autowired
 	private UserFeignClient userFeignClient;
+	/** 对话事件发布器，用于发送离线通知 */
 	@Resource
 	private DialogEventPublisher dialogEventPublisher;
+	/** 日志记录器 */
 	private static final Logger log = LoggerFactory.getLogger(DialogWebSocketHandler.class);
 
 	// ========================= 连接生命周期管理 =========================
 	/**
 	 * 连接建立成功回调（用户上线）
-	 * 流程：1. 解析用户ID 2. 存储会话映射 3. 更新Redis在线状态 4. 日志记录
+	 * 业务说明：处理WebSocket连接建立事件，更新用户在线状态
+	 * 业务流程：
+	 * 1. 从会话属性中获取用户ID
+	 * 2. 存储会话映射（覆盖旧连接，解决多端登录问题）
+	 * 3. 更新Redis在线状态
+	 * 4. 推送用户上线消息给相关会话
+	 * 异常处理：用户ID为空时关闭连接
+	 * 参数校验：用户ID不能为空
 	 * @param session WebSocket会话对象（包含连接信息、属性等）
 	 * @throws Exception 连接处理异常
 	 */
@@ -119,7 +137,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 连接关闭回调（用户下线）
-	 * 流程：1. 清理会话映射 2. 清除Redis在线状态 3. 日志记录
+	 * 业务说明：处理WebSocket连接关闭事件，清理用户在线状态
+	 * 业务流程：
+	 * 1. 从会话属性中获取用户ID
+	 * 2. 清理在线用户会话映射
+	 * 3. 延迟清除Redis在线状态（防止网络波动）
+	 * 4. 推送用户下线消息给相关会话
+	 * 参数校验：用户ID不能为空
 	 * @param session 关闭的会话对象
 	 * @param status 关闭状态（正常/异常）
 	 * @throws Exception 关闭处理异常
@@ -163,7 +187,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	// ========================= 客户端消息处理 =========================
 	/**
 	 * 接收客户端文本消息（如心跳、已读确认）
-	 * 消息格式：JSON字符串，必须包含"msgType"字段（消息类型）
+	 * 业务说明：处理客户端发送的文本消息，根据消息类型分发处理
+	 * 业务流程：
+	 * 1. 校验消息格式（非空+JSON格式）
+	 * 2. 解析消息类型
+	 * 3. 按消息类型分发处理
+	 * 异常处理：消息格式错误时发送错误消息
+	 * 参数校验：消息内容不能为空，必须为JSON格式
 	 * @param session 发送消息的客户端会话
 	 * @param message 客户端发送的文本消息
 	 * @throws Exception 消息处理异常
@@ -229,6 +259,19 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		}
 	}
 
+	/**
+	 * 处理未读数变更
+	 * 业务说明：处理客户端发送的未读消息数变更事件
+	 * 业务流程：
+	 * 1. 解析会话ID和未读数参数
+	 * 2. 更新Redis中的会话未读数
+	 * 3. 同步更新数据库中的会话未读数
+	 * 参数校验：会话ID和未读数不能为空
+	 * 数据处理：同时更新缓存和数据库中的未读数
+	 * @param userId 用户ID
+	 * @param sessionIdObj 会话ID对象
+	 * @param unreadCountObj 未读数对象
+	 */
 	public void handleUnreadCountChange(Long userId, Object sessionIdObj, Object unreadCountObj) {
 		if (ObjectUtil.isNull(sessionIdObj) || ObjectUtil.isNull(unreadCountObj)) {
 			log.error("处理未读数变更失败 | 缺少必要参数 (用户ID: {})", userId);
@@ -244,6 +287,12 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 处理用户输入状态更新
+	 * 业务说明：处理用户输入状态更新事件，用于显示对方正在输入的状态
+	 * 业务流程：
+	 * 1. 解析会话ID和输入状态参数
+	 * 2. 更新Redis中的输入状态
+	 * 参数校验：会话ID和输入状态不能为空
+	 * 数据处理：输入状态在Redis中缓存10秒后过期
 	 * @param userId 用户ID
 	 * @param msgMap 消息数据
 	 */
@@ -268,6 +317,12 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 处理离开会话事件
+	 * 业务说明：处理用户离开会话事件，清理相关缓存
+	 * 业务流程：
+	 * 1. 解析会话ID参数
+	 * 2. 删除会话相关缓存
+	 * 参数校验：会话ID不能为空
+	 * 数据处理：清理指定会话的缓存数据
 	 * @param userId 用户ID
 	 * @param msgMap 消息数据
 	 */
@@ -285,6 +340,12 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 处理进入会话事件
+	 * 业务说明：处理用户进入会话事件，更新会话列表缓存
+	 * 业务流程：
+	 * 1. 解析会话ID参数
+	 * 2. 添加会话到列表缓存
+	 * 参数校验：会话ID不能为空
+	 * 数据处理：会话在缓存中过期时间为30分钟
 	 * @param userId 用户ID
 	 * @param msgMap 消息数据
 	 */
@@ -302,6 +363,11 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 处理客户端异常（如连接中断、消息发送失败）
+	 * 业务说明：处理WebSocket传输异常事件
+	 * 业务流程：
+	 * 1. 记录异常日志
+	 * 2. 关闭异常会话（触发连接关闭回调）
+	 * 异常处理：异常时关闭会话以触发连接关闭回调，清理在线状态
 	 * @param session 出现异常的会话
 	 * @param exception 异常对象
 	 * @throws Exception 异常处理过程中的二次异常
@@ -321,6 +387,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	// ========================= 消息发送工具方法 =========================
 	/**
 	 * 向指定用户推送私信消息（实时对话核心方法）
+	 * 业务说明：向指定用户推送私信消息，若用户离线则通过MQ发送离线通知
+	 * 业务流程：
+	 * 1. 检查用户是否在线
+	 * 2. 在线则直接推送消息
+	 * 3. 离线则通过MQ发送系统通知
+	 * 异常处理：推送失败时关闭会话，后续消息走离线推送
+	 * 参数校验：用户ID和消息内容不能为空
 	 * @param userId    目标用户ID
 	 * @param messageVO 消息VO（包含消息ID、内容、发送者等信息）
 	 * @param messagePushType 消息推送类型
@@ -365,8 +438,45 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 			}
 		}
 	}
+
+
+	public void sendMsgSuccess(Long userId, String msgId, String tmpId) {
+		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(msgId)) {
+			log.error("发送消息成功失败 | 用户ID或消息ID为空");
+			return;
+		}
+
+		// 1. 获取用户在线会话
+		log.info("发送消息成功-在线用户会话映射: {}", JSON.toJSONString(onlineUserSessionMap.keySet()));
+		WebSocketSession session = onlineUserSessionMap.get(userId);
+		if (!isUserOnline(userId)) {
+			log.info("发送消息成功失败 | 用户已离线 (用户ID: {})", userId);
+			return;
+		}
+		// 2. 构建推送消息
+		Map<String, Object> pushMsg = new ConcurrentHashMap<>(2);
+		pushMsg.put("msgType", MessagePushType.SENT.getName());
+		pushMsg.put("msgId", msgId);
+		pushMsg.put("tmpId", tmpId);
+		String jsonMsg = JSON.toJSONString(pushMsg);
+
+		// 3. 发送消息
+		try {
+			session.sendMessage(new TextMessage(jsonMsg));
+		} catch (IOException e) {
+			log.error("发送消息成功失败 | 用户ID: {}, 错误信息: {}",
+					userId, e.getMessage(), e);
+		}
+	}
+
 	/**
 	 * 获取发送者名称（AI/用户）
+	 * 业务说明：根据发送者ID获取发送者名称，AI助手返回固定名称，用户返回昵称
+	 * 业务流程：
+	 * 1. 判断是否为AI助手
+	 * 2. AI助手返回固定名称
+	 * 3. 用户调用Feign客户端获取昵称
+	 * 异常处理：获取用户信息失败时返回默认名称
 	 * @param senderId 发送者ID
 	 * @return 发送者名称（AI助手/用户昵称）
 	 */
@@ -388,6 +498,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 向指定用户推送系统通知（如会话被删除、用户被拉黑）
+	 * 业务说明：向指定用户推送系统通知消息
+	 * 业务流程：
+	 * 1. 检查用户是否在线
+	 * 2. 构建系统通知消息格式
+	 * 3. 发送消息给用户
+	 * 异常处理：用户离线时不推送
+	 * 参数校验：用户ID、通知内容和通知类型不能为空
 	 * @param userId 目标用户ID
 	 * @param notifyContent 通知内容
 	 * @param notifyType 通知类型（如"SESSION_DELETED"、"USER_BLOCKED"）
@@ -422,6 +539,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 向客户端发送错误消息（如参数错误、权限不足）
+	 * 业务说明：向客户端发送错误消息，用于告知客户端操作失败原因
+	 * 业务流程：
+	 * 1. 检查会话是否有效
+	 * 2. 构建错误消息格式
+	 * 3. 发送错误消息给客户端
+	 * 异常处理：会话已关闭时记录错误日志
+	 * 参数校验：会话不能为空且必须处于开启状态
 	 * @param session 目标客户端会话
 	 * @param errorMsg 错误描述
 	 */
@@ -448,7 +572,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	// ========================= 具体消息类型处理 =========================
 	/**
 	 * 处理客户端心跳消息（刷新在线状态，防止超时下线）
-	 * 逻辑：1. 刷新Redis在线状态过期时间 2. 回复心跳确认
+	 * 业务说明：处理客户端发送的心跳消息，用于维持连接和刷新在线状态
+	 * 业务流程：
+	 * 1. 刷新Redis在线状态过期时间
+	 * 2. 回复心跳确认消息
+	 * 3. 推送用户上线消息给相关会话
+	 * 异常处理：心跳响应发送失败时推送用户下线消息
+	 * 参数校验：用户ID和会话不能为空
 	 * @param userId 用户ID
 	 * @param session 客户端会话
 	 */
@@ -493,7 +623,14 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 处理消息已读确认（清除用户对应会话的未读消息数）
+	 * 业务说明：处理客户端发送的消息已读确认，更新消息状态和推送已读回执
 	 * 客户端消息格式：{"msgType":"MSG_READ_CONFIRM", "sessionId": 123, "lastReadMsgId": "60d21b4667d0d8992e610c85"}
+	 * 业务流程：
+	 * 1. 解析会话ID、发送方ID和消息ID
+	 * 2. 清除Redis中该会话的未读消息数
+	 * 3. 推送已读状态给发送方
+	 * 4. 更新数据库中消息的已读状态
+	 * 参数校验：会话ID、发送方ID和消息ID不能为空
 	 * @param userId 用户ID（已读操作的发起者）
 	 * @param msgMap 客户端消息映射
 	 */
@@ -539,6 +676,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 标记消息为已读状态（MongoDB操作）
+	 * 业务说明：在MongoDB中将指定消息标记为已读状态
+	 * 业务流程：
+	 * 1. 构建MongoDB查询条件（会话ID、接收者ID、状态）
+	 * 2. 添加消息ID条件（如果提供了消息ID列表）
+	 * 3. 执行更新操作，将消息状态设为已读
+	 * 参数校验：会话ID、接收者ID不能为空
+	 * 数据处理：更新消息状态为已读，设置读取时间和更新时间
 	 * @param sessionId 会话ID
 	 * @param receiverId 接收者ID
 	 * @param msgIds 消息ID列表
@@ -566,6 +710,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	// ========================= 在线状态查询工具方法 =========================
 	/**
 	 * 查询用户是否在线（内存映射+Redis双重校验）
+	 * 业务说明：检查用户是否在线，使用内存映射和Redis双重校验确保准确性
+	 * 业务流程：
+	 * 1. 优先查询内存映射中的会话
+	 * 2. 内存中无有效会话时查询Redis
+	 * 3. 返回用户在线状态
+	 * 性能优化：优先查询内存以提高性能
+	 * 参数校验：用户ID不能为空
 	 * @param userId 用户ID
 	 * @return true=在线，false=离线
 	 */
@@ -588,6 +739,9 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 获取当前在线用户数量（内存映射统计）
+	 * 业务说明：获取当前通过WebSocket连接在线的用户数量
+	 * 业务流程：返回内存映射中的会话数量
+	 * 数据处理：直接返回在线用户会话映射的大小
 	 * @return 在线用户数
 	 */
 	public int getOnlineUserCount() {
@@ -596,6 +750,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 	/**
 	 * 推送消息状态给发送者
+	 * 业务说明：向消息发送者推送消息状态（如已读状态）
+	 * 业务流程：
+	 * 1. 检查发送者是否在线
+	 * 2. 构建推送消息格式
+	 * 3. 发送消息给发送者
+	 * 异常处理：推送失败时关闭会话
+	 * 参数校验：发送者ID和消息数据不能为空
 	 * @param senderId 消息发送者ID
 	 * @param messagePushType 消息推送类型
 	 * @param readData 消息已读数据
