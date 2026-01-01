@@ -38,12 +38,23 @@ public class CommentQuoteClientLocalImpl implements QuoteClient {
 	@Override
 	public Result<org.doubao.comment.service.vo.QuoteVo> detail(Long id) {
 		try {
-			QuoteVo data = quoteService.getDetailById(id).getData();
-			org.doubao.comment.service.vo.QuoteVo quoteVo = new org.doubao.comment.service.vo.QuoteVo();
-			BeanUtils.copyProperties(data, quoteVo);
+			QuoteVo data = quoteService.publicGetDetailById(id, null).getData();
+			org.doubao.comment.service.vo.QuoteVo quoteVo = convert(data);
 			return Result.success(quoteVo);
 		} catch (Exception e) {
 			return Result.error("获取引文详情失败: " + e.getMessage());
 		}
+	}
+	private org.doubao.comment.service.vo.QuoteVo convert(QuoteVo data) {
+		org.doubao.comment.service.vo.QuoteVo quoteVo = new org.doubao.comment.service.vo.QuoteVo();
+		if (data != null) {
+			quoteVo.setId(data.getId());
+			quoteVo.setContent(data.getContent());
+			quoteVo.setAuthor(data.getAuthor());
+			quoteVo.setSource(data.getSource());
+			quoteVo.setCategoryName(data.getCategoryName());
+			quoteVo.setCategoryId(data.getCategoryId());
+		}
+		return quoteVo;
 	}
 }
