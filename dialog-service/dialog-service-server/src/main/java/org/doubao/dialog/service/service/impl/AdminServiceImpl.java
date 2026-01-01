@@ -21,22 +21,43 @@ import java.time.LocalDateTime;
 
 /**
  * 管理员服务实现类
+ * 业务说明：实现管理员对话管理功能，包括发送回复、标记对话状态等操作
+ * 核心功能：1. 管理员发送回复 2. 对话状态管理 3. 实时消息推送
+ * 适用场景：
+ * 1. 管理员对话管理功能
+ * 2. 客服对话处理
+ * 3. 对话状态管理
  */
 @Service
 public class AdminServiceImpl extends ServiceImpl<AssistantMessageMapper, AssistantMessage> implements AdminService {
 
+	/** 日志记录器 */
 	private static final Logger log = LoggerFactory.getLogger(AdminServiceImpl.class);
+	/** 对话Mapper，用于对话信息的持久化操作 */
 	@Autowired
 	private AssistantDialogMapper dialogMapper;
 
+	/** 消息Mapper，用于消息信息的持久化操作 */
 	@Autowired
 	private AssistantMessageMapper messageMapper;
 
+	/** WebSocket服务，用于实时消息推送 */
 	@Autowired
 	private WebSocketService webSocketService;
 
 	/**
 	 * 管理员发送回复
+	 * 业务说明：管理员对用户咨询进行回复，将回复内容保存到数据库并实时推送给用户
+	 * 业务流程：
+	 * 1. 保存管理员发送的消息到数据库
+	 * 2. 更新对话状态为"活跃"（ACTIVE），表示正在处理中
+	 * 3. 通过WebSocket实时推送消息给对应的用户
+	 * 事务说明：使用事务确保消息保存和状态更新的一致性
+	 * 异常处理：发生异常时回滚所有操作
+	 * 参数校验：请求对象不能为空，对话ID、管理员ID、内容不能为空
+	 * 数据处理：消息保存到数据库，对话状态更新为活跃状态
+	 * @param request 管理员回复请求，包含对话ID、管理员ID、回复内容等信息
+	 * @return 回复消息对象，包含对话ID、内容、发送时间等信息
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -68,6 +89,16 @@ public class AdminServiceImpl extends ServiceImpl<AssistantMessageMapper, Assist
 
 	/**
 	 * 标记对话为已解决
+	 * 业务说明：将指定对话标记为已解决状态，表示问题已处理完毕
+	 * 业务流程：
+	 * 1. 更新对话状态为"已解决"（RESOLVED）
+	 * 2. 通过WebSocket通知用户问题已解决
+	 * 事务说明：使用事务确保状态更新的原子性
+	 * 异常处理：发生异常时回滚操作
+	 * 参数校验：对话ID不能为空
+	 * 数据处理：对话状态更新为已解决状态，向用户推送解决通知
+	 * @param dialogId 对话ID，标识需要标记的对话
+	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -101,6 +132,16 @@ public class AdminServiceImpl extends ServiceImpl<AssistantMessageMapper, Assist
 
 	/**
 	 * 标记对话为待跟进
+	 * 业务说明：将指定对话标记为待跟进状态，表示需要后续处理
+	 * 业务流程：
+	 * 1. 更新对话状态为"待跟进"（PENDING）
+	 * 2. 通过WebSocket通知用户问题待跟进
+	 * 事务说明：使用事务确保状态更新的原子性
+	 * 异常处理：发生异常时回滚操作
+	 * 参数校验：对话ID不能为空
+	 * 数据处理：对话状态更新为待跟进状态，向用户推送待跟进通知
+	 * @param dialogId 对话ID，标识需要标记的对话
+	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -133,6 +174,17 @@ public class AdminServiceImpl extends ServiceImpl<AssistantMessageMapper, Assist
 
 	/**
 	 * 保存消息
+	 * 业务说明：将消息保存到数据库，供后续查询和管理使用
+	 * 业务流程：
+	 * 1. 创建消息实体对象
+	 * 2. 设置消息属性（对话ID、发送者ID、内容、发送者类型、发送时间）
+	 * 3. 插入数据库
+	 * 参数校验：对话ID、发送者ID、内容不能为空
+	 * 数据处理：发送时间设置为当前时间
+	 * @param dialogId 对话ID，标识消息所属对话
+	 * @param senderId 发送者ID，标识消息发送方
+	 * @param content 消息内容，存储实际的消息文本
+	 * @param senderType 发送者类型，标识是用户还是管理员发送
 	 */
 	private void saveMessage(Long dialogId, Long senderId, String content, int senderType) {
 		AssistantMessage message = new AssistantMessage();
