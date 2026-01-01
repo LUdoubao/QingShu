@@ -135,10 +135,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	public Result<String> deleteQuote(List<Long> quoteIds) {
 		if (quoteIds == null || quoteIds.isEmpty()) {
-			return Result.error(ResultCode.FAIL.getCode(), ResultCode.FAIL.getMessage());
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
 		this.removeByIds(quoteIds);
-		quoteTagMapper.deleteBatchIds(quoteIds);
+		quoteTagMapper.deleteByQuoteIds(quoteIds);
 		return Result.success(ResultCode.SUCCESS.getMessage());
 	}
 
@@ -826,17 +826,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
 		QuoteStatus quoteStatus = QuoteStatus.getQuoteStatus(status);
-		switch (Objects.requireNonNull(quoteStatus)) {
-			case OFF_SHELF:
-				// 下架
-				quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
-				break;
-			case PUBLISHED:
-				// 发布
-				quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.PUBLISHED.getCode());
-				break;
-			default:
-				throw new BusinessException(ErrorCode.BAD_REQUEST);
+		if (Objects.requireNonNull(quoteStatus) == QuoteStatus.OFF_SHELF) {// 下架
+			quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
+		} else {
+			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
 	}
 

@@ -16,4 +16,6 @@ public interface QuoteTagMapper extends BaseMapper<QuoteTag> {
 	List<Map<String, Object>> selectQuoteTagsWithDetails(@Param("quoteIds") List<Long> quoteIds);
 
 	void deleteByQuoteId(@Param("id") Long id);
+
+	void deleteByQuoteIds(@Param("ids") List<Long> ids);
 }

@@ -129,7 +129,7 @@
         COUNT(CASE WHEN status = 2 THEN 1 END) AS blockCount,
         COUNT(CASE WHEN status = 3 THEN 1 END) AS draftCount,
         COUNT(CASE WHEN status = 4 THEN 1 END) AS auditRejectCount,
-        COUNT(CASE WHEN status = 5 THEN 1 END) AS withdrawCount
+        COUNT(CASE WHEN status = 5 THEN 1 END) AS offShelfCount
         FROM quote
         WHERE deleted = 0
         AND created_id = #{userId}

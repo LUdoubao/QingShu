@@ -30,4 +30,13 @@
     <delete id="deleteByQuoteId">
         DELETE FROM quote_tag WHERE quote_id = #{id}
     </delete>
+
+    <!-- void deleteByQuoteIds(@Param("ids") List<Long> ids);-->
+    <delete id="deleteByQuoteIds">
+        DELETE FROM quote_tag WHERE quote_id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
 </mapper>

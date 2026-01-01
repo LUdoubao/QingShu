@@ -20,7 +20,7 @@ public class QuoteStatusCountVo {
 	/**
 	 * 下架数
 	 */
-	private int withdrawCount;
+	private int offShelfCount;
 	/**
 	 * 屏蔽数
 	 */
@@ -62,12 +62,12 @@ public class QuoteStatusCountVo {
 		this.auditRejectCount = auditRejectCount;
 	}
 
-	public int getWithdrawCount() {
-		return withdrawCount;
+	public int getOffShelfCount() {
+		return offShelfCount;
 	}
 
-	public void setWithdrawCount(int withdrawCount) {
-		this.withdrawCount = withdrawCount;
+	public void setOffShelfCount(int offShelfCount) {
+		this.offShelfCount = offShelfCount;
 	}
 
 	public int getBlockCount() {
