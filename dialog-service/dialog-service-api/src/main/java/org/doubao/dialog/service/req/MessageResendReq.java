@@ -20,6 +20,7 @@ import java.util.Map;
  * 消息重发请求DTO
  * 用途：接收客户端发起的消息重发请求，包含重发所需的核心参数（关联会话、原消息标识、消息类型等）
  * 适用场景：消息发送失败后重试（如网络波动、服务临时不可用）、手动触发重发
+ * 业务说明：定义消息重发操作的请求参数，包含重发消息的上下文信息和重发原因
  */
 @ApiModel(value = "MessageResendReq", description = "消息重发请求参数")
 public class MessageResendReq implements Serializable {
@@ -29,6 +30,9 @@ public class MessageResendReq implements Serializable {
 	/**
 	 * 会话ID
 	 * 说明：关联消息所属的会话，确保重发消息进入正确的聊天窗口
+	 * 业务说明：标识消息所属的会话，用于确定重发消息的接收目标
+	 * 数据校验：不能为空，必须为正整数
+	 * 使用场景：确保重发的消息进入正确的对话会话
 	 */
 	@NotNull(message = "会话ID不能为空")
 	@Positive(message = "会话ID必须为正整数")
@@ -38,6 +42,9 @@ public class MessageResendReq implements Serializable {
 	/**
 	 * 发送者用户ID
 	 * 说明：重发消息的发起者，需与原消息发送者一致（避免越权重发）
+	 * 业务说明：标识执行重发操作的用户，用于权限验证和消息归属判断
+	 * 数据校验：不能为空，必须为正整数
+	 * 权限控制：仅原消息发送者可以重发该消息
 	 */
 	@NotNull(message = "发送者ID不能为空")
 	@Positive(message = "发送者ID必须为正整数")
@@ -47,6 +54,9 @@ public class MessageResendReq implements Serializable {
 	/**
 	 * 原消息ID
 	 * 说明：关联需要重发的原始消息（MongoDB的ObjectId或业务自定义ID），用于查询原消息内容/接收者等信息
+	 * 业务说明：标识需要重发的原始消息，用于获取原消息的完整信息
+	 * 数据校验：不能为空
+	 * 使用场景：通过原消息ID查询消息内容、接收者等信息用于重发
 	 */
 	@NotBlank(message = "原消息ID不能为空")
 	@ApiModelProperty(value = "原消息ID（关联消息表msg_id）", required = true, example = "60d21b4667d0d8992e610c85")
@@ -55,6 +65,10 @@ public class MessageResendReq implements Serializable {
 	/**
 	 * 消息类型
 	 * 说明：与原消息类型保持一致，确保重发消息格式正确（文本/图片/语音/文件）
+	 * 业务说明：标识重发消息的类型，确保重发的消息格式与原消息一致
+	 * 枚举类型：MsgTypeEnum（TEXT、IMAGE、VOICE、FILE等）
+	 * 数据校验：不能为空
+	 * 使用场景：确保重发的消息以正确的格式发送
 	 */
 	@NotNull(message = "消息类型不能为空")
 	@ApiModelProperty(value = "消息类型（TEXT=文本，IMAGE=图片，VOICE=语音，FILE=文件）", required = true, example = "TEXT")

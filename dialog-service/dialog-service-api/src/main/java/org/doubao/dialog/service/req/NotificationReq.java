@@ -17,6 +17,7 @@ import java.io.Serializable;
  * 1. 用户离线线时，通过MQ推送私信/系统通知（后续用户上线后消费）
  * 2. 服务间调用传递通知信息（如用户被拉黑、会话被删除的系统通知）
  * 核心作用：统一通知数据格式，支持私信通知和系统通知两种类型
+ * 业务说明：定义消息通知的请求参数，包含通知类型、目标用户、通知内容等必要信息
  */
 @ApiModel(description = "消息通知请求参数，支持私信通知和系统通知")
 public class NotificationReq implements Serializable {
@@ -30,6 +31,9 @@ public class NotificationReq implements Serializable {
 	 * 业务规则：
 	 * - 私信通知：需传递messageVO字段（完整消息信息）
 	 * - 系统通知：需传递systemNotify相关字段（通知类型、内容）
+	 * 业务说明：标识通知的类型，用于区分私信通知和系统通知的处理逻辑
+	 * 数据校验：不能为空，仅支持NOTIFY_PRIVATE_MSG和NOTIFY_SYSTEM
+	 * 使用场景：确定通知的处理方式和内容结构
 	 */
 	@NotBlank(message = "通知类型不能为空，请选择NOTIFY_PRIVATE_MSG或NOTIFY_SYSTEM")
 	@ApiModelProperty(
@@ -43,6 +47,9 @@ public class NotificationReq implements Serializable {
 	/**
 	 * 目标用户ID
 	 * 业务规则：通知的接收者ID，必须为已存在的用户（后端需校验用户有效性）
+	 * 业务说明：标识通知的接收用户，用于消息路由和权限验证
+	 * 数据校验：不能为空，必须为正整数
+	 * 使用场景：确定通知消息的接收目标
 	 */
 	@NotNull(message = "目标用户ID不能为空")
 	@ApiModelProperty(
@@ -56,6 +63,9 @@ public class NotificationReq implements Serializable {
 	/**
 	 * 通知生成时间戳（毫秒）
 	 * 业务规则：默认取系统当前时间，用于排序和超时判断（超过24小时的通知可丢弃）
+	 * 业务说明：记录通知生成的时间，用于消息排序和过期处理
+	 * 数据格式：毫秒级时间戳
+	 * 使用场景：通知消息排序、过期判断、时间线管理
 	 */
 	@ApiModelProperty(
 			value = "通知生成时间戳（毫秒），默认取当前时间",
