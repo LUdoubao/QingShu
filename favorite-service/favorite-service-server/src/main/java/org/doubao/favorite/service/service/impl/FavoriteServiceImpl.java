@@ -125,23 +125,19 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 			}).collect(Collectors.toList());
 			List<Map<String, Object>> data = quoteServiceClient.getQuotesByIds(quoteIds).getData();
 			Map<Long, Long> countQuotes = countQuotes(quoteIds);
-			LOGGER.info("quoteIds: {}, data: {}", JSON.toJSONString(quoteIds), JSON.toJSONString(data));
+			List<FavoriteContentVo> newList = new ArrayList<>();
 			if (data != null && !data.isEmpty()) {
-				collect.forEach(favoriteVo -> {
-					LOGGER.info("favoriteVo: {}", JSON.toJSONString(favoriteVo));
-					for (Map<String, Object> d : data) {
-						LOGGER.info("d: {}", JSON.toJSONString(d));
-						LOGGER.info("d.getId(): {}, favoriteVo.getQuoteId(): {}", d.get("id"), favoriteVo.getQuoteId());
+				for (Map<String, Object> d : data) {
+					collect.forEach(favoriteVo -> {
 						if (Long.valueOf(d.get("id").toString()).equals(Long.valueOf(favoriteVo.getQuoteId().toString()))) {
-							LOGGER.info("d1: {}", JSON.toJSONString(d));
 							favoriteVo.setQuote(d);
 							favoriteVo.setFavoriteCount(countQuotes.getOrDefault(favoriteVo.getQuoteId(), 0L));
-							break;
+							newList.add(favoriteVo);
 						}
-					}
-				});
-				favoritePage.setRecords(collect);
+					});
+				}
 			}
+			favoritePage.setRecords(newList);
 		}
 		return favoritePage;
 	}
