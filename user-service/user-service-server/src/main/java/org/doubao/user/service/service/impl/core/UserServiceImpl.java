@@ -50,7 +50,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public String uploadAvatar(MultipartFile avatarFile, Long userId) {
 		FileUploadResult result = ossServiceClient.uploadFile(
-				avatarFile).getData();
+				avatarFile, "image").getData();
 		// 更新用户头像URL
 		userMapper.updateUserAvatar(userId, result.getFileKey(), result.getStorageType());
 		clearUserCache(userId);
@@ -60,7 +60,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Override
 	public String uploadBg(MultipartFile file, Long userId) {
 		FileUploadResult result = ossServiceClient.uploadFile(
-				file).getData();
+				file, "image").getData();
 		userMapper.updateUserBg(userId, result.getFileKey(), result.getStorageType());
 		clearUserCache(userId);
 		return result.getAccessUrl();

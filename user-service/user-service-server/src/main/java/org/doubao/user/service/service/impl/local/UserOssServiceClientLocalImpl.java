@@ -16,8 +16,8 @@ public class UserOssServiceClientLocalImpl implements OssServiceClient {
 	@Resource
 	private OssService ossService;
 	@Override
-	public Result<FileUploadResult> uploadFile(MultipartFile file) {
-		return ossService.uploadFile(file, "file");
+	public Result<FileUploadResult> uploadFile(MultipartFile file, String type) {
+		return ossService.uploadFile(file, type);
 	}
 
 	@Override

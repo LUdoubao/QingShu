@@ -16,7 +16,7 @@ public class OssServiceFallback implements OssServiceClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(OssServiceFallback.class);
 
 	@Override
-	public Result<FileUploadResult> uploadFile(MultipartFile file) {
+	public Result<FileUploadResult> uploadFile(MultipartFile file, String type) {
 		LOGGER.error("oss服务uploadFile暂时不可用，触发降级处理");
 		return Result.error("文件上传服务暂时不可用，请稍后重试");
 	}

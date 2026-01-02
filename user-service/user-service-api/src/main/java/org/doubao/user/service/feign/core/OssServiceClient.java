@@ -20,7 +20,8 @@ public interface OssServiceClient {
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	Result<FileUploadResult> uploadFile(
-			@RequestPart("file") MultipartFile file
+			@RequestPart("file") MultipartFile file,
+			@RequestParam("type") String type
 	);
 
 	@GetMapping("/url")
