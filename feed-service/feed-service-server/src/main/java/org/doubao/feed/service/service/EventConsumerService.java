@@ -45,13 +45,8 @@ public class EventConsumerService {
 	 */
 	@RabbitListener(queues = "dynamic.queue", ackMode = "MANUAL")
 	@Transactional(rollbackFor = Exception.class)
-	public void consumeDynamicEvent(@Payload String message, Message amqpMessage, Channel channel) throws IOException {
+	public void consumeDynamicEvent(@Payload BusinessEvent event, Message amqpMessage, Channel channel) throws IOException {
 		try {
-			log.info("[consumeDynamicEvent] 接收事件: {}", message);
-
-			// 解析事件
-			BusinessEvent event = JSON.parseObject(message, BusinessEvent.class);
-
 			// 处理事件
 			handleEvent(event);
 

@@ -397,6 +397,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 					user.getUsername(),
 					dto.getCreatedId()
 			);
+			quoteEventPublisher.pushFanoutFeedPublish(quote);
 		}
 		// 删除审核表数据
 		LambdaQueryWrapper<QuoteVerify> wrapper = new LambdaQueryWrapper<>();
