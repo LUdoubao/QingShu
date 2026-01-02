@@ -141,20 +141,6 @@ public class NotificationServiceImpl implements NotificationService {
 		}
 		UnreadCountDTO unreadCountDTO = new UnreadCountDTO();
 
-		// 总未读数
-		String key = "notification:unread:" + userId;
-		String countStr = redisTemplate.opsForValue().get(key);
-		if (countStr == null) {
-			// 缓存未命中，从数据库加载
-			int count = notificationMapper.selectUnreadCount(userId);
-			redisTemplate.opsForValue().set(key, String.valueOf(count));
-			unreadCountDTO.setUnreadCount(count);
-		} else {
-			// 缓存命中
-			unreadCountDTO.setUnreadCount(Integer.parseInt(countStr));
-		}
-
-
 		// 查询comment通知数
 		LambdaQueryWrapper<Notification> query = new LambdaQueryWrapper<>();
 		query.eq(Notification::getUserId, userId)
