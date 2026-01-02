@@ -20,14 +20,14 @@ spring:
     allow-bean-definition-overriding: true
   data:
     mongodb:
-      host: 192.168.179.130
+      host: 115.191.9.196
       port: 27017
       database: doubao_db
       username: root
       password: MongoDB@123456
       authentication-database: admin
   rabbitmq:
-    host: 192.168.179.130
+    host: 115.191.9.196
     port: 5672
     username: doubao
     password: 123456
@@ -47,12 +47,12 @@ spring:
   application:
     name: doubao-starter
   datasource:
-    url: jdbc:mysql://192.168.179.130:3306/doubao_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://115.191.9.196:3306/doubao_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: Lg101799.
     driver-class-name: com.mysql.cj.jdbc.Driver
   redis:
-    host: 192.168.179.130
+    host: 115.191.9.196
     port: 6379
     password: 123456
     database: 0
@@ -89,7 +89,7 @@ oss:
     bucket-name: doubao-1017
   # 本地存储配置
   local:
-    storage-path: /home/java/doubao/file/uploads
+    storage-path: D:\workspace\doubao\SpringCloudDemo\files\uploads
     base-url: http://localhost/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
