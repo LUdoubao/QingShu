@@ -58,7 +58,7 @@ public class UserTimeline extends BaseDel {
 	 * 动态权重（用于排序）
 	 */
 	@TableField("weight")
-	private Double weight;
+	private Double weight = 0.0;
 
 	public Long getId() {
 		return id;

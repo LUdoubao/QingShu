@@ -31,7 +31,7 @@ public class UserTimelineServiceImpl extends ServiceImpl<UserTimelineMapper, Use
 		for (int i = 0; i < list.size(); i += batchSize) {
 			int end = Math.min(i + batchSize, list.size());
 			List<UserTimeline> batch = list.subList(i, end);
-			this.saveBatch(batch);
+			userTimelineMapper.batchInsertIgnore(batch);
 		}
 	}
 }

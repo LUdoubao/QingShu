@@ -40,4 +40,31 @@
             </foreach>
         </if>
     </select>
+    <insert id="batchInsertIgnore">
+        INSERT IGNORE INTO user_timeline
+        (
+        user_id,
+        event_id,
+        actor_id,
+        event_type,
+        target_id,
+        target_type,
+        event_time,
+        weight
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.userId},
+            #{item.eventId},
+            #{item.actorId},
+            #{item.eventType},
+            #{item.targetId},
+            #{item.targetType},
+            #{item.eventTime},
+            #{item.weight}
+            )
+        </foreach>
+    </insert>
+
 </mapper>

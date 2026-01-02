@@ -28,5 +28,6 @@ public interface UserTimelineMapper extends BaseMapper<UserTimeline> {
 	 * 统计未读动态数量
 	 */
 	long countUnreadTimeline(Long userId, List<Long> actorIds, LocalDateTime lastReadTime);
+	int batchInsertIgnore(@Param("list") List<UserTimeline> list);
 
 }
