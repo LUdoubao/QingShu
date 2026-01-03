@@ -34,7 +34,16 @@
 
     <!-- boolean existsByNickname(String nickname); -->
     <select id="existsByNickname" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM user WHERE nickname = #{nickname})
+        SELECT
+        EXISTS
+        (
+            SELECT 1 FROM user
+            WHERE nickname = #{nickname}
+            <if test = "userId != null">
+                AND id != #{userId}
+            </if>
+        )
+
     </select>
 
 

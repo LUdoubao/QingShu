@@ -21,7 +21,7 @@ public interface UserMapper extends BaseMapper<User> {
 					  @Param("fileKey") String fileKey,
 					  @Param("storageType") String storageType);
 
-	boolean existsByNickname(@Param("nickname") String nickname);
+	boolean existsByNickname(@Param("nickname") String nickname, @Param("userId") Long userId);
 
 	void updateUserPassword(@Param("email") String email, @Param("pwd") String pwd);
 }

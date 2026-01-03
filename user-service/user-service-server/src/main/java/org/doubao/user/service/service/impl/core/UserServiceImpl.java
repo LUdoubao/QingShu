@@ -227,7 +227,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		// 生成昵称
 		String nickname = UserUtil.generateArtisticNickname();
 		// 校验昵称是否已存在
-		if (userMapper.existsByNickname(nickname)) {
+		if (userMapper.existsByNickname(nickname, null)) {
 			// 生成随机数昵称
 			nickname = nickname + new Random().nextInt(1000);
 		}
@@ -272,7 +272,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		User user = new User();
 		if (dto.getNickname() != null && !dto.getNickname().isEmpty()) {
 			// 昵称校验
-			if (userMapper.existsByNickname(dto.getNickname())) {
+			if (userMapper.existsByNickname(dto.getNickname(), dto.getUserId())) {
 				throw new BusinessException(ErrorCode.USER_NICKNAME_EXISTS);
 			}
 		}
