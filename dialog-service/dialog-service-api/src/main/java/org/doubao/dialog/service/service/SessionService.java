@@ -33,7 +33,7 @@ public interface SessionService {
      * @param pageSize 页大小，控制返回记录数量
      * @return 分页会话VO列表，包含未读计数、最后一条消息预览、目标用户信息等
      */
-    Page<SessionVO> getSessionList(Long userId, Integer pageNum, Integer pageSize);
+    Page<SessionVO> getSessionList(Long userId, Integer pageNum, Integer pageSize, Long currentSessionId);
 
     /**
      * 会话置顶/取消置顶
@@ -106,7 +106,7 @@ public interface SessionService {
      * @param userId 用户ID，标识会话创建者
      * @return 用户创建的会话列表
      */
-    List<DialogSession> queryOwnUserSessions(Long userId);
+    List<DialogSession> queryOwnUserSessions(Long userId, Long currentSessionId);
 
     /**
      * 查询用户所有会话列表（包括隐藏的）

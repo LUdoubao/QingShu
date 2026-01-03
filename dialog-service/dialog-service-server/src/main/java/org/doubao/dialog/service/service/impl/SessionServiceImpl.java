@@ -172,14 +172,14 @@ public class SessionServiceImpl implements SessionService {
      * @return 分页的会话列表，包含会话信息和用户信息
      */
     @Override
-    public Page<SessionVO> getSessionList(Long userId, Integer pageNum, Integer pageSize) {
+    public Page<SessionVO> getSessionList(Long userId, Integer pageNum, Integer pageSize, Long currentSessionId) {
         // 1. 校验参数
         if (userId == null || pageNum == null || pageSize == null || pageNum < 1 || pageSize < 1) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         // 2. 核心查询：仅获取当前用户创建的会话（userId=当前用户，未删除，用户间会话）
-        List<DialogSession> ownSessions = queryOwnUserSessions(userId);
+        List<DialogSession> ownSessions = queryOwnUserSessions(userId, currentSessionId);
         if (CollectionUtils.isEmpty(ownSessions)) {
             return new Page<>(pageNum, pageSize, 0); // 无自己创建的会话，返回空分页
         }
@@ -244,12 +244,15 @@ public class SessionServiceImpl implements SessionService {
      * @return 自己创建的会话列表
      */
     @Override
-    public List<DialogSession> queryOwnUserSessions(Long userId) {
+    public List<DialogSession> queryOwnUserSessions(Long userId, Long currentSessionId) {
         LambdaQueryWrapper<DialogSession> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(DialogSession::getUserId, userId) // 仅自己创建的会话
                 .eq(DialogSession::getDeleted, 0)
                 .eq(DialogSession::getSessionType, "USER")
                 .eq(DialogSession::getHidden, 0);
+        if (currentSessionId != null) {
+            queryWrapper.eq(DialogSession::getId, currentSessionId);
+        }
         return sessionMapper.selectList(queryWrapper);
     }
 
@@ -598,7 +601,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public Integer getUnreadCount(Long userId) {
         // 获取所有当前用户会话列表
-        List<DialogSession> sessions = queryOwnUserSessions(userId);
+        List<DialogSession> sessions = queryOwnUserSessions(userId,null);
         if (sessions.isEmpty()) {
             return 0;
         }

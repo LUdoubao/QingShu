@@ -70,14 +70,15 @@ public class SessionController {
     @ApiOperation(value = "查询会话列表", notes = "按“置顶>最后消息时间倒序”排序，返回会话详情")
     public Result<Page<SessionVO>> getSessionList(
             @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
-            @ApiParam(value = "页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize
+            @ApiParam(value = "页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Long currentSessionId
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
 
 
         // 2. 调用Service查询会话列表
-        Page<SessionVO> sessionPage = sessionService.getSessionList(userId, pageNum, pageSize);
+        Page<SessionVO> sessionPage = sessionService.getSessionList(userId, pageNum, pageSize,currentSessionId);
 
         // 3. 返回结果
         return Result.success(sessionPage);
