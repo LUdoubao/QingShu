@@ -674,9 +674,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		// 获取当前用户ID（数据权限：仅统计当前用户的内容）
 		Long userId = UserContext.getUserId();
 
-		// 1. 查询当前用户的所有文章ID（排除已删除的）
+		// 1. 查询当前用户的所有已发布文章ID（排除已删除的）
 		LambdaQueryWrapper<Quote> quoteQuery = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getCreatedId, userId)
+				.eq(Quote::getStatus, 1) // 已发布
 				.eq(Quote::getDeleted, 0) // 未删除
 				.select(Quote::getId); // 仅查询ID，优化性能
 		List<Quote> userQuotes = this.list(quoteQuery);
