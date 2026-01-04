@@ -39,6 +39,9 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 	private UserBlockMapper userBlockMapper;
 	@Override
 	public boolean checkSeePermission(Long targetUserId, Long currentUserId, int seeAccessType) {
+		if (currentUserId.equals(targetUserId)) { // 本人永远有权限
+			return true;
+		}
 		// 检查是否被拉黑
 		Integer count = userBlockMapper.checkBlockRelation(targetUserId, currentUserId);
 		if (count != null && count > 0) {
@@ -72,12 +75,6 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 			case 1: // 公开：所有人
 				return true;
 			case 2: // 仅互关：需判断当前用户与目标用户是否互关
-				if (currentUserId == null) { // 未登录用户无权限
-					return false;
-				}
-				if (currentUserId.equals(targetUserId)) { // 本人永远有权限
-					return true;
-				}
 				// 查询是否互关（A关注B且B关注A）
 				int aFollowsB = relationMapper.existsRelation(
 						currentUserId, targetUserId, RelationType.FOLLOW.getValue()
@@ -87,14 +84,8 @@ public class UserPrivacyServiceImpl implements UserPrivacyService {
 				);
 				return aFollowsB > 0 && bFollowsA > 0;
 			case 3: // 私密：仅本人可看
-				return currentUserId != null && currentUserId.equals(targetUserId);
+				return false;
 			case 4: // 仅关注自己的用户
-				if (currentUserId == null) { // 未登录用户无权限
-					return false;
-				}
-				if (currentUserId.equals(targetUserId)) { // 本人永远有权限
-					return true;
-				}
 				return relationMapper.existsRelation(
 						currentUserId, targetUserId, RelationType.FOLLOW.getValue()
 				) > 0;
