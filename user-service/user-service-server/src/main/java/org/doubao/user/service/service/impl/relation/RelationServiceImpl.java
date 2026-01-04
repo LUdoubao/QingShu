@@ -71,7 +71,7 @@ public class RelationServiceImpl extends ServiceImpl<UserRelationMapper, UserRel
 	private static final String FOLLOWER_CACHE_KEY = "user:followers:%d:page:%d:size:%d";
 	private static final String FOLLOWING_CACHE_KEY = "user:following:%d:page:%d:size:%d";
 	private static final String FOLLOWING_CACHE_KEY_PREFIX = "user:following:%d";
-	private static final String FOLLOWER_CACHE_KEY_PREFIX = "user:followers:%d";
+	private static final String FOLLOWER_CACHE_KEY_PREFIX = "user:follows:%d";
 	private static final int CACHE_TTL_SECONDS = 300; // 缓存5分钟
 
 
