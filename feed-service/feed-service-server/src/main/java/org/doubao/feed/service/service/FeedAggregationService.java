@@ -47,13 +47,20 @@ public class FeedAggregationService {
 	/**
 	 * 聚合用户关注的动态
 	 */
-	public PageResult<DynamicDTO> aggregateUserFeeds(Long userId, int page, int pageSize, int sortType) {
-		// 1. 获取用户关注列表
-		List<Long> followees = getUserFollowees(userId);
-		logger.info("获取用户关注列表：{}", followees);
-		if (followees.isEmpty()) {
-			return new PageResult<>(page, pageSize, 0, Collections.emptyList());
+	public PageResult<DynamicDTO> aggregateUserFeeds(Long userId, Long targetUserId, int page, int pageSize, int sortType) {
+		List<Long> followees = new ArrayList<>();
+		if (targetUserId == null) {
+			// 1. 获取用户关注列表
+			followees = getUserFollowees(userId);
+			logger.info("获取用户关注列表：{}", followees);
+			if (followees.isEmpty()) {
+				return new PageResult<>(page, pageSize, 0, Collections.emptyList());
+			}
+		} else {
+			// 获取指定用户动态
+			followees.add(targetUserId);
 		}
+
 
 		// 2. 区分普通用户和大V
 		Map<Boolean, List<Long>> followeeGroup = groupFolloweesByVip(followees);

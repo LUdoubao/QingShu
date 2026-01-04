@@ -35,6 +35,8 @@ public class FeedController {
 	 */
 	@GetMapping("/list")
 	public Result<PageResult<DynamicDTO>> getFeedList(
+			@RequestParam(required = false) Long targetUserId,
+
 			@RequestParam(defaultValue = "1") int page,
 
 			@RequestParam(defaultValue = "10") int pageSize,
@@ -48,7 +50,7 @@ public class FeedController {
 			}
 
 			// 获取动态列表
-			PageResult<DynamicDTO> feedPage = aggregationService.aggregateUserFeeds(userId, page, pageSize, sortType);
+			PageResult<DynamicDTO> feedPage = aggregationService.aggregateUserFeeds(userId, targetUserId, page, pageSize, sortType);
 
 			// 应用过滤规则
 			// List<DynamicDTO> filtered = filterService.applyFilter(userId, feedPage.getList());
