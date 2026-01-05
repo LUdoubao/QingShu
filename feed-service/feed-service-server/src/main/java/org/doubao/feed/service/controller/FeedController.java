@@ -1,11 +1,12 @@
 package org.doubao.feed.service.controller;
 
-import io.swagger.annotations.Tag;
 import org.doubao.feed.service.model.dto.DynamicDTO;
 import org.doubao.feed.service.model.dto.FilterSettingDTO;
+import org.doubao.feed.service.model.dto.UpdateValidDto;
 import org.doubao.feed.service.service.FeedAggregationService;
 import org.doubao.feed.service.service.FeedFilterService;
 import org.doubao.feed.service.service.UnreadService;
+import org.doubao.feed.service.service.UserTimelineService;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.PageResult;
@@ -16,7 +17,6 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/feed")
@@ -29,6 +29,18 @@ public class FeedController {
 	private UnreadService unreadService;
 	@Resource
 	private FeedFilterService filterService;
+	@Resource
+	private UserTimelineService userTimelineService;
+
+	/**
+	 * 更新动态流状态
+	 */
+	@PostMapping("/update-status")
+	public Result<Void> updateFeedStatus(
+			@RequestBody UpdateValidDto updateValidDto) {
+		userTimelineService.updateValid(updateValidDto);
+		return Result.success();
+	}
 
 	/**
 	 * 获取动态流列表

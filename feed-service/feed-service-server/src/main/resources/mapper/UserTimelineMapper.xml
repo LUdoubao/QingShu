@@ -13,6 +13,7 @@
         WHERE
         user_id = #{userId}
         AND
+        is_valid = 1 AND
         deleted = 0
         <if test="actorIds != null and actorIds.size() > 0">
             AND actor_id IN
@@ -33,6 +34,9 @@
         user_timeline
         WHERE
         user_id = #{userId}
+        AND
+        is_valid = 1 AND
+        deleted = 0
         <if test="actorIds != null and actorIds.size() > 0">
             AND actor_id IN
             <foreach item="actorId" collection="actorIds" separator="," open="(" close=")" index="">
@@ -50,7 +54,8 @@
         target_id,
         target_type,
         event_time,
-        weight
+        weight,
+        is_valid
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
@@ -62,7 +67,8 @@
             #{item.targetId},
             #{item.targetType},
             #{item.eventTime},
-            #{item.weight}
+            #{item.weight},
+            #{item.isValid}
             )
         </foreach>
     </insert>

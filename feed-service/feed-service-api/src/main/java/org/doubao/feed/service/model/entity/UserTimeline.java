@@ -59,6 +59,20 @@ public class UserTimeline extends BaseDel {
 	 */
 	@TableField("weight")
 	private Double weight = 0.0;
+	/**
+	 * 失效状态标记：0-失效（无效数据），1-有效（默认值）
+	 * 用于逻辑区分有效动态和失效动态，不物理删除数据
+	 */
+	@TableField("is_valid")
+	private Integer isValid = 1;
+
+	public Integer getIsValid() {
+		return isValid;
+	}
+
+	public void setIsValid(Integer isValid) {
+		this.isValid = isValid;
+	}
 
 	public Long getId() {
 		return id;
