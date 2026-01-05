@@ -120,15 +120,18 @@ public class QuoteController {
 		return Result.success(quoteService.queryStatusCount());
 	}
 	@GetMapping("/queryContentOverview")
-	public Result<ContentOverviewVo> queryContentOverview() {
-		return Result.success(quoteService.queryContentOverview());
+	public Result<ContentOverviewVo> queryContentOverview(
+			@RequestParam(required = false) Long id
+	) {
+		return Result.success(quoteService.queryContentOverview(id));
 	}
 
 	@GetMapping("/queryContentTrend")
 	public Result<List<ContentTrendVo>> queryContentTrend(
+			@RequestParam(required = false) Long id,
 			@RequestParam int days,  // 最近天数：7/14/30
 			@RequestParam(required = false) List<String> metrics) {
-		return Result.success(quoteService.queryContentTrend(days, metrics));
+		return Result.success(quoteService.queryContentTrend(id, days, metrics));
 	}
 
 	@PostMapping("/offOrOnShelf")

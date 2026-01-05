@@ -702,23 +702,27 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public ContentOverviewVo queryContentOverview() {
+	public ContentOverviewVo queryContentOverview(Long id) {
 		// 获取当前用户ID（数据权限：仅统计当前用户的内容）
 		Long userId = UserContext.getUserId();
-
-		// 1. 查询当前用户的所有已发布文章ID（排除已删除的）
-		LambdaQueryWrapper<Quote> quoteQuery = new LambdaQueryWrapper<Quote>()
-				.eq(Quote::getCreatedId, userId)
-				.eq(Quote::getStatus, 1) // 已发布
-				.eq(Quote::getDeleted, 0) // 未删除
-				.select(Quote::getId); // 仅查询ID，优化性能
-		List<Quote> userQuotes = this.list(quoteQuery);
-		List<Long> quoteIds = userQuotes.stream()
-				.map(Quote::getId)
-				.collect(Collectors.toList());
+		List<Long> quoteIds;
+		if (id == null) {
+			// 1. 查询当前用户的所有已发布文章ID（排除已删除的）
+			LambdaQueryWrapper<Quote> quoteQuery = new LambdaQueryWrapper<Quote>()
+					.eq(Quote::getCreatedId, userId)
+					.eq(Quote::getStatus, 1) // 已发布
+					.eq(Quote::getDeleted, 0) // 未删除
+					.select(Quote::getId); // 仅查询ID，优化性能
+			List<Quote> userQuotes = this.list(quoteQuery);
+			quoteIds = userQuotes.stream()
+					.map(Quote::getId)
+					.collect(Collectors.toList());
+		} else {
+			quoteIds = Collections.singletonList(id);
+		}
 
 		// 2. 计算总文章数
-		long totalArticles = userQuotes.size();
+		long totalArticles = quoteIds.size();
 
 		// 3. 计算总浏览量（通过ViewCountClient获取）
 		long totalViews = 0;
@@ -768,7 +772,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public List<ContentTrendVo> queryContentTrend(int days, List<String> metrics) {
+	public List<ContentTrendVo> queryContentTrend(Long id, int days, List<String> metrics) {
 		// 1. 参数校验
 		if (days <= 0) {
 			throw new BusinessException(ErrorCode.CONTENT_STATISTICS_DAYS_INVALID);
@@ -791,7 +795,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		LocalDate startDate = endDate.minusDays(days - 1); // 起始日期 = 今天 - (天数-1)
 		List<LocalDate> dateList = generateDateList(startDate, endDate); // 生成连续日期列表
 
-		List<Long> quoteIds = getQuoteIdsInDateRange(userId, startDate, endDate);
+		List<Long> quoteIds = id == null ? getQuoteIdsInDateRange(userId) : Collections.singletonList(id);
 		if (quoteIds.isEmpty()) {
 			// 无文章数据时，返回全0趋势
 			return dateList.stream().map(date -> {
@@ -943,7 +947,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	/**
 	 * 获取指定日期范围内用户创建的文章ID（未删除）
 	 */
-	private List<Long> getQuoteIdsInDateRange(Long userId, LocalDate startDate, LocalDate endDate) {
+	private List<Long> getQuoteIdsInDateRange(Long userId) {
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.eq(Quote::getCreatedId, userId) // 仅当前用户的文章
 				.eq(Quote::getDeleted, 0) // 未删除

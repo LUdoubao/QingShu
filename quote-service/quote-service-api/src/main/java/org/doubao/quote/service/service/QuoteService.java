@@ -155,7 +155,7 @@ public interface QuoteService extends IService<Quote> {
 	 * 查询内容概览统计
 	 * @return 内容概览视图对象
 	 */
-	ContentOverviewVo queryContentOverview();
+	ContentOverviewVo queryContentOverview(Long id);
 
 	/**
 	 * 查询内容趋势统计
@@ -163,7 +163,7 @@ public interface QuoteService extends IService<Quote> {
 	 * @param metrics 统计指标列表
 	 * @return 内容趋势视图对象列表
 	 */
-	List<ContentTrendVo> queryContentTrend(int days, List<String> metrics);
+	List<ContentTrendVo> queryContentTrend(Long id, int days, List<String> metrics);
 
 	/**
 	 * 获取引文更新详情
