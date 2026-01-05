@@ -10,4 +10,9 @@ public interface UserTimelineService extends IService<UserTimeline> {
 	void batchInsert(List<UserTimeline> list);
 
 	void updateValid(UpdateValidDto updateValidDto);
+
+	/**
+	 * 清理无效的动态数据
+	 */
+	int cleanupInvalidTimelines();
 }

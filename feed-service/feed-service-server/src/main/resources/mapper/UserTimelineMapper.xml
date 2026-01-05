@@ -72,5 +72,17 @@
             )
         </foreach>
     </insert>
+    
+    <!-- 清理无效的动态数据 -->
+    <delete id="cleanupInvalidTimelines">
+        DELETE FROM user_timeline WHERE is_valid = 0
+    </delete>
+    
+    <!-- 统计无效的动态数据数量 -->
+    <select id="countInvalidTimelines" resultType="long">
+        SELECT COUNT(*) 
+        FROM user_timeline 
+        WHERE is_valid = 0
+    </select>
 
 </mapper>

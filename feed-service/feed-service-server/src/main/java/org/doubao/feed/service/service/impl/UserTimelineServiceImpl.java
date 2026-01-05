@@ -54,4 +54,20 @@ public class UserTimelineServiceImpl extends ServiceImpl<UserTimelineMapper, Use
 		this.update(wrapper);
 		logger.info("更新用户时间线成功，用户id：{}，事件id：{}，事件类型：{}，是否有效：{}", actorId, targetId, targetType, isValid);
 	}
+
+	@Override
+	@Transactional(rollbackFor = Exception.class)
+	public int cleanupInvalidTimelines() {
+		// 先统计无效记录数量
+		long countToDelete = userTimelineMapper.countInvalidTimelines();
+		if (countToDelete == 0) {
+			logger.info("无需清理，没有无效的动态数据");
+			return 0;
+		}
+		
+		// 物理删除is_valid为0的记录
+		int deletedCount = userTimelineMapper.cleanupInvalidTimelines();
+		logger.info("清理无效动态数据完成，尝试删除 {} 条记录，实际删除 {} 条记录", countToDelete, deletedCount);
+		return deletedCount;
+	}
 }

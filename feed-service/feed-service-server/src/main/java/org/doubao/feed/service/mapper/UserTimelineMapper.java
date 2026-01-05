@@ -30,4 +30,13 @@ public interface UserTimelineMapper extends BaseMapper<UserTimeline> {
 	long countUnreadTimeline(Long userId, List<Long> actorIds, LocalDateTime lastReadTime);
 	int batchInsertIgnore(@Param("list") List<UserTimeline> list);
 
+	/**
+	 * 清理无效的动态数据（is_valid = 0）
+	 */
+	int cleanupInvalidTimelines();
+	
+	/**
+	 * 统计无效的动态数据数量（is_valid = 0）
+	 */
+	long countInvalidTimelines();
 }
