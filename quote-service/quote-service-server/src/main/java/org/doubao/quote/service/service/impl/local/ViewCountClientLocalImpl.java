@@ -1,4 +1,4 @@
-package org.doubao.quote.service.service.impl;
+package org.doubao.quote.service.service.impl.local;
 
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.feign.ViewCountClient;

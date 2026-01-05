@@ -10,12 +10,10 @@ import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.threadpool.CommonTaskExecutor;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
-import org.doubao.quote.service.dto.PageDto;
-import org.doubao.quote.service.dto.QueryDataPageDto;
-import org.doubao.quote.service.dto.QuoteDTO;
-import org.doubao.quote.service.dto.QuoteUpdateDto;
+import org.doubao.quote.service.dto.*;
 import org.doubao.quote.service.duplicate.check.CitationCheckService;
 import org.doubao.quote.service.duplicate.check.DecisionEngine;
 import org.doubao.quote.service.entity.*;
@@ -29,6 +27,7 @@ import org.doubao.quote.service.vo.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +52,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Resource
 	private QuoteMapper quoteMapper;
 
+	@Autowired
+	private CommonTaskExecutor taskExecutor;
 	@Resource
 	private QuoteVerifyService quoteVerifyService;
 	@Resource
@@ -68,6 +69,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	private CommentClient commentClient;
 	@Resource
 	 private FavoriteClient favoriteClient;
+	@Resource
+	private FeedClient feedClient;
 	@Resource
 	private CitationCheckService citationCheckService;
 	@Override
@@ -137,11 +140,36 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		if (quoteIds == null || quoteIds.isEmpty()) {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
+		Long userId = UserContext.getUserId();
 		this.removeByIds(quoteIds);
 		quoteTagMapper.deleteByQuoteIds(quoteIds);
+		// 异步失效动态流数据
+		for (Long quoteId : quoteIds) {
+			noValidFeed(userId, quoteId);
+		}
 		return Result.success(ResultCode.SUCCESS.getMessage());
 	}
 
+	/**
+	 * 用户动态流更新失效状态
+	 * @param actorId 发起用户
+	 * @param quoteId 目标id
+	 */
+	private void noValidFeed (Long actorId, Long quoteId) {
+		taskExecutor.asyncExecute(() -> {
+			UpdateValidDto  updateValidDto = new UpdateValidDto();
+			updateValidDto.setActorId(actorId);
+			updateValidDto.setTargetId(quoteId);
+			updateValidDto.setTargetType("quote");
+			updateValidDto.setIsValid(0);
+			feedClient.updateFeedStatus(updateValidDto);
+			return null;
+		}).whenComplete((v, t) -> {
+			if (t != null) {
+				LOGGER.error("异步更新动态流数据失败", t);
+			}
+		});
+	}
 	@Override
 	public Result<String> updateQuote(QuoteUpdateDto dto) {
 		UserLoginVo userInfo = UserContext.getUser();
@@ -594,6 +622,10 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		updateWrapper.set(Quote::getStatus, status)
 				.eq(Quote::getId, quoteId);
 		this.update(updateWrapper);
+		if (QuoteStatus.noList().contains(status)) {
+			Long userId = UserContext.getUserId();
+			noValidFeed(userId, quoteId);
+		}
 	}
 
 	@Override
@@ -827,9 +859,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		if (status == null || QuoteStatus.getQuoteStatus(status) == null) {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
+		Long userId = UserContext.getUserId();
 		QuoteStatus quoteStatus = QuoteStatus.getQuoteStatus(status);
 		if (Objects.requireNonNull(quoteStatus) == QuoteStatus.OFF_SHELF) {// 下架
 			quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
+			noValidFeed(userId,quoteId);
 		} else {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}

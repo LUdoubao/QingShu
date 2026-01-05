@@ -1,5 +1,8 @@
 package org.doubao.quote.service.enums;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 状态，0:审核中1:已发布 2:屏蔽 3:草稿 4:未通过 5:下架
  */
@@ -30,5 +33,13 @@ public enum QuoteStatus {
 			}
 		}
 		return null;
+	}
+
+	public static List<Integer> noList() {
+		List<Integer> noList = new ArrayList<>();
+		noList.add(AUDITING.code);
+		noList.add(BLOCKED.code);
+		noList.add(OFF_SHELF.code);
+		return noList;
 	}
 }
