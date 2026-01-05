@@ -54,6 +54,7 @@ public class CommentQuoteClientLocalImpl implements QuoteClient {
 			quoteVo.setSource(data.getSource());
 			quoteVo.setCategoryName(data.getCategoryName());
 			quoteVo.setCategoryId(data.getCategoryId());
+			quoteVo.setCreatedId(data.getCreatedId());
 		}
 		return quoteVo;
 	}
