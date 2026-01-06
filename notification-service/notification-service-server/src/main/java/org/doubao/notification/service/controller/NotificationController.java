@@ -1,7 +1,7 @@
 package org.doubao.notification.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import lombok.RequiredArgsConstructor;
+
 import org.doubao.mall.common.entity.Result;
 import org.doubao.notification.service.dto.NotificationDTO;
 import org.doubao.notification.service.dto.NotificationQueryDto;
@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/notifications")
-@RequiredArgsConstructor
+
 public class NotificationController {
 
 	@Resource

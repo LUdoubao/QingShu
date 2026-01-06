@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 import java.time.LocalDate;
 
@@ -14,7 +14,7 @@ import java.time.LocalDate;
  * 3. 为后台管理界面提供灵活的对话查询能力
  * 业务说明：定义对话查询的筛选条件，用于管理员对用户对话进行检索和管理
  */
-@ApiModel(description = "对话查询条件对象，支持按状态、用户、时间范围等筛选")
+//@ApiModel(description = "对话查询条件对象，支持按状态、用户、时间范围等筛选")
 public class DialogQuery {
 
 	/**
@@ -28,13 +28,6 @@ public class DialogQuery {
 	 * 数据校验：可选参数，传null时查询所有状态的对话
 	 * 使用场景：管理员按状态筛选对话，优先处理待跟进对话
 	 */
-	@ApiModelProperty(
-			value = "对话状态筛选条件（0-活跃，1-已解决，2-待跟进）",
-			required = false,
-			example = "0",
-			allowableValues = "0,1,2",
-			notes = "传null时查询所有状态的对话记录"
-		)
 	private Integer status;
 
 	/**
@@ -46,12 +39,6 @@ public class DialogQuery {
 	 * 数据校验：可选参数，传null时查询所有用户的对话
 	 * 使用场景：管理员查询特定用户的历史对话记录
 	 */
-	@ApiModelProperty(
-			value = "用户ID筛选条件",
-			required = false,
-			example = "123456",
-			notes = "传null时查询所有用户对话记录"
-		)
 	private Long userId;
 
 	/**
@@ -64,12 +51,6 @@ public class DialogQuery {
 	 * 数据校验：可选参数，传null时不进行时间范围筛选
 	 * 使用场景：管理员查询指定时间范围内的对话记录
 	 */
-	@ApiModelProperty(
-			value = "查询开始时间（YYYY-MM-DD）",
-			required = false,
-			example = "2024-01-01",
-			notes = "需与endTime配合使用，仅当两者都非空时生效"
-		)
 	private LocalDate startTime;
 
 	/**
@@ -82,12 +63,6 @@ public class DialogQuery {
 	 * 数据校验：可选参数，传null时不进行时间范围筛选
 	 * 使用场景：管理员查询指定时间范围内的对话记录
 	 */
-	@ApiModelProperty(
-			value = "查询结束时间（YYYY-MM-DD）",
-			required = false,
-			example = "2024-01-31",
-			notes = "需与startTime配合使用，仅当两者都非空时生效"
-		)
 	private LocalDate endTime;
 
 	/**
@@ -100,12 +75,6 @@ public class DialogQuery {
 	 * 数据校验：可选参数，传null或空字符串时不进行关键词筛选
 	 * 使用场景：管理员通过关键词搜索特定内容的对话记录
 	 */
-	@ApiModelProperty(
-			value = "关键词搜索条件（在对话内容中模糊匹配）",
-			required = false,
-			example = "问题解决",
-			notes = "传null或空字符串时不进行关键词筛选，最大支持50字符"
-		)
 	private String keyword;
 
 	public Integer getStatus() {

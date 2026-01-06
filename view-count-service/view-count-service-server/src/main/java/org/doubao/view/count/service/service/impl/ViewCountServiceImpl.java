@@ -3,7 +3,7 @@ package org.doubao.view.count.service.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import lombok.extern.slf4j.Slf4j;
+
 import org.doubao.mall.common.util.ConvertUtil;
 import org.doubao.view.count.service.dto.ViewRecordDTO;
 import org.doubao.view.count.service.entity.ContentView;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
-@Slf4j
+
 public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, ContentView> implements ViewCountService {
 
 	private static final Logger log = LoggerFactory.getLogger(ViewCountServiceImpl.class);

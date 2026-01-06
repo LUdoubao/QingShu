@@ -1,6 +1,6 @@
 package org.doubao.dialog.service.entity;
 
-import lombok.Data;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 

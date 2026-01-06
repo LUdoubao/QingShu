@@ -1,6 +1,6 @@
 package org.doubao.dialog.service.vo;
 
-import lombok.Data;
+
 import org.doubao.dialog.service.entity.DialogSession;
 
 import java.time.LocalDateTime;

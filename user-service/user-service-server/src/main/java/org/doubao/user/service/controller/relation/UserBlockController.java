@@ -1,6 +1,6 @@
 package org.doubao.user.service.controller.relation;
 
-import io.swagger.annotations.ApiOperation;
+
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.PageResult;
@@ -28,7 +28,7 @@ public class UserBlockController {
 	 * 拉黑用户
 	 */
 	@PostMapping("/block")
-	@ApiOperation("拉黑用户")
+	//@ApiOperation("拉黑用户")
 	public Result<Void> blockUser(@Valid @RequestBody UserBlockReq req) {
 		Long userId = UserContext.getUserId(); // 从上下文获取当前用户ID
 		userBlockService.blockUser(userId, req.getTargetUserId());
@@ -39,7 +39,7 @@ public class UserBlockController {
 	 * 解除拉黑
 	 */
 	@PostMapping("/unblock")
-	@ApiOperation("解除拉黑")
+	//@ApiOperation("解除拉黑")
 	public Result<Void> unblockUser(@Valid @RequestBody UserBlockReq req) {
 		Long userId = UserContext.getUserId();
 		userBlockService.unblockUser(userId, req.getTargetUserId());
@@ -65,7 +65,7 @@ public class UserBlockController {
 	 * 检查是否被拉黑
 	 */
 	@GetMapping("/check")
-	@ApiOperation("检查是否被拉黑")
+	//@ApiOperation("检查是否被拉黑")
 	public Result<Boolean> checkIsBlocked(@RequestParam Long targetUserId) {
 		Long userId = UserContext.getUserId();
 		boolean isBlocked = userBlockService.checkIsBlocked(userId, targetUserId);

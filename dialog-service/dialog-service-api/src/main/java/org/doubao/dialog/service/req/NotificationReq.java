@@ -1,15 +1,11 @@
 package org.doubao.dialog.service.req;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import org.doubao.dialog.service.vo.MessageVO;
-
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * 消息通知请求参数对象
@@ -19,7 +15,7 @@ import java.io.Serializable;
  * 核心作用：统一通知数据格式，支持私信通知和系统通知两种类型
  * 业务说明：定义消息通知的请求参数，包含通知类型、目标用户、通知内容等必要信息
  */
-@ApiModel(description = "消息通知请求参数，支持私信通知和系统通知")
+//@ApiModel(description = "消息通知请求参数，支持私信通知和系统通知")
 public class NotificationReq implements Serializable {
 	private static final long serialVersionUID = 1L; // 序列化版本号，确保MQ传输兼容性
 
@@ -36,12 +32,6 @@ public class NotificationReq implements Serializable {
 	 * 使用场景：确定通知的处理方式和内容结构
 	 */
 	@NotBlank(message = "通知类型不能为空，请选择NOTIFY_PRIVATE_MSG或NOTIFY_SYSTEM")
-	@ApiModelProperty(
-			value = "通知类型：NOTIFY_PRIVATE_MSG（私信通知）、NOTIFY_SYSTEM（系统通知）",
-			required = true,
-			example = "NOTIFY_PRIVATE_MSG",
-			allowableValues = "NOTIFY_PRIVATE_MSG,NOTIFY_SYSTEM"
-	)
 	private String notifyType;
 
 	/**
@@ -52,12 +42,6 @@ public class NotificationReq implements Serializable {
 	 * 使用场景：确定通知消息的接收目标
 	 */
 	@NotNull(message = "目标用户ID不能为空")
-	@ApiModelProperty(
-			value = "通知接收者用户ID",
-			required = true,
-			example = "123456",
-			notes = "需确保用户ID在user-service中已注册"
-	)
 	private Long targetUserId;
 
 	/**
@@ -67,12 +51,6 @@ public class NotificationReq implements Serializable {
 	 * 数据格式：毫秒级时间戳
 	 * 使用场景：通知消息排序、过期判断、时间线管理
 	 */
-	@ApiModelProperty(
-			value = "通知生成时间戳（毫秒），默认取当前时间",
-			required = false,
-			example = "1725788800000",
-			notes = "未传递时后端自动填充System.currentTimeMillis()"
-	)
 	private Long createTime = System.currentTimeMillis();
 
 	// ========================= 私信通知专用字段 =========================
@@ -82,11 +60,6 @@ public class NotificationReq implements Serializable {
 	 * - 当notifyType=NOTIFY_PRIVATE_MSG时，此字段为必填
 	 * - 包含完整的消息信息（消息ID、发送者、内容、时间等），用于用户上线后补推
 	 */
-	@ApiModelProperty(
-			value = "私信消息VO（仅NOTIFY_PRIVATE_MSG类型需传递）",
-			required = false,
-			notes = "需包含msgId、senderId、content、sendTime等核心字段"
-	)
 	private MessageVO messageVO;
 
 	// ========================= 系统通知专用字段 =========================
@@ -95,12 +68,6 @@ public class NotificationReq implements Serializable {
 	 * 枚举约束：SESSION_DELETED（会话被删除）、USER_BLOCKED（用户被拉黑）、FRIEND_APPLY（好友申请）等
 	 * 业务规则：当notifyType=NOTIFY_SYSTEM时，此字段为必填
 	 */
-	@ApiModelProperty(
-			value = "系统通知子类型（仅NOTIFY_SYSTEM类型需传递）",
-			required = false,
-			example = "SESSION_DELETED",
-			notes = "需与前端约定枚举值，确保通知类型一致性"
-	)
 	private String systemNotifyType;
 
 	/**
@@ -109,12 +76,6 @@ public class NotificationReq implements Serializable {
 	 * - 当notifyType=NOTIFY_SYSTEM时，此字段为必填
 	 * - 支持纯文本或JSON格式（如包含会话ID、操作人等扩展信息）
 	 */
-	@ApiModelProperty(
-			value = "系统通知内容（仅NOTIFY_SYSTEM类型需传递）",
-			required = false,
-			example = "您的会话【工作群聊】已被管理员删除",
-			notes = "复杂通知可传递JSON字符串，如{\"sessionId\":123,\"operatorId\":456}"
-	)
 	private String systemNotifyContent;
 
 	/**
@@ -123,12 +84,6 @@ public class NotificationReq implements Serializable {
 	 * - 可选字段，关联业务实体ID（如会话ID、好友申请ID）
 	 * - 用于前端跳转（如点击通知进入对应会话）
 	 */
-	@ApiModelProperty(
-			value = "系统通知关联ID（可选，如会话ID、好友申请ID）",
-			required = false,
-			example = "789",
-			notes = "前端可通过此ID实现通知跳转功能"
-	)
 	private Long systemNotifyRelateId;
 
 
@@ -140,7 +95,7 @@ public class NotificationReq implements Serializable {
 	 */
 	public boolean validate() {
 		// 1. 通用字段校验（已通过JSR380注解校验，此处补充非空判断）
-		if (StrUtil.isBlank(notifyType) || ObjectUtil.isNull(targetUserId)) {
+		if (notifyType.isEmpty()|| Objects.isNull(targetUserId)) {
 			return false;
 		}
 
@@ -148,10 +103,10 @@ public class NotificationReq implements Serializable {
 		switch (notifyType) {
 			case "NOTIFY_PRIVATE_MSG":
 				// 私信通知：必须包含messageVO，且messageVO需非空
-				return ObjectUtil.isNotNull(messageVO) && StrUtil.isNotBlank(messageVO.getId());
+				return !Objects.isNull(messageVO) && !messageVO.getId().isEmpty();
 			case "NOTIFY_SYSTEM":
 				// 系统通知：必须包含子类型和内容
-				return StrUtil.isNotBlank(systemNotifyType) && StrUtil.isNotBlank(systemNotifyContent);
+				return !systemNotifyType.isEmpty()&& !systemNotifyContent.isEmpty();
 			default:
 				// 未知通知类型
 				return false;

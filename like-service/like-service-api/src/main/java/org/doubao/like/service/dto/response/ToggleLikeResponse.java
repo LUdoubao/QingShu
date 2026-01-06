@@ -1,14 +1,14 @@
 package org.doubao.like.service.dto.response;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 
 /**
  * 点赞操作响应DTO
  * <p>
  * 包含点赞/取消点赞操作的结果状态和最新数据
  */
-@ApiModel(description = "点赞操作响应结果")
+//@ApiModel(description = "点赞操作响应结果")
 public class ToggleLikeResponse {
 
 	/**
@@ -17,12 +17,7 @@ public class ToggleLikeResponse {
 	 * true: 操作已成功执行
 	 * false: 操作失败（需结合错误信息处理）
 	 */
-	@ApiModelProperty(
-			value = "操作状态",
-			required = true,
-			example = "true",
-			notes = "表示操作是否成功执行"
-	)
+
 	private Boolean success;
 
 	/**
@@ -32,13 +27,6 @@ public class ToggleLikeResponse {
 	 * - "like": 表示执行的是点赞操作
 	 * - "cancel": 表示执行的是取消点赞操作
 	 */
-	@ApiModelProperty(
-			value = "动作类型",
-			required = true,
-			allowableValues = "like, cancel",
-			example = "like",
-			notes = "标识实际执行的是点赞还是取消操作"
-	)
 	private String action;
 
 	/**
@@ -46,12 +34,6 @@ public class ToggleLikeResponse {
 	 * <p>
 	 * 操作完成后该实体的最新点赞数
 	 */
-	@ApiModelProperty(
-			value = "最新点赞数",
-			required = true,
-			example = "42",
-			notes = "操作完成后实体的总点赞数"
-	)
 	private Long currentCount;
 
 	/**
@@ -59,11 +41,6 @@ public class ToggleLikeResponse {
 	 * <p>
 	 * 用于传递额外的操作信息（如错误原因等）
 	 */
-	@ApiModelProperty(
-			value = "附加信息",
-			example = "操作成功",
-			notes = "额外的操作状态说明"
-	)
 	private String message;
 
 	public Boolean getSuccess() {

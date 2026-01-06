@@ -1,7 +1,7 @@
 package org.doubao.comment.service.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ import java.util.List;
  * 用于客户端批量查询多个实体的点赞状态和计数
  * 支持同时查询不同类型的实体（如内容和评论）的点赞状态
  */
-@ApiModel(description = "批量获取点赞状态请求参数")
+//@ApiModel(description = "批量获取点赞状态请求参数")
 public class BatchLikeStatusRequest {
 
 	/**
@@ -24,7 +24,7 @@ public class BatchLikeStatusRequest {
 	 * 必须为非空值
 	 */
 	@NotNull(message = "用户ID不能为空")
-	@ApiModelProperty(value = "用户ID", required = true, example = "123456")
+	//@ApiModelProperty(value = "用户ID", required = true, example = "123456")
 	private Long userId;
 
 	/**
@@ -52,11 +52,6 @@ public class BatchLikeStatusRequest {
 	 */
 	@Valid
 	@NotNull(message = "实体列表不能为空")
-	@ApiModelProperty(
-			value = "待查询的实体列表",
-			required = true,
-			example = "[{\"entityType\":\"CONTENT\",\"entityId\":1},{\"entityType\":\"COMMENT\",\"entityId\":2}]"
-	)
 	private List<EntityRequest> entities;
 
 	public @NotNull(message = "用户ID不能为空") Long getUserId() {
@@ -116,7 +111,7 @@ public class BatchLikeStatusRequest {
 	 * <p>
 	 * 封装单个实体的查询参数，包括实体类型和实体ID
 	 */
-	@ApiModel(description = "单个实体查询参数")
+	//@ApiModel(description = "单个实体查询参数")
 	public static class EntityRequest {
 
 		/**
@@ -127,12 +122,6 @@ public class BatchLikeStatusRequest {
 		 * - 1: 评论
 		 */
 		@NotNull(message = "实体类型不能为空")
-		@ApiModelProperty(
-				value = "实体类型",
-				required = true,
-				allowableValues = "0, 1",
-				example = "1"
-		)
 		private int entityType;
 
 		/**
@@ -141,7 +130,7 @@ public class BatchLikeStatusRequest {
 		 * 对应内容或评论的唯一标识，必须为非空字符串
 		 */
 		@NotNull(message = "实体ID不能为空")
-		@ApiModelProperty(value = "实体ID", required = true, example = "1")
+		//@ApiModelProperty(value = "实体ID", required = true, example = "1")
 		private String entityId;
 
 		public EntityRequest() {

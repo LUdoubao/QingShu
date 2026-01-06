@@ -1,6 +1,6 @@
 package org.doubao.share.service.controller;
 
-import io.swagger.annotations.ApiOperation;
+
 import org.doubao.mall.common.entity.Result;
 import org.doubao.share.service.dto.ShareVerifyDTO;
 import org.doubao.share.service.entity.ShareLink;
@@ -27,14 +27,14 @@ public class ShareLinkPublicController {
 	private RecordService recordService;
 
 	@GetMapping("/verify")
-	@ApiOperation("验证分享链接访问权限")
+	//@ApiOperation("验证分享链接访问权限")
 	public Result<VerifyResultVO> verifyShareLink(ShareVerifyDTO dto, HttpServletRequest request) {
 		VerifyResultVO result = verifyService.verifyShareLink(dto, request);
 		return Result.success(result);
 	}
 
 	@GetMapping("/detail")
-	@ApiOperation("查询引文外链")
+	//@ApiOperation("查询引文外链")
 	public Result<ShareLink> getShareLinkByQuoteId(
 			@RequestParam String shareUrl) {
 		ShareLink result = linkService.getShareLinkByUrl(shareUrl);

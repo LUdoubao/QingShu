@@ -2,8 +2,8 @@ package org.doubao.dialog.service.controller;
 
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
+
 import org.doubao.dialog.service.dto.MessageDTO;
 import org.doubao.dialog.service.dto.MessageRequest;
 import org.doubao.dialog.service.service.MessageService;
@@ -23,7 +23,7 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/dialog/ai")
-@Api(tags = "对话消息接口")
+//@Api(tags = "对话消息接口")
 public class AIMessageController {
 
 	@Autowired
@@ -39,7 +39,7 @@ public class AIMessageController {
 	 * 业务流程：接收请求→调用AI服务→返回AI回复
 	 */
 	@PostMapping("/message")
-	@ApiOperation("发送消息到AI助手")
+	//@ApiOperation("发送消息到AI助手")
 	public ResponseEntity<MessageDTO> sendMessage(@Valid @RequestBody MessageRequest request) {
 		MessageDTO response = messageService.handleUserMessage(request);
 		return ResponseEntity.ok(response);
@@ -57,7 +57,7 @@ public class AIMessageController {
 	 * 业务流程：参数校验→查询AI对话历史→返回分页结果
 	 */
 	@GetMapping("/history")
-	@ApiOperation("获取用户AI对话历史")
+	//@ApiOperation("获取用户AI对话历史")
 	public ResponseEntity<IPage<DialogVO>> getDialogHistory(
 			@RequestParam(required = false) Long userId,
 			@RequestParam(defaultValue = "1") int pageNum,
@@ -76,7 +76,7 @@ public class AIMessageController {
 	 * 业务流程：参数校验→查询对话详情→返回结果
 	 */
 	@GetMapping("/{dialogId}")
-	@ApiOperation("获取AI对话详情")
+	//@ApiOperation("获取AI对话详情")
 	public ResponseEntity<DialogVO> getDialogDetail(@PathVariable Long dialogId) {
 		DialogVO detail = messageService.getDialogDetail(dialogId);
 		return ResponseEntity.ok(detail);

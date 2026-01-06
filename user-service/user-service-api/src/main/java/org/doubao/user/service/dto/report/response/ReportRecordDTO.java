@@ -1,66 +1,45 @@
 package org.doubao.user.service.dto.report.response;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * 举报记录详情DTO
  */
-@ApiModel(value = "举报记录详情数据")
 public class ReportRecordDTO {
 
-	@ApiModelProperty(value = "举报ID")
 	private Long id;
 
-	@ApiModelProperty(value = "举报人ID")
 	private Long userId;
 
-	@ApiModelProperty(value = "被举报对象类型：1=内容，2=用户，3=评论")
 	private Integer reportedType;
 
-	@ApiModelProperty(value = "被举报对象类型名称")
 	private String reportedTypeName;
 
-	@ApiModelProperty(value = "被举报对象ID")
 	private String reportedId;
 
-	@ApiModelProperty(value = "一级分类名称")
 	private String firstCategoryName;
 
-	@ApiModelProperty(value = "二级分类名称")
 	private String secondCategoryName;
 
-	@ApiModelProperty(value = "三级分类名称")
 	private String thirdCategoryName;
 
-	@ApiModelProperty(value = "AI预检测风险等级：0=正常，1=低风险，2=高风险")
 	private Integer riskLevel;
 
-	@ApiModelProperty(value = "风险等级名称")
 	private String riskLevelName;
 
-	@ApiModelProperty(value = "举报状态：0=待审核，1=审核中，2=审核通过，3=审核不通过，4=待复核")
 	private Integer status;
 
-	@ApiModelProperty(value = "举报状态描述")
 	private String statusDesc;
 
-	@ApiModelProperty(value = "处理结果描述")
 	private String handleResult;
 
-	@ApiModelProperty(value = "处理时间")
 	private LocalDateTime handleTime;
 
-	@ApiModelProperty(value = "创建时间")
 	private LocalDateTime createdTime;
 
-	@ApiModelProperty(value = "补充描述")
 	private String description;
 
-	@ApiModelProperty(value = "证据链接列表")
 	private List<String> evidenceUrls;
 
 	public Long getId() {

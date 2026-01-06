@@ -1,7 +1,7 @@
 package org.doubao.search.service.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import lombok.Data;
+
 import org.doubao.mall.common.entity.BaseDel;
 
 import java.time.LocalDateTime;

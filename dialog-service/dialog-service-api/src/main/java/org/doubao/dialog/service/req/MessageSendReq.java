@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.req;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -14,7 +14,7 @@ import javax.validation.constraints.Size;
  * 用于指定消息所属会话、内容、类型等核心信息，支持文字和表情类型消息
  * 业务说明：定义用户发送消息时的请求参数，包含会话信息、消息内容、消息类型等必要字段
  */
-@ApiModel(description = "消息发送请求参数，包含会话ID、消息内容、消息类型等")
+//@ApiModel(description = "消息发送请求参数，包含会话ID、消息内容、消息类型等")
 public class MessageSendReq {
 
 	/**
@@ -28,12 +28,6 @@ public class MessageSendReq {
 	 * 使用场景：用户在特定会话中发送消息
 	 */
 	@NotNull(message = "会话ID不能为空，请传递合法的会话ID")
-	@ApiModelProperty(
-			value = "消息所属会话ID（当前用户必须是会话参与者）",
-			required = true,
-			example = "456",
-			notes = "会话ID可通过会话列表接口（/dialog/session/list）获取，无效会话ID会导致发送失败"
-	)
 	private Long sessionId;
 
 	/**
@@ -48,12 +42,6 @@ public class MessageSendReq {
 	 */
 	@NotBlank(message = "消息内容不能为空，请输入文字或选择表情")
 	@Size(max = 500, message = "消息内容过长，最大支持500字符")
-	@ApiModelProperty(
-			value = "消息内容（文字消息直接传文本，表情消息传表情编码如[微笑]）",
-			required = true,
-			example = "你好，这是一条测试消息！",
-			notes = "文字消息支持500字符以内，表情消息需使用后端定义的编码格式"
-	)
 	private String content;
 
 	/**
@@ -67,13 +55,6 @@ public class MessageSendReq {
 	 * 使用场景：区分文字消息和表情消息的处理逻辑
 	 */
 	@NotBlank(message = "消息类型不能为空，请选择TEXT或EMOJI")
-	@ApiModelProperty(
-			value = "消息类型，固定枚举值：TEXT（文字消息）、EMOJI（表情消息）",
-			required = true,
-			example = "TEXT",
-			allowableValues = "TEXT,EMOJI",
-			notes = "EMOJI类型需传递后端支持的表情编码，非法编码会被转为文字显示"
-	)
 	private String contentType;
 
 	/**
@@ -83,12 +64,6 @@ public class MessageSendReq {
 	 * 数据格式：JSON字符串格式
 	 * 使用场景：消息引用、重要性标记、消息分类等高级功能
 	 */
-	@ApiModelProperty(
-			value = "消息扩展字段（可选，JSON格式），如引用历史消息、消息重要性标记等",
-			required = false,
-			example = "{\"quoteMsgId\":\"60d21b4667d0d8992e610c85\",\"isImportant\":false}",
-			notes = "无扩展信息时可省略此参数，后端会默认处理为null"
-	)
 	private String extInfo;
 
 	public @NotNull(message = "会话ID不能为空，请传递合法的会话ID") Long getSessionId() {

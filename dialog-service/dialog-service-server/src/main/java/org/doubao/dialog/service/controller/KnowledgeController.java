@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.controller;
 
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
+
 import org.doubao.dialog.service.entity.AssistantKnowledge;
 import org.doubao.dialog.service.service.KnowledgeService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +20,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/dialog/knowledge")
-@Api(tags = "知识库管理接口")
+//@Api(tags = "知识库管理接口")
 public class KnowledgeController {
 
 	@Autowired
@@ -35,7 +35,7 @@ public class KnowledgeController {
 	 * 业务流程：查询所有知识库条目→返回完整列表
 	 */
 	@GetMapping
-	@ApiOperation("获取所有知识库条目")
+	//@ApiOperation("获取所有知识库条目")
 	public ResponseEntity<List<AssistantKnowledge>> getAllKnowledge() {
 		return ResponseEntity.ok(knowledgeService.list());
 	}
@@ -50,7 +50,7 @@ public class KnowledgeController {
 	 * 业务流程：参数校验→按模块查询知识库→返回结果
 	 */
 	@GetMapping("/module/{module}")
-	@ApiOperation("根据模块获取知识库条目")
+	//@ApiOperation("根据模块获取知识库条目")
 	public ResponseEntity<List<AssistantKnowledge>> getKnowledgeByModule(@PathVariable String module) {
 		return ResponseEntity.ok(knowledgeService.getByModule(module));
 	}
@@ -65,7 +65,7 @@ public class KnowledgeController {
 	 * 业务流程：参数校验→添加知识库条目→返回操作结果
 	 */
 	@PostMapping
-	@ApiOperation("添加知识库条目")
+	//@ApiOperation("添加知识库条目")
 	public ResponseEntity<Boolean> addKnowledge(@RequestBody AssistantKnowledge knowledge) {
 		return ResponseEntity.ok(knowledgeService.addKnowledge(knowledge));
 	}
@@ -80,7 +80,7 @@ public class KnowledgeController {
 	 * 业务流程：参数校验→更新知识库条目→返回操作结果
 	 */
 	@PutMapping
-	@ApiOperation("更新知识库条目")
+	//@ApiOperation("更新知识库条目")
 	public ResponseEntity<Boolean> updateKnowledge(@RequestBody AssistantKnowledge knowledge) {
 		return ResponseEntity.ok(knowledgeService.updateKnowledge(knowledge));
 	}
@@ -95,7 +95,7 @@ public class KnowledgeController {
 	 * 业务流程：参数校验→删除知识库条目→返回操作结果
 	 */
 	@DeleteMapping("/{id}")
-	@ApiOperation("删除知识库条目")
+	//@ApiOperation("删除知识库条目")
 	public ResponseEntity<Boolean> deleteKnowledge(@PathVariable Long id) {
 		return ResponseEntity.ok(knowledgeService.removeById(id));
 	}

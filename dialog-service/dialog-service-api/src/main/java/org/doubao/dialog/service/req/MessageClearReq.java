@@ -1,7 +1,7 @@
 package org.doubao.dialog.service.req;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 import org.doubao.dialog.service.enums.ClearScopeEnum;
 import org.doubao.dialog.service.enums.MsgTypeEnum;
 
@@ -18,7 +18,7 @@ import java.util.List;
  * 适用场景：用户手动清空聊天记录、会话过期自动清理、敏感消息批量删除
  * 业务说明：定义消息清空操作的请求参数，包含清空范围、目标会话、操作人等必要信息
  */
-@ApiModel(value = "MessageClearReq", description = "消息清空请求参数")
+//@ApiModel(value = "MessageClearReq", description = "消息清空请求参数")
 public class MessageClearReq implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -32,7 +32,7 @@ public class MessageClearReq implements Serializable {
 	 */
 	@NotNull(message = "会话ID不能为空")
 	@Positive(message = "会话ID必须为正整数")
-	@ApiModelProperty(value = "会话ID（关联dialog_sessions表主键）", required = true, example = "123456")
+	//@ApiModelProperty(value = "会话ID（关联dialog_sessions表主键）", required = true, example = "123456")
 	private Long conversationId;
 
 	/**
@@ -44,7 +44,7 @@ public class MessageClearReq implements Serializable {
 	 */
 	@NotNull(message = "操作人ID不能为空")
 	@Positive(message = "操作人ID必须为正整数")
-	@ApiModelProperty(value = "清空操作人ID（需为会话参与者）", required = true, example = "10001")
+	//@ApiModelProperty(value = "清空操作人ID（需为会话参与者）", required = true, example = "10001")
 	private Long operatorId;
 
 	/**
@@ -56,24 +56,18 @@ public class MessageClearReq implements Serializable {
 	 * 使用场景：根据用户需求选择不同的清空策略
 	 */
 	@NotNull(message = "清空范围不能为空")
-	@ApiModelProperty(value = "清空范围（ALL=全部消息，BEFORE_TIME=指定时间前消息，SPECIFIC_TYPE=指定类型消息）",
-			required = true, example = "ALL")
 	private ClearScopeEnum clearScope;
 
 	/**
 	 * 指定时间（仅clearScope=BEFORE_TIME时必选）
 	 * 说明：清空此时间点之前的所有消息（格式：yyyy-MM-dd HH:mm:ss）
 	 */
-	@ApiModelProperty(value = "指定时间（仅清空范围为BEFORE_TIME时必填，格式：yyyy-MM-dd HH:mm:ss）",
-			example = "2025-09-01 00:00:00")
 	private LocalDateTime clearTime;
 
 	/**
 	 * 指定消息类型列表（仅clearScope=SPECIFIC_TYPE时必选）
 	 * 说明：仅清空列表中的消息类型（如[TEXT, IMAGE]表示只清空文本和图片消息）
 	 */
-	@ApiModelProperty(value = "指定消息类型列表（仅清空范围为SPECIFIC_TYPE时必填，可选值：TEXT/IMAGE/VOICE/FILE/SYSTEM）",
-			example = "[\"TEXT\", \"IMAGE\"]")
 	private List<MsgTypeEnum> msgTypes;
 
 	/**
@@ -81,7 +75,7 @@ public class MessageClearReq implements Serializable {
 	 * 说明：记录清空触发原因，用于日志审计和问题排查（如用户手动清空、系统自动清理）
 	 */
 	@Size(max = 200, message = "清空原因长度不能超过200字符")
-	@ApiModelProperty(value = "清空原因（用于日志审计）", example = "用户手动清空半年前的聊天记录")
+	//@ApiModelProperty(value = "清空原因（用于日志审计）", example = "用户手动清空半年前的聊天记录")
 	private String clearReason;
 
 	/**

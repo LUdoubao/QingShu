@@ -1,9 +1,6 @@
 package org.doubao.dialog.service.config;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.doubao.dialog.service.feign.AuthServiceClient;
 import org.doubao.dialog.service.util.RedisCacheUtil;
 import org.slf4j.Logger;
@@ -24,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * WebSocket认证拦截器
@@ -81,7 +79,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 		String clientIp = getClientIp(servletRequest.getServletRequest());
 
 		// 2. 基础参数校验（无Token直接拦截）
-		if (StrUtil.isBlank(token)) {
+		if (StringUtils.isBlank(token)) {
 			log.warn("WebSocket auth failed | no token found (clientIp: {})", clientIp);
 			setUnauthorizedResponse(response, "WebSocket认证失败：缺少Token参数");
 			return false;
@@ -90,7 +88,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 		// 3. 校验Token是否在黑名单（如用户登出后已失效的Token，通过Redis快速查询）
 		String blacklistKey = TOKEN_BLACKLIST_PREFIX + token;
 		String blacklistToken = redisCacheUtil.getString(blacklistKey, String.class);
-		if (StrUtil.isNotBlank(blacklistToken)) {
+		if (StringUtils.isNotBlank(blacklistToken)) {
 			log.warn("WebSocket auth failed | token in blacklist (clientIp: {}, token: {})",
 					clientIp, maskToken(token)); // Token脱敏，避免日志泄露敏感信息
 			setUnauthorizedResponse(response, "WebSocket认证失败：Token已失效，请重新登录");
@@ -110,7 +108,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 		}
 
 		// 5. 校验解析结果（确保用户ID非空、用户状态正常，避免无效用户建立连接）
-		if (ObjectUtil.isNull(parseResult)) {
+		if (Objects.isNull(parseResult)) {
 			log.warn("WebSocket auth failed | invalid user (clientIp: {}, userId: {})",
 					clientIp, parseResult);
 			setUnauthorizedResponse(response, "WebSocket认证失败：用户不存在或已被禁用");
@@ -181,11 +179,11 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 	private String getClientIp(HttpServletRequest request) {
 		// 1. 先从X-Forwarded-For获取（代理场景下的真实IP）
 		String xffIp = request.getHeader("X-Forwarded-For");
-		if (StrUtil.isNotBlank(xffIp) && !"unknown".equalsIgnoreCase(xffIp)) {
+		if (StringUtils.isNotBlank(xffIp) && !"unknown".equalsIgnoreCase(xffIp)) {
 			// X-Forwarded-For格式：clientIp, proxyIp1, proxyIp2（取第一个非unknown的IP）
 			String[] ipArr = xffIp.split(",");
 			for (String ip : ipArr) {
-				if (StrUtil.isNotBlank(ip) && !"unknown".equalsIgnoreCase(ip.trim())) {
+				if (StringUtils.isNotBlank(ip) && !"unknown".equalsIgnoreCase(ip.trim())) {
 					return ip.trim();
 				}
 			}
@@ -193,7 +191,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 
 		// 2. 从X-Real-IP获取（Nginx常用配置）
 		String realIp = request.getHeader("X-Real-IP");
-		if (StrUtil.isNotBlank(realIp) && !"unknown".equalsIgnoreCase(realIp)) {
+		if (StringUtils.isNotBlank(realIp) && !"unknown".equalsIgnoreCase(realIp)) {
 			return realIp.trim();
 		}
 
@@ -208,7 +206,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 	 * @return 脱敏后的Token
 	 */
 	private String maskToken(String token) {
-		if (StrUtil.isBlank(token)) {
+		if (StringUtils.isBlank(token)) {
 			return "";
 		}
 		if (token.length() <= 10) {
@@ -231,7 +229,7 @@ public class WebSocketAuthInterceptor implements HandshakeInterceptor {
 		/** Token过期时间戳（毫秒）：用于进一步校验过期状态 */
 		private long tokenExpireTime;
 
-		// Getter和Setter（Lombok的@Data注解可简化，此处显式定义便于理解）
+		// Getter和Setter（Lombok的注解可简化，此处显式定义便于理解）
 		public Long getUserId() {
 			return userId;
 		}

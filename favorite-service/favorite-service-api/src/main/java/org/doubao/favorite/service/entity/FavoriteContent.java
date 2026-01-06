@@ -3,11 +3,11 @@ package org.doubao.favorite.service.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+
 import org.doubao.mall.common.entity.BaseDel;
 
 
-@Data
+
 @TableName("favorite_content")
 public class FavoriteContent extends BaseDel {
 	@TableId(type = IdType.AUTO)

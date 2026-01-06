@@ -2,8 +2,8 @@ package org.doubao.dialog.service.controller;
 
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
+
 import org.doubao.dialog.service.dto.AdminReplyRequest;
 import org.doubao.dialog.service.dto.MessageDTO;
 import org.doubao.dialog.service.service.AdminService;
@@ -27,7 +27,7 @@ import javax.validation.Valid;
  */
 @RestController
 @RequestMapping("/dialog/admin")
-@Api(tags = "管理员对话接口")
+//@Api(tags = "管理员对话接口")
 public class AdminController {
 
 	/** 管理员服务，用于处理管理员相关的对话操作 */
@@ -55,7 +55,7 @@ public class AdminController {
 	 * @return 分页的对话列表，包含对话ID、用户信息、状态、最后消息等
 	 */
 	@GetMapping("/list")
-	@ApiOperation("获取管理员对话列表")
+	//@ApiOperation("获取管理员对话列表")
 	public ResponseEntity<IPage<DialogVO>> getAdminDialogList(
 			DialogQuery query,
 			@RequestParam(defaultValue = "1") int pageNum,
@@ -81,7 +81,7 @@ public class AdminController {
 	 * @return 回复消息对象，包含回复内容、发送时间等信息
 	 */
 	@PostMapping("/reply")
-	@ApiOperation("管理员发送回复")
+	//@ApiOperation("管理员发送回复")
 	public ResponseEntity<MessageDTO> sendAdminReply(@Valid @RequestBody AdminReplyRequest request) {
 		MessageDTO reply = adminService.sendAdminReply(request);
 		return ResponseEntity.ok(reply);
@@ -103,7 +103,7 @@ public class AdminController {
 	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@PutMapping("/{dialogId}/resolve")
-	@ApiOperation("标记对话为已解决")
+	//@ApiOperation("标记对话为已解决")
 	public ResponseEntity<Boolean> markDialogResolved(@PathVariable Long dialogId) {
 		boolean result = adminService.markDialogResolved(dialogId);
 		return ResponseEntity.ok(result);
@@ -125,7 +125,7 @@ public class AdminController {
 	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@PutMapping("/{dialogId}/pending")
-	@ApiOperation("标记对话为待跟进")
+	//@ApiOperation("标记对话为待跟进")
 	public ResponseEntity<Boolean> markDialogPending(@PathVariable Long dialogId) {
 		boolean result = adminService.markDialogPending(dialogId);
 		return ResponseEntity.ok(result);
@@ -148,7 +148,7 @@ public class AdminController {
 	 * @return 操作是否成功，true=成功，false=失败
 	 */
 	@PutMapping("/{dialogId}/status")
-	@ApiOperation("更新对话状态")
+	//@ApiOperation("更新对话状态")
 	public ResponseEntity<Boolean> updateDialogStatus(
 			@PathVariable Long dialogId,
 			@RequestParam Integer status) {

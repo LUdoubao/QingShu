@@ -1,15 +1,9 @@
 package org.doubao.mall.common.entity;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 /**
  * 通用返回结果封装类
  */
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class Result<T> {
 	private Integer code;
 	private String message;

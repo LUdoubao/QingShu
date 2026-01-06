@@ -1,8 +1,8 @@
 package org.doubao.comment.service.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 import org.doubao.mall.common.entity.UserInfoDes;
 
 import java.io.Serializable;
@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * <p>
  * 封装评论回复的详细信息，包括回复内容、用户信息、点赞状态等
  */
-@ApiModel(description = "评论回复信息")
+//@ApiModel(description = "评论回复信息")
 public class ReplyVO implements Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -23,7 +23,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 回复的唯一标识符，格式为"R-"前缀加时间戳
 	 */
-	@ApiModelProperty(value = "回复ID", example = "R-202507241005")
+	//@ApiModelProperty(value = "回复ID", example = "R-202507241005")
 	private String replyId;
 
 	/**
@@ -31,7 +31,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 发表该回复的用户唯一标识符
 	 */
-	@ApiModelProperty(value = "回复者用户ID", example = "1002")
+	//@ApiModelProperty(value = "回复者用户ID", example = "1002")
 	private Long userId;
 
 	/**
@@ -39,7 +39,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 回复的文本内容，可能包含对其他用户的@引用
 	 */
-	@ApiModelProperty(value = "回复内容", example = "@文学爱好者 同意你的观点，这首诗确实意境深远")
+	//@ApiModelProperty(value = "回复内容", example = "@文学爱好者 同意你的观点，这首诗确实意境深远")
 	private String content;
 
 	/**
@@ -47,7 +47,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 如果是回复他人评论，则显示被回复者的昵称
 	 */
-	@ApiModelProperty(value = "被回复者昵称（如果是回复他人）", example = "文学爱好者")
+	//@ApiModelProperty(value = "被回复者昵称（如果是回复他人）", example = "文学爱好者")
 	private String repliedNickname;
 
 	/**
@@ -55,7 +55,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 该回复获得的点赞总数
 	 */
-	@ApiModelProperty(value = "点赞数量", example = "8")
+	//@ApiModelProperty(value = "点赞数量", example = "8")
 	private Long likeCount;
 
 	/**
@@ -63,7 +63,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 标识当前访问用户是否已对该回复点赞
 	 */
-	@ApiModelProperty(value = "当前用户是否已点赞该回复", example = "false")
+	//@ApiModelProperty(value = "当前用户是否已点赞该回复", example = "false")
 	private Boolean isLiked = false;
 
 	/**
@@ -71,7 +71,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 回复发表的具体时间，格式为yyyy-MM-dd HH:mm:ss
 	 */
-	@ApiModelProperty(value = "回复创建时间", example = "2025-07-24 10:05:11")
+	//@ApiModelProperty(value = "回复创建时间", example = "2025-07-24 10:05:11")
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
 	private LocalDateTime createdTime;
 
@@ -80,7 +80,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 标识该回复是否被文章作者置顶
 	 */
-	@ApiModelProperty(value = "回复是否被作者置顶", example = "false")
+	//@ApiModelProperty(value = "回复是否被作者置顶", example = "false")
 	private Boolean isAuthorTop = false;
 
 	/**
@@ -88,7 +88,7 @@ public class ReplyVO implements Serializable {
 	 * <p>
 	 * 用于标记回复的特殊属性，如管理员回复等
 	 */
-	@ApiModelProperty(value = "回复标签（如管理员回复）")
+	//@ApiModelProperty(value = "回复标签（如管理员回复）")
 	private String[] tags;
 
 	/**

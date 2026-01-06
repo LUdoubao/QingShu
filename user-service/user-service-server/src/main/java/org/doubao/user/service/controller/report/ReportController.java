@@ -1,7 +1,7 @@
 package org.doubao.user.service.controller.report;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+
+
 import org.doubao.mall.common.entity.Result;
 import org.doubao.user.service.dto.report.request.ReportSubmitRequest;
 import org.doubao.user.service.dto.report.response.ReportPageResponse;
@@ -15,14 +15,14 @@ import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/user/report")
-@Api(tags = "举报管理接口")
+//@Api(tags = "举报管理接口")
 public class ReportController {
 
 	@Autowired
 	private ReportService reportService;
 
 	@PostMapping("/submit")
-	@ApiOperation("用户提交举报")
+	//@ApiOperation("用户提交举报")
 	public Result<ReportSubmitResponse> submitReport(
 			@RequestHeader("userId") Long userId,
 			@Valid @RequestBody ReportSubmitRequest request) {

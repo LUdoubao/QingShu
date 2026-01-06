@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
+
+
 import org.doubao.dialog.service.req.MessageClearReq;
 import org.doubao.dialog.service.req.MessageResendReq;
 import org.doubao.dialog.service.req.MessageSendReq;
@@ -23,7 +23,7 @@ import java.util.ArrayList;
  */
 @RestController
 @RequestMapping("/dialog/message")
-@Api(tags = "消息管理接口")
+//@Api(tags = "消息管理接口")
 public class MessageController {
 
     @Autowired
@@ -36,9 +36,9 @@ public class MessageController {
      * @return 消息ID（MongoDB的ObjectId）
      */
     @PostMapping("/send")
-    @ApiOperation(value = "发送消息", notes = "支持文字（TEXT）和表情（EMOJI），表情内容用编码格式如[微笑]")
+    //@ApiOperation(value = "发送消息", notes = "支持文字（TEXT）和表情（EMOJI），表情内容用编码格式如[微笑]")
     public Result<String> sendMessage(
-            @ApiParam(value = "消息发送参数", required = true) @RequestBody MessageSendReq sendReq
+             @RequestBody MessageSendReq sendReq
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -58,11 +58,11 @@ public class MessageController {
      * @return 分页消息列表
      */
     @GetMapping("/history")
-    @ApiOperation(value = "查询历史消息", notes = "按发送时间倒序排列，下拉加载更多时递增pageNum")
+    //@ApiOperation(value = "查询历史消息", notes = "按发送时间倒序排列，下拉加载更多时递增pageNum")
     public Result<Page<MessageVO>> getMessageHistory(
-            @ApiParam(value = "会话ID", required = true) @RequestParam Long sessionId,
-            @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
-            @ApiParam(value = "页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize
+          @RequestParam Long sessionId,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+             @RequestParam(defaultValue = "10") Integer pageSize
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -81,9 +81,9 @@ public class MessageController {
      * @return 操作结果
      */
     @PutMapping("/resend")
-    @ApiOperation(value = "重发失败消息", notes = "仅支持状态为FAILED的消息，重发后状态更新为SENT")
+    //@ApiOperation(value = "重发失败消息", notes = "仅支持状态为FAILED的消息，重发后状态更新为SENT")
     public Result<Void> resendMessage(
-            @ApiParam(value = "消息重发参数", required = true) @RequestBody MessageResendReq resendReq
+           @RequestBody MessageResendReq resendReq
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -102,9 +102,9 @@ public class MessageController {
      * @return 操作结果
      */
     @DeleteMapping("/clear")
-    @ApiOperation(value = "清空会话消息", notes = "永久删除该会话所有消息，不可恢复")
+    //@ApiOperation(value = "清空会话消息", notes = "永久删除该会话所有消息，不可恢复")
     public Result<Void> clearSessionMessages(
-            @ApiParam(value = "消息清空参数", required = true) @RequestBody MessageClearReq clearReq
+            @RequestBody MessageClearReq clearReq
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -123,10 +123,10 @@ public class MessageController {
      * @return 操作结果
      */
     @PutMapping("/read")
-    @ApiOperation(value = "标记消息为已读", notes = "msgIds为空时标记会话所有未读消息，不为空时仅标记指定消息")
+    //@ApiOperation(value = "标记消息为已读", notes = "msgIds为空时标记会话所有未读消息，不为空时仅标记指定消息")
     public Result<Void> markMessagesAsRead(
-            @ApiParam(value = "会话ID", required = true) @RequestParam Long sessionId,
-            @ApiParam(value = "消息ID列表（可选）") @RequestParam(required = false) java.util.List<String> msgIds
+             @RequestParam Long sessionId,
+            @RequestParam(required = false) java.util.List<String> msgIds
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();

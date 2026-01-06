@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.controller;
 
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
+
+
 import org.doubao.dialog.service.req.SessionCreateReq;
 import org.doubao.dialog.service.req.SessionTopReq;
 import org.doubao.dialog.service.service.SessionService;
@@ -23,7 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
  */
 @RestController
 @RequestMapping("/dialog/session")
-@Api(tags = "会话管理接口")
+//@Api(tags = "会话管理接口")
 public class SessionController {
 
     @Autowired
@@ -36,9 +36,9 @@ public class SessionController {
      * @return 会话ID
      */
     @PostMapping("/create")
-    @ApiOperation(value = "创建会话", notes = "支持用户会话（USER）和AI会话（AI），AI会话targetId固定为10000")
+    //@ApiOperation(value = "创建会话", notes = "支持用户会话（USER）和AI会话（AI），AI会话targetId固定为10000")
     public Result<Long> createSession(
-            @ApiParam(value = "会话创建参数", required = true) @RequestBody SessionCreateReq createReq
+             @RequestBody SessionCreateReq createReq
     ) {
         // 1. 解析用户ID
         Long reqUserId;
@@ -67,10 +67,10 @@ public class SessionController {
      * @return 分页会话列表（含未读计数、最后一条消息预览）
      */
     @GetMapping("/list")
-    @ApiOperation(value = "查询会话列表", notes = "按“置顶>最后消息时间倒序”排序，返回会话详情")
+    //@ApiOperation(value = "查询会话列表", notes = "按“置顶>最后消息时间倒序”排序，返回会话详情")
     public Result<Page<SessionVO>> getSessionList(
-            @ApiParam(value = "页码", defaultValue = "1") @RequestParam(defaultValue = "1") Integer pageNum,
-            @ApiParam(value = "页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer pageSize,
+             @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Long currentSessionId
     ) {
         // 1. 解析用户ID
@@ -90,9 +90,9 @@ public class SessionController {
      * @return 操作结果
      */
     @PostMapping("/top")
-    @ApiOperation(value = "会话置顶/取消置顶", notes = "isTop=1置顶，isTop=0取消，置顶会话会排在列表最前")
+    //@ApiOperation(value = "会话置顶/取消置顶", notes = "isTop=1置顶，isTop=0取消，置顶会话会排在列表最前")
     public Result<Void> updateSessionTop(
-            @ApiParam(value = "置顶参数", required = true) @RequestBody SessionTopReq topReq
+           @RequestBody SessionTopReq topReq
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -111,9 +111,9 @@ public class SessionController {
      * @return 操作结果
      */
     @GetMapping("/delete/{sessionId}")
-    @ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
+    //@ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
     public Result<Void> deleteSession(
-            @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
+            @PathVariable Long sessionId
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -131,9 +131,9 @@ public class SessionController {
      * @return 操作结果
      */
     @GetMapping("/hidden/{sessionId}")
-    @ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
+    //@ApiOperation(value = "删除会话", notes = "逻辑删除（保留消息记录），重新创建会话可恢复历史消息")
     public Result<Void> hiddenSession(
-            @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
+            @PathVariable Long sessionId
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -152,9 +152,9 @@ public class SessionController {
      * @return 清零前的未读计数
      */
     @PostMapping("/unread/clear/{sessionId}")
-    @ApiOperation(value = "会话未读清零", notes = "进入会话后调用，将该会话未读消息数置为0")
+    //@ApiOperation(value = "会话未读清零", notes = "进入会话后调用，将该会话未读消息数置为0")
     public Result<Void> clearSessionUnread(
-            @ApiParam(value = "会话ID", required = true) @PathVariable Long sessionId
+             @PathVariable Long sessionId
     ) {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();
@@ -180,7 +180,7 @@ public class SessionController {
     }
 
     @GetMapping("/unreadCount/get")
-    @ApiOperation(value = "会话未读总数")
+    //@ApiOperation(value = "会话未读总数")
     public Result<Integer> getUnreadCount() {
         // 1. 解析用户ID
         Long userId = UserContext.getUserId();

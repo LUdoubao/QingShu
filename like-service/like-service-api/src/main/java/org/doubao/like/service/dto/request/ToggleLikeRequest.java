@@ -1,8 +1,8 @@
 package org.doubao.like.service.dto.request;
 
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 
 import javax.validation.constraints.NotNull;
 
@@ -11,7 +11,7 @@ import javax.validation.constraints.NotNull;
  * <p>
  * 用于处理用户对文案/评论的点赞状态切换
  */
-@ApiModel(description = "点赞操作请求参数")
+//@ApiModel(description = "点赞操作请求参数")
 public class ToggleLikeRequest {
 
 	/**
@@ -21,12 +21,6 @@ public class ToggleLikeRequest {
 	 * 必须为非空值
 	 */
 	@NotNull(message = "用户ID不能为空")
-	@ApiModelProperty(
-			value = "操作用户ID",
-			required = true,
-			example = "123456",
-			notes = "执行点赞操作的用户唯一标识"
-	)
 	private Long operatorUserId;
 
 	/**
@@ -37,13 +31,6 @@ public class ToggleLikeRequest {
 	 * - 1: 评论
 	 */
 	@NotNull(message = "实体类型不能为空")
-	@ApiModelProperty(
-			value = "实体类型",
-			required = true,
-			allowableValues = "CONTENT, COMMENT",
-			example = "0",
-			notes = "被点赞的实体类型（文案/评论）"
-	)
 	private int entityType;
 
 	/**
@@ -53,12 +40,6 @@ public class ToggleLikeRequest {
 	 * 必须为正数
 	 */
 	@NotNull(message = "实体ID不能为空")
-	@ApiModelProperty(
-			value = "实体ID",
-			required = true,
-			example = "789",
-			notes = "被点赞的文案ID或评论ID"
-	)
 	private String entityId;
 
 	/**
@@ -68,12 +49,6 @@ public class ToggleLikeRequest {
 	 * 必须为非空值
 	 */
 	@NotNull(message = "用户ID不能为空")
-	@ApiModelProperty(
-			value = "用户ID",
-			required = true,
-			example = "123456",
-			notes = "被点赞的用户唯一标识"
-	)
 	private Long userId;
 
 	/**
@@ -82,11 +57,6 @@ public class ToggleLikeRequest {
 	 * 点赞时，指定点赞内容
 	 * 默认为空
 	 */
-	@ApiModelProperty(
-			value = "点赞内容",
-			example = "点赞文案",
-			notes = "点赞时，指定点赞内容"
-	)
 	private String content;
 
 	public @NotNull(message = "用户ID不能为空") Long getOperatorUserId() {

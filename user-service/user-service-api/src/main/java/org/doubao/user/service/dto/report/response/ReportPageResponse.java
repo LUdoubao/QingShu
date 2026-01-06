@@ -1,29 +1,29 @@
 package org.doubao.user.service.dto.report.response;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 import java.util.List;
 
 /**
  * 举报记录分页响应DTO
  */
-@ApiModel(value = "举报记录分页响应数据")
+//@ApiModel(value = "举报记录分页响应数据")
 public class ReportPageResponse {
 
-	@ApiModelProperty(value = "总条数")
+	//@ApiModelProperty(value = "总条数")
 	private Long total;
 
-	@ApiModelProperty(value = "总页数")
+	//@ApiModelProperty(value = "总页数")
 	private Integer totalPages;
 
-	@ApiModelProperty(value = "当前页码")
+	//@ApiModelProperty(value = "当前页码")
 	private Integer pageNum;
 
-	@ApiModelProperty(value = "每页条数")
+	//@ApiModelProperty(value = "每页条数")
 	private Integer pageSize;
 
-	@ApiModelProperty(value = "举报记录列表")
+	//@ApiModelProperty(value = "举报记录列表")
 	private List<ReportRecordDTO> records;
 
 	public Long getTotal() {

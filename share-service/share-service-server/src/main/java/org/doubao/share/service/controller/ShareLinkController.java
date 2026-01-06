@@ -1,8 +1,6 @@
 package org.doubao.share.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.share.service.dto.ShareLinkCreateDTO;
 import org.doubao.share.service.dto.ShareVerifyDTO;
@@ -20,7 +18,6 @@ import javax.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/share")
-@Api(tags = "分享服务API")
 public class ShareLinkController {
 
 	@Autowired
@@ -33,21 +30,18 @@ public class ShareLinkController {
 	private RecordService recordService;
 
 	@PostMapping("/links")
-	@ApiOperation("生成分享链接")
 	public Result<ShareLinkVO> createShareLink(@RequestBody ShareLinkCreateDTO dto) {
 		ShareLinkVO result = linkService.createShareLink(dto);
 		return Result.success(result);
 	}
 
 	@GetMapping("/verify")
-	@ApiOperation("验证分享链接访问权限")
 	public Result<VerifyResultVO> verifyShareLink(ShareVerifyDTO dto, HttpServletRequest request) {
 		VerifyResultVO result = verifyService.verifyShareLink(dto, request);
 		return Result.success(result);
 	}
 
 	@GetMapping("/records")
-	@ApiOperation("获取原创文案访问记录")
 	public Result<Page<AccessRecordVO>> getAccessRecords(
 			@RequestParam String quoteId,
 			@RequestParam(required = false) String startTime,
@@ -59,7 +53,6 @@ public class ShareLinkController {
 	}
 
 	@PostMapping("/update/{linkId}")
-	@ApiOperation("更新分享链接权限")
 	public Result<ShareLinkVO> updateShareLink(
 			@PathVariable Long linkId,
 			@RequestBody ShareLinkCreateDTO dto) {
@@ -68,7 +61,6 @@ public class ShareLinkController {
 	}
 
 	@GetMapping("/link/{quoteId}")
-	@ApiOperation("查询引文外链")
 	public Result<ShareLink> getShareLinkByQuoteId(
 			@PathVariable Long quoteId) {
 		ShareLink result = linkService.getShareLinkByQuoteId(quoteId);

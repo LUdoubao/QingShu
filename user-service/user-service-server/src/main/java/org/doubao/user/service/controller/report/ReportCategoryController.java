@@ -1,7 +1,7 @@
 package org.doubao.user.service.controller.report;
 
 
-import io.swagger.annotations.ApiOperation;
+
 import org.doubao.user.service.dto.report.response.CategoryTreeDTO;
 import org.doubao.user.service.service.report.ReportCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +23,7 @@ public class ReportCategoryController {
 	}
 
 	@GetMapping("/{id}")
-	@ApiOperation("根据ID查询分类详情")
+	//@ApiOperation("根据ID查询分类详情")
 	public CategoryTreeDTO getCategoryById(Long id) {
 		return categoryService.getCategoryById(id);
 	}

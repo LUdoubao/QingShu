@@ -1,6 +1,5 @@
 package org.doubao.dialog.service.service.impl;
 
-import cn.hutool.core.util.ObjectUtil;
 import org.doubao.dialog.service.config.DialogWebSocketHandler;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.feign.UserFeignClient;
@@ -727,7 +726,7 @@ public class SessionServiceImpl implements SessionService {
 
         // 3. 从缓存获取实时未读计数（优先缓存，避免DB延迟）
         Integer unreadCount = redisCacheUtil.getSessionUnreadCount(userId, sessionPO.getId());
-        if (ObjectUtil.isNull(unreadCount)) {
+        if (Objects.isNull(unreadCount)) {
             // 缓存未读计数不存在，从DB查询
             DialogSession dialogSession = sessionMapper.selectById(sessionPO.getId());
             unreadCount = Optional.ofNullable(dialogSession).map(DialogSession::getUnreadCount).orElse(0);

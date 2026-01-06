@@ -1,8 +1,8 @@
 package org.doubao.comment.service.dto;
 
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import java.util.List;
  * 包含多个实体的点赞状态和计数信息
  * 用于返回批量查询点赞状态的响应结果
  */
-@ApiModel(description = "批量点赞状态响应结果")
+//@ApiModel(description = "批量点赞状态响应结果")
 public class BatchLikeStatusResponse {
 
 	/**
@@ -24,11 +24,6 @@ public class BatchLikeStatusResponse {
 	 * <p>
 	 * 列表中的结果顺序与请求中的实体顺序一致
 	 */
-	@ApiModelProperty(
-			value = "查询结果列表",
-			required = true,
-			notes = "按请求顺序返回每个实体的点赞状态和计数"
-	)
 	private List<LikeStatusResult> results;
 
 	public List<LikeStatusResult> getResults() {
@@ -44,7 +39,7 @@ public class BatchLikeStatusResponse {
 	 * <p>
 	 * 封装单个实体的点赞状态详情，包括实体类型、ID、点赞状态和计数
 	 */
-	@ApiModel(description = "单个实体的点赞状态详情")
+	//@ApiModel(description = "单个实体的点赞状态详情")
 	public static class LikeStatusResult {
 
 		/**
@@ -52,10 +47,6 @@ public class BatchLikeStatusResponse {
 		 * <p>
 		 * 0-内容/引文，1-评论
 		 */
-		@ApiModelProperty(
-				value = "实体类型",
-				required = true
-		)
 		private int entityType;
 
 		/**
@@ -63,11 +54,6 @@ public class BatchLikeStatusResponse {
 		 * <p>
 		 * 对应内容ID或评论ID，用于标识具体的实体
 		 */
-		@ApiModelProperty(
-				value = "实体ID",
-				required = true,
-				example = "789"
-		)
 		private String entityId;
 
 		/**
@@ -76,12 +62,6 @@ public class BatchLikeStatusResponse {
 		 * true: 当前用户已点赞该实体
 		 * false: 当前用户未点赞
 		 */
-		@ApiModelProperty(
-				value = "是否已点赞",
-				required = true,
-				example = "true",
-				notes = "表示当前用户是否已点赞该实体"
-		)
 		private Boolean liked;
 
 		/**
@@ -89,12 +69,6 @@ public class BatchLikeStatusResponse {
 		 * <p>
 		 * 该实体获得的总点赞数（包含所有用户的点赞）
 		 */
-		@ApiModelProperty(
-				value = "点赞总数",
-				required = true,
-				example = "42",
-				notes = "该实体获得的总点赞数"
-		)
 		private Integer count;
 
 		public int getEntityType() {

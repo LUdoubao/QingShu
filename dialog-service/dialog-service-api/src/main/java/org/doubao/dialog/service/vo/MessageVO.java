@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 import org.doubao.dialog.service.entity.DialogMessage;
 
 import java.time.LocalDateTime;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 3. 用于WebSocket消息推送，包含前端展示所需的所有字段
  * 业务说明：定义消息列表展示的视图对象，封装消息及发送者、展示样式等完整信息
  */
-@ApiModel(description = "消息视图对象，包含消息内容、发送者信息、展示样式等完整信息")
+//@ApiModel(description = "消息视图对象，包含消息内容、发送者信息、展示样式等完整信息")
 public class MessageVO {
 
     /**
@@ -27,12 +27,6 @@ public class MessageVO {
      * 数据格式：MongoDB ObjectId字符串
      * 使用场景：消息唯一标识、消息操作、消息关联查询
      */
-    @ApiModelProperty(
-            value = "消息唯一标识ID（MongoDB ObjectId）",
-            required = true,
-            example = "60d21b4667d0d8992e610c85",
-            notes = "对应MongoDB中DialogMessage集合的ObjectId"
-    )
     private String id;
 
     /**
@@ -44,12 +38,6 @@ public class MessageVO {
      * 数据格式：64位长整型
      * 使用场景：消息归类、会话历史查询、会话维度统计
      */
-    @ApiModelProperty(
-            value = "消息所属会话ID",
-            required = true,
-            example = "456",
-            notes = "与DialogMessage.sessionId字段保持一致"
-    )
     private Long sessionId;
 
     /**
@@ -61,12 +49,6 @@ public class MessageVO {
      * 数据格式：64位长整型
      * 使用场景：跨会话消息展示、会话间消息关联显示
      */
-    @ApiModelProperty(
-            value = "可显示的会话ID（特殊场景使用）",
-            required = false,
-            example = "789",
-            notes = "通常与sessionId相同，仅在特定业务场景下不同"
-    )
     private Long showSessionId;
 
     /**
@@ -78,12 +60,6 @@ public class MessageVO {
      * 数据格式：64位长整型
      * 使用场景：消息归属判断、发送者信息补充、权限控制
      */
-    @ApiModelProperty(
-            value = "消息发送者ID",
-            required = true,
-            example = "123456",
-            notes = "与DialogMessage.senderId字段保持一致"
-    )
     private Long senderId;
 
         /**
@@ -96,12 +72,6 @@ public class MessageVO {
      * 数据格式：最大50个字符
      * 使用场景：消息发送者展示、用户识别
      */
-    @ApiModelProperty(
-            value = "发送者昵称",
-            required = true,
-            example = "AI助手",
-            notes = "AI会话固定为AI助手，用户会话从user-service获取"
-    )
     private String senderNickname;
 
     /**
@@ -114,12 +84,6 @@ public class MessageVO {
      * 数据格式：标准HTTP/HTTPS URL
      * 使用场景：消息发送者头像展示、用户识别
      */
-    @ApiModelProperty(
-            value = "发送者头像URL",
-            required = false,
-            example = "https://example.com/avatar/123456.jpg",
-            notes = "AI会话固定为默认头像，用户会话从user-service获取"
-    )
     private String senderAvatarUrl;
 
     /**
@@ -131,12 +95,6 @@ public class MessageVO {
      * 数据格式：64位长整型
      * 使用场景：消息接收者判断、消息路由、权限控制
      */
-    @ApiModelProperty(
-            value = "消息接收者ID",
-            required = false,
-            example = "789012",
-            notes = "与DialogMessage.receiverId字段保持一致"
-    )
     private Long receiverId;
 
     /**
@@ -150,12 +108,6 @@ public class MessageVO {
      * 数据格式：字符串，最大500字符
      * 使用场景：消息内容展示、消息处理
      */
-    @ApiModelProperty(
-            value = "消息内容（文字或表情编码）",
-            required = true,
-            example = "你好，有什么可以帮助你的吗？",
-            notes = "根据contentType区分文字内容或表情编码"
-    )
     private String content;
 
         /**
@@ -168,12 +120,6 @@ public class MessageVO {
      * 数据格式：字符串，最大30字符
      * 使用场景：会话列表预览、离线通知内容展示
      */
-    @ApiModelProperty(
-            value = "消息内容预览（前30字符摘要）",
-            required = false,
-            example = "你好，有什么可以帮助你的吗？",
-            notes = "用于会话列表和离线通知的内容预览"
-    )
     private String contentPreview;
 
     /**
@@ -187,13 +133,6 @@ public class MessageVO {
      * 数据校验：必须为TEXT或EMOJI
      * 使用场景：消息类型判断、前端渲染逻辑
      */
-    @ApiModelProperty(
-            value = "消息类型（TEXT/EMOJI）",
-            required = true,
-            example = "TEXT",
-            allowableValues = "TEXT,EMOJI",
-            notes = "对应DialogMessage.ContentTypeEnum.getValue()"
-    )
     private String contentType;
 
     /**
@@ -208,13 +147,6 @@ public class MessageVO {
      * 数据校验：必须为SENT、READ或FAILED
      * 使用场景：消息状态展示、消息重发控制
      */
-    @ApiModelProperty(
-            value = "消息状态（SENT/READ/FAILED）",
-            required = true,
-            example = "SENT",
-            allowableValues = "SENT,READ,FAILED",
-            notes = "对应DialogMessage.MessageStatusEnum.getValue()"
-    )
     private String status;
 
     /**
@@ -227,12 +159,6 @@ public class MessageVO {
      * 数据格式：字符串格式的时间
      * 使用场景：前端消息时间展示
      */
-    @ApiModelProperty(
-            value = "格式化后的发送时间（用户友好格式）",
-            required = true,
-            example = "15:30",
-            notes = "如15:30（今天）、昨天 15:30（昨天）、06-12 15:30（更早日期）"
-    )
     private String sendTimeStr;
 
         /**
@@ -245,12 +171,6 @@ public class MessageVO {
      * 数据格式：本地时间格式
      * 使用场景：消息排序、时间线管理、数据库同步
      */
-    @ApiModelProperty(
-            value = "消息原始发送时间",
-            required = true,
-            example = "2024-01-15T15:30:00",
-            notes = "用于消息排序和时间线管理，为sendTimeStr提供原始数据"
-    )
     private LocalDateTime sendTime;
 
     /**
@@ -263,12 +183,6 @@ public class MessageVO {
      * 数据格式：本地时间格式，可为空
      * 使用场景：消息已读状态追踪、消息统计
      */
-    @ApiModelProperty(
-            value = "消息已读时间",
-            required = false,
-            example = "2024-01-15T15:35:00",
-            notes = "仅当消息状态为READ时有值，未读消息为null"
-    )
     private LocalDateTime readTime;
 
     /**
@@ -282,13 +196,6 @@ public class MessageVO {
      * 数据校验：必须为0或1
      * 使用场景：消息撤回功能、前端展示控制
      */
-    @ApiModelProperty(
-            value = "消息撤回状态（0-未撤回，1-已撤回）",
-            required = true,
-            example = "0",
-            allowableValues = "0,1",
-            notes = "撤回消息显示为此消息已撤回"
-    )
     private Integer isRevoked;
 
     /**
@@ -301,12 +208,6 @@ public class MessageVO {
      * 数据格式：布尔值
      * 使用场景：前端消息气泡样式控制、消息方向判断
      */
-    @ApiModelProperty(
-            value = "消息方向（true-自己发送，false-对方发送）",
-            required = true,
-            example = "true",
-            notes = "用于前端消息气泡样式控制，true为右侧气泡，false为左侧气泡"
-    )
     private Boolean isSelfSend;
 
         /**
@@ -320,13 +221,6 @@ public class MessageVO {
      * 数据校验：必须为self或other
      * 使用场景：前端消息气泡样式控制、消息展示渲染
      */
-    @ApiModelProperty(
-            value = "消息气泡样式（self-自己发送，other-对方发送）",
-            required = true,
-            example = "self",
-            allowableValues = "self,other",
-            notes = "为前端提供直接可用的样式标识"
-    )
     private String bubbleStyle;
 
     public MessageVO() {

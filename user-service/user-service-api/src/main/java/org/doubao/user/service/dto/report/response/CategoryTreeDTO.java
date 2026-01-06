@@ -1,7 +1,7 @@
 package org.doubao.user.service.dto.report.response;
 
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
 import java.util.List;
 
 /**
@@ -9,16 +9,16 @@ import java.util.List;
  */
 public class CategoryTreeDTO {
 
-	@ApiModelProperty("分类ID")
+	//@ApiModelProperty("分类ID")
 	private Long id;
 
-	@ApiModelProperty("分类名称")
+	//@ApiModelProperty("分类名称")
 	private String name;
 
-	@ApiModelProperty("层级：1=一级，2=二级，3=三级")
+	//@ApiModelProperty("层级：1=一级，2=二级，3=三级")
 	private Integer level;
 
-	@ApiModelProperty("子分类列表")
+	//@ApiModelProperty("子分类列表")
 	private List<CategoryTreeDTO> children;
 
 	public Long getId() {

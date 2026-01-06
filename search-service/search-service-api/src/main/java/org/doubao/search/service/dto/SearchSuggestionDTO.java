@@ -1,6 +1,6 @@
 package org.doubao.search.service.dto;
 
-import lombok.Data;
+
 
 import java.util.List;
 

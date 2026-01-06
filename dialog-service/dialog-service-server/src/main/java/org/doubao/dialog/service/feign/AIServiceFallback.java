@@ -1,7 +1,7 @@
 package org.doubao.dialog.service.feign;
 
 
-import lombok.extern.slf4j.Slf4j;
+
 import org.doubao.dialog.service.dto.AIRequest;
 import org.doubao.dialog.service.dto.AIResponse;
 import org.doubao.mall.common.entity.Result;

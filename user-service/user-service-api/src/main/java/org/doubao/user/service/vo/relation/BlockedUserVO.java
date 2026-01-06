@@ -1,27 +1,27 @@
 package org.doubao.user.service.vo.relation;
 
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+
+
 
 /**
  * 黑名单用户信息VO
  */
-@ApiModel("黑名单用户信息")
+//@ApiModel("黑名单用户信息")
 public class BlockedUserVO {
-	@ApiModelProperty("用户ID")
+	//@ApiModelProperty("用户ID")
 	private Long id;
 
-	@ApiModelProperty("用户昵称")
+	//@ApiModelProperty("用户昵称")
 	private String nickname;
 
-	@ApiModelProperty("用户头像URL")
+	//@ApiModelProperty("用户头像URL")
 	private String avatarUrl;
 
-	@ApiModelProperty("拉黑时间")
+	//@ApiModelProperty("拉黑时间")
 	private String blockTime;
 
-	@ApiModelProperty("存储类型")
+	//@ApiModelProperty("存储类型")
 	private String storageType;
 
 	public String getStorageType() {

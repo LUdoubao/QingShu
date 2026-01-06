@@ -11,12 +11,6 @@
     <name>doubao-starter</name>
     <description>Doubao Monolith Starter - A single application that integrates all services</description>
     <dependencies>
-        <dependency>
-            <groupId>com.doubao</groupId>
-            <artifactId>mall-common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>
-        
         <!-- 引入所有服务模块 -->
         <!-- 认证服务 -->
         <dependency>

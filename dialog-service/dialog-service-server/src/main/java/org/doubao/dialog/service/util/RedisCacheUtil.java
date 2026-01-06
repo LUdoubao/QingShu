@@ -1,8 +1,7 @@
 package org.doubao.dialog.service.util;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
+import org.apache.commons.lang.StringUtils;
 import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.mall.common.enums.ErrorCode;
@@ -77,7 +76,7 @@ public class RedisCacheUtil {
 	 * @param sessionId 会话ID
 	 */
 	public void deleteSessionCache(Long userId, Long sessionId) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId)) {
 			log.error("Redis deleteSessionCache failed | userId or sessionId is null");
 			return;
 		}
@@ -118,7 +117,7 @@ public class RedisCacheUtil {
 	 * @param userId 用户ID
 	 */
 	public void deleteSessionListCache(Long userId) {
-		if (ObjectUtil.isNull(userId)) {
+		if (Objects.isNull(userId)) {
 			log.warn("Redis deleteSessionListCache failed | userId is null");
 			return;
 		}
@@ -144,7 +143,7 @@ public class RedisCacheUtil {
 	 * @return 未读消息数（null时返回0）
 	 */
 	public Integer getSessionUnreadCount(Long userId, Long sessionId) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId)) {
 			log.error("Redis getSessionUnreadCount failed | userId or sessionId is null");
 			return 0;
 		}
@@ -191,7 +190,7 @@ public class RedisCacheUtil {
 	 * @param unreadCount 未读消息数（需≥0）
 	 */
 	public void setSessionUnreadCount(Long userId, Long sessionId, int unreadCount) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId)) {
 			log.error("Redis setSessionUnreadCount failed | userId or sessionId is null");
 			return;
 		}
@@ -225,20 +224,17 @@ public class RedisCacheUtil {
 	 * @return 会话PO对象（缓存不存在返回null）
 	 */
 	public DialogSession getSessionCache(Long userId, Long sessionId) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId)) {
 			log.error("Redis getSessionCache failed | userId or sessionId is null");
 			return null;
 		}
 
 		String sessionSingleKey = buildSessionSingleKey(userId, sessionId);
 		Object object = redisTemplate.opsForValue().get(sessionSingleKey);
-		if (ObjectUtil.isNull(object)) {
+		if (Objects.isNull(object)) {
 			return null;
 		}
-		DialogSession sessionPO = (DialogSession) object;
-		log.debug("Redis getSessionCache | userId: {}, sessionId: {}, exists: {}",
-				userId, sessionId, ObjectUtil.isNotNull(sessionPO));
-		return sessionPO;
+		return (DialogSession) object;
 	}
 
 	/**
@@ -258,11 +254,11 @@ public class RedisCacheUtil {
 	 * @param sessionCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void setSessionCache(Long userId, Long sessionId, DialogSession sessionPO, Integer sessionCacheExpireSec) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId) || ObjectUtil.isNull(sessionPO)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId) || Objects.isNull(sessionPO)) {
 			log.error("Redis setSessionCache failed | userId/sessionId/sessionPO is null");
 			return;
 		}
-		if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
+		if (Objects.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
 			log.error("Redis setSessionCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
 					userId, sessionId, sessionCacheExpireSec);
 			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID);
@@ -275,7 +271,7 @@ public class RedisCacheUtil {
 
 
 		// 3. 同步更新会话列表ZSet（若会话列表存在，更新排序分数）
-		if (ObjectUtil.isNotNull(sessionPO.getLastMsgTime())) {
+		if (!Objects.isNull(sessionPO.getLastMsgTime())) {
 			long score = sessionPO.getLastMsgTime().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
 			addSessionToListCache(userId, sessionId, score, sessionCacheExpireSec);
 		}
@@ -312,11 +308,11 @@ public class RedisCacheUtil {
 	 * @param sessionCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void addSessionToListCache(Long userId, Long sessionId, long score, Integer sessionCacheExpireSec) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(userId) || Objects.isNull(sessionId)) {
 			log.error("Redis addSessionToListCache failed | userId or sessionId is null");
 			return;
 		}
-		if (ObjectUtil.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
+		if (Objects.isNull(sessionCacheExpireSec) || sessionCacheExpireSec <= 0) {
 			log.error("Redis addSessionToListCache failed | invalid expire sec (userId: {}, sessionId: {}, sec: {})",
 					userId, sessionId, sessionCacheExpireSec);
 			throw new BusinessException(ErrorCode.DIALOG_MESSAGE_CACHE_EXPIRE_TIME_INVALID);
@@ -346,7 +342,7 @@ public class RedisCacheUtil {
 	 * @param sessionId 会话ID（消息所属会话）
 	 */
 	public void deleteMessageCache(Long sessionId) {
-		if (ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(sessionId)) {
 			log.error("Redis deleteMessageCache failed | sessionId is null");
 			return;
 		}
@@ -355,7 +351,7 @@ public class RedisCacheUtil {
 		String messageKeyPrefix = buildMessageSingleKeyPrefix(sessionId);
 		// 2. 模糊查询所有匹配的消息Key
 		Set<String> messageKeys = redisTemplate.keys(messageKeyPrefix + "*");
-		if (ObjectUtil.isEmpty(messageKeys) || messageKeys == null) {
+		if (messageKeys == null || messageKeys.isEmpty()) {
 			log.info("Redis deleteMessageCache | no message cache found (sessionId: {})", sessionId);
 			return;
 		}
@@ -380,16 +376,13 @@ public class RedisCacheUtil {
 	 * @return 消息PO对象（缓存不存在返回null）
 	 */
 	public DialogMessage getMessageCache(String msgId) {
-		if (StrUtil.isBlank(msgId)) {
+		if (StringUtils.isBlank(msgId)) {
 			log.warn("Redis getMessageCache failed | msgId is blank");
 			return null;
 		}
 
 		String messageSingleKey = buildMessageSingleKey(msgId);
-		DialogMessage messagePO = getMessage(messageSingleKey, DialogMessage.class);
-		log.debug("Redis getMessageCache | msgId: {}, exists: {}",
-				msgId, ObjectUtil.isNotNull(messagePO));
-		return messagePO;
+		return getMessage(messageSingleKey, DialogMessage.class);
 	}
 
 	/**
@@ -425,11 +418,11 @@ public class RedisCacheUtil {
 	 * @param msgCacheExpireSec 缓存过期时间（秒）
 	 */
 	public void setMessageCache(DialogMessage messagePO, Integer msgCacheExpireSec) {
-		if (ObjectUtil.isNull(messagePO) || StrUtil.isBlank(messagePO.getId())) {
+		if (Objects.isNull(messagePO) || StringUtils.isBlank(messagePO.getId())) {
 			log.error("Redis setMessageCache failed | messagePO or msgId is null/blank");
 			return;
 		}
-		if (ObjectUtil.isNull(msgCacheExpireSec) || msgCacheExpireSec <= 0) {
+		if (Objects.isNull(msgCacheExpireSec) || msgCacheExpireSec <= 0) {
 			log.error("Redis setMessageCache failed | invalid expire sec (msgId: {}, sec: {})",
 					messagePO.getId(), msgCacheExpireSec);
 			throw new IllegalArgumentException("消息缓存过期时间必须大于0秒");
@@ -473,7 +466,7 @@ public class RedisCacheUtil {
 	 * @param sessionId 会话ID
 	 */
 	public void incrementSessionUnreadCount(Long receiverId, Long sessionId) {
-		if (ObjectUtil.isNull(receiverId) || ObjectUtil.isNull(sessionId)) {
+		if (Objects.isNull(receiverId) || Objects.isNull(sessionId)) {
 			log.error("Redis incrementSessionUnreadCount failed | receiverId or sessionId is null");
 			return;
 		}
@@ -513,7 +506,8 @@ public class RedisCacheUtil {
 	 * @return 完整缓存Key
 	 */
 	private String buildSessionSingleKey(Long userId, Long sessionId) {
-		return StrUtil.format("{}{}:{}", DIALOG_SESSION_SINGLE_PREFIX, userId, sessionId);
+		// 构建单个会话缓存Key
+		return DIALOG_SESSION_SINGLE_PREFIX + userId + ":" + sessionId;
 	}
 
 	/**
@@ -525,7 +519,7 @@ public class RedisCacheUtil {
 	 * @return 完整缓存Key
 	 */
 	private String buildSessionListZSetKey(Long userId) {
-		return StrUtil.format("{}{}", DIALOG_SESSION_LIST_ZSET_PREFIX, userId);
+		return DIALOG_SESSION_LIST_ZSET_PREFIX + userId;
 	}
 
 	/**
@@ -537,7 +531,7 @@ public class RedisCacheUtil {
 	 * @return 完整缓存Key
 	 */
 	private String buildMessageSingleKey(String msgId) {
-		return StrUtil.format("{}{}", DIALOG_MESSAGE_SINGLE_PREFIX, msgId);
+		return DIALOG_MESSAGE_SINGLE_PREFIX + msgId;
 	}
 
 	/**
@@ -550,7 +544,7 @@ public class RedisCacheUtil {
 	 * @return 消息缓存Key前缀
 	 */
 	private String buildMessageSingleKeyPrefix(Long sessionId) {
-		return StrUtil.format("{}{}:", DIALOG_MESSAGE_SINGLE_PREFIX, sessionId);
+		return DIALOG_MESSAGE_SINGLE_PREFIX + sessionId + ":";
 	}
 
 	/**

@@ -2,8 +2,8 @@ package org.doubao.comment.service.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+
+
 import org.doubao.comment.service.dto.CommentDTO;
 import org.doubao.comment.service.dto.ReplyDTO;
 import org.doubao.comment.service.dto.ToggleLikeResponse;
@@ -59,13 +59,10 @@ public class CommentController {
 	 * @return 包含分页回复数据的成功响应结果
 	 */
 	@GetMapping("/replies")
-	@ApiOperation(value = "分页加载评论的回复", notes = "根据评论ID分页获取回复列表")
+	//@ApiOperation(value = "分页加载评论的回复", notes = "根据评论ID分页获取回复列表")
 	public Result<Page<ReplyVO>> getReplies(
-			@ApiParam(value = "评论ID", required = true, example = "C-202507241001")
 			@RequestParam String commentId,
-			@ApiParam(value = "页码（从1开始）", defaultValue = "1", example = "1")
 			@RequestParam(defaultValue = "1") Integer page,
-			@ApiParam(value = "每页条数", defaultValue = "5", example = "5")
 			@RequestParam(defaultValue = "5") Integer size) {
 		// 调用服务层获取分页回复数据
 		Page<ReplyVO> replyPage = commentService.getRepliesByCommentId(commentId, page, size);

@@ -1,8 +1,8 @@
 package org.doubao.user.service.dto.report.response;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,25 +10,25 @@ import java.util.List;
 /**
  * 举报状态响应DTO
  */
-@ApiModel(value = "举报状态响应数据")
+//@ApiModel(value = "举报状态响应数据")
 public class ReportStatusResponse {
 
-    @ApiModelProperty(value = "举报ID")
+    //@ApiModelProperty(value = "举报ID")
     private Long reportId;
 
-    @ApiModelProperty(value = "举报状态：0=待审核，1=审核中，2=审核通过，3=审核不通过，4=待复核")
+    //@ApiModelProperty(value = "举报状态：0=待审核，1=审核中，2=审核通过，3=审核不通过，4=待复核")
     private Integer status;
 
-    @ApiModelProperty(value = "举报状态描述")
+    //@ApiModelProperty(value = "举报状态描述")
     private String statusDesc;
 
-    @ApiModelProperty(value = "处理结果描述")
+    //@ApiModelProperty(value = "处理结果描述")
     private String handleResult;
 
-    @ApiModelProperty(value = "处理时间")
+    //@ApiModelProperty(value = "处理时间")
     private String handleTime;
 
-    @ApiModelProperty(value = "证据链接列表")
+    //@ApiModelProperty(value = "证据链接列表")
     private List<String> evidenceUrls;
 
     private String description;

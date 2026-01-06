@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.req;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -13,7 +13,7 @@ import javax.validation.constraints.NotNull;
  * 用于指定创建会话的目标用户ID和会话类型（用户会话/AI会话）
  * 业务说明：定义创建会话时的请求参数，包含目标用户ID、会话类型等必要信息
  */
-@ApiModel(description = "会话创建请求参数，包含目标ID和会话类型")
+//@ApiModel(description = "会话创建请求参数，包含目标ID和会话类型")
 public class SessionCreateReq {
 
     private Long userId;
@@ -27,12 +27,6 @@ public class SessionCreateReq {
      * 使用场景：创建用户间聊天会话或用户与AI助手的对话
      */
     @NotNull(message = "目标ID不能为空，请传递合法的用户ID或AI会话占位ID")
-    @ApiModelProperty(
-            value = "目标ID（用户会话=真实用户ID，AI会话可传任意值，后端自动处理为10000）",
-            required = true,
-            example = "123456",
-            notes = "AI会话场景下，此参数最终会被替换为10000"
-    )
     private Long targetId;
 
     /**
@@ -44,12 +38,6 @@ public class SessionCreateReq {
      * 使用场景：区分用户间聊天和用户与AI助手对话的不同处理逻辑
      */
     @NotBlank(message = "会话类型不能为空，请选择USER或AI")
-    @ApiModelProperty(
-            value = "会话类型，固定枚举值：USER（用户间会话）、AI（用户与AI助手会话）",
-            required = true,
-            example = "USER",
-            allowableValues = "USER,AI"
-    )
     private String sessionType;
 
     public @NotNull(message = "目标ID不能为空，请传递合法的用户ID或AI会话占位ID") Long getTargetId() {

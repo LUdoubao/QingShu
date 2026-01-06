@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -77,7 +78,8 @@ public class FolderServiceImpl extends ServiceImpl<FavoriteFolderMapper, Favorit
 	@Override
 	public List<FavoriteFolder> getUserFolders(Long userId, Integer type) {
 		List<FavoriteFolder> favoriteFolders = folderMapper.selectUserFolders(userId, type);
-		if (favoriteFolders.isEmpty()) {
+		if (favoriteFolders == null || favoriteFolders.isEmpty()) {
+			favoriteFolders = new ArrayList<>();
 			// 创建默认收藏夹
 			favoriteFolders.add(favoriteComponent.getUserDefaultFolder(userId, type));
 			return favoriteFolders;

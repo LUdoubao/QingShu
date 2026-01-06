@@ -1,6 +1,5 @@
 package org.doubao.user.service.service.impl.report;
 
-import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.doubao.mall.common.enums.ErrorCode;
@@ -275,7 +274,7 @@ public class ReportServiceImpl implements ReportService {
      */
     private void saveEvidence(Long reportId, ReportSubmitRequest request) {
         if ((request.getEvidenceUrls() == null || request.getEvidenceUrls().isEmpty())
-                && StrUtil.isEmpty(request.getDescription())) {
+                && request.getDescription().isEmpty()) {
             return; // 无证据和描述，不保存
         }
 
@@ -343,7 +342,7 @@ public class ReportServiceImpl implements ReportService {
                         request.getReviewResult() == 2 ? "驳回" : "需进一步处理")
                 .append("；");
 
-        if (StrUtil.isNotBlank(request.getReviewOpinion())) {
+        if (!request.getReviewOpinion().isEmpty()) {
             result.append("审核意见：").append(request.getReviewOpinion());
         }
 

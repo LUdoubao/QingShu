@@ -1,11 +1,10 @@
 package org.doubao.dialog.service.config;
 
-import cn.hutool.core.util.ObjectUtil;
-import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.apache.commons.lang.StringUtils;
 import org.doubao.dialog.service.entity.DialogMessage;
 import org.doubao.dialog.service.entity.DialogSession;
 import org.doubao.dialog.service.enums.MessagePushType;
@@ -99,15 +98,10 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
 		log.info("WebSocket连接建立-接收消息 | 用户ID: {}", object);
 		Long userId = Long.valueOf(String.valueOf(object));
-		if (ObjectUtil.isNull(userId)) {
-			log.error("WebSocket连接失败 | 用户ID为空 (会话ID: {})", session.getId());
-			session.close(CloseStatus.POLICY_VIOLATION.withReason("用户身份验证失败"));
-			return;
-		}
 
 		// 2. 存储在线用户会话映射（覆盖旧连接，解决多端登录问题）
 		WebSocketSession oldSession = onlineUserSessionMap.put(userId, session);
-		if (ObjectUtil.isNotNull(oldSession) && oldSession.isOpen()) {
+		if (!Objects.isNull(oldSession) && oldSession.isOpen()) {
 			// 关闭旧连接（确保同一用户仅保持一个有效连接）
 			oldSession.close(CloseStatus.NORMAL.withReason("账号在其他设备登录，当前连接已断开"));
 			log.warn("WebSocket旧会话已关闭 | 用户ID: {}, 旧会话ID: {}, 新会话ID: {}",
@@ -154,14 +148,14 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object object = session.getAttributes().get(SESSION_ATTR_USER_ID);
 		log.info("WebSocket连接关闭-接收消息 | 用户ID: {}", object);
 		Long userId = Long.valueOf(String.valueOf(object));
-		if (ObjectUtil.isNull(userId)) {
+		if (Objects.isNull(object)) {
 			log.error("WebSocket连接关闭 | 用户ID为空 (会话ID: {})", session.getId());
 			return;
 		}
 
 		// 2. 清理在线用户会话映射（仅删除当前会话，避免误删新连接）
 		WebSocketSession storedSession = onlineUserSessionMap.get(userId);
-		if (ObjectUtil.isNotNull(storedSession) && storedSession.getId().equals(session.getId())) {
+		if (!Objects.isNull(storedSession) && storedSession.getId().equals(session.getId())) {
 			onlineUserSessionMap.remove(userId);
 			// 3. 清除Redis在线状态（延迟10秒，防止网络波动导致的误下线）
 			String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
@@ -205,7 +199,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		String msgContent = message.getPayload();
 
 		// 1. 校验消息格式（非空+JSON格式）
-		if (StrUtil.isBlank(msgContent)) {
+		if (msgContent.isEmpty()) {
 			sendErrorMessage(session, "消息内容不能为空");
 			return;
 		}
@@ -221,7 +215,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 		// 2. 解析消息类型，分发处理
 		String msgType = (String) msgMap.get("msgType");
-		if (StrUtil.isBlank(msgType)) {
+		if (msgType.isEmpty()) {
 			sendErrorMessage(session, "消息缺少必要字段：msgType");
 			return;
 		}
@@ -270,7 +264,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param unreadCountObj 未读数对象
 	 */
 	public void handleUnreadCountChange(Long userId, Object sessionIdObj, Object unreadCountObj) {
-		if (ObjectUtil.isNull(sessionIdObj) || ObjectUtil.isNull(unreadCountObj)) {
+		if (Objects.isNull(sessionIdObj) || Objects.isNull(unreadCountObj)) {
 			log.error("处理未读数变更失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
@@ -298,11 +292,11 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
 		Object isTypingObj = jsonData.get("isTyping");
-		if (ObjectUtil.isNull(sessionIdObj)) {
+		if (Objects.isNull(sessionIdObj)) {
 			log.error("处理输入状态失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
-		if (ObjectUtil.isNull(isTypingObj)) {
+		if (Objects.isNull(isTypingObj)) {
 			log.error("处理输入状态失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
@@ -327,7 +321,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object data = msgMap.getOrDefault("data", new HashMap<>());
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
-		if (ObjectUtil.isNull(sessionIdObj)) {
+		if (Objects.isNull(sessionIdObj)) {
 			log.error("处理离开会话失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
@@ -350,7 +344,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 		Object data = msgMap.getOrDefault("data", new HashMap<>());
 		JSONObject jsonData = JSON.parseObject(JSON.toJSONString(data));
 		Object sessionIdObj = jsonData.get("sessionId");
-		if (ObjectUtil.isNull(sessionIdObj)) {
+		if (Objects.isNull(sessionIdObj)) {
 			log.warn("处理进入会话失败 | 缺少必要参数 (用户ID: {})", userId);
 			return;
 		}
@@ -396,7 +390,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param messagePushType 消息推送类型
 	 */
 	public void pushPrivateMessage(Long userId, MessageVO messageVO, MessagePushType messagePushType) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(messageVO)) {
+		if (Objects.isNull(userId) || Objects.isNull(messageVO)) {
 			log.error("推送私信失败 | 用户ID或消息内容为空");
 			return;
 		}
@@ -438,7 +432,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 
 
 	public void sendMsgSuccess(Long userId, String msgId, String tmpId) {
-		if (ObjectUtil.isNull(userId) || ObjectUtil.isNull(msgId)) {
+		if (Objects.isNull(userId) || Objects.isNull(msgId)) {
 			log.error("发送消息成功失败 | 用户ID或消息ID为空");
 			return;
 		}
@@ -507,13 +501,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param notifyType 通知类型（如"SESSION_DELETED"、"USER_BLOCKED"）
 	 */
 	public void pushSystemNotify(Long userId, String notifyContent, String notifyType) {
-		if (ObjectUtil.isNull(userId) || StrUtil.isBlank(notifyContent) || StrUtil.isBlank(notifyType)) {
+		if (Objects.isNull(userId) || StringUtils.isBlank(notifyContent) || StringUtils.isBlank(notifyType)) {
 			log.error("推送系统通知失败 | 参数缺失 (用户ID: {}, 通知类型: {})", userId, notifyType);
 			return;
 		}
 
 		WebSocketSession session = onlineUserSessionMap.get(userId);
-		if (ObjectUtil.isNull(session) || !session.isOpen()) {
+		if (Objects.isNull(session) || !session.isOpen()) {
 			log.info("推送系统通知失败 | 用户已离线 (用户ID: {})", userId);
 			return;
 		}
@@ -547,7 +541,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param errorMsg 错误描述
 	 */
 	private void sendErrorMessage(WebSocketSession session, String errorMsg) {
-		if (ObjectUtil.isNull(session) || !session.isOpen()) {
+		if (Objects.isNull(session) || !session.isOpen()) {
 			log.error("发送错误消息失败 | 会话已关闭");
 			return;
 		}
@@ -714,20 +708,20 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @return true=在线，false=离线
 	 */
 	public boolean isUserOnline(Long userId) {
-		if (ObjectUtil.isNull(userId)) {
+		if (Objects.isNull(userId)) {
 			return false;
 		}
 
 		// 1. 先查内存映射（性能优先）
 		WebSocketSession session = onlineUserSessionMap.get(userId);
-		if (ObjectUtil.isNotNull(session) && session.isOpen()) {
+		if (!Objects.isNull(session) && session.isOpen()) {
 			return true;
 		}
 
 		// 2. 内存映射无有效会话时，查Redis（防止内存数据与Redis不一致）
 		String onlineKey = RedisCacheUtil.DIALOG_USER_ONLINE_PREFIX + userId;
 		String sessionId = redisCacheUtil.getString(onlineKey, String.class);
-		return ObjectUtil.isNotNull(sessionId);
+		return !Objects.isNull(sessionId);
 	}
 
 	/**
@@ -755,13 +749,13 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 * @param readData 消息已读数据
 	 */
 	public void pushMessage(Long senderId, MessagePushType messagePushType, JSONObject readData) {
-		if (ObjectUtil.isNull(senderId) || ObjectUtil.isNull(readData)) {
+		if (Objects.isNull(senderId) || Objects.isNull(readData)) {
 			log.error("推送消息失败 | 参数缺失 (发送者ID: {})", senderId);
 			return;
 		}
 
 		WebSocketSession session = onlineUserSessionMap.get(senderId);
-		if (ObjectUtil.isNull(session) || !session.isOpen()) {
+		if (Objects.isNull(session) || !session.isOpen()) {
 			log.debug("推送消息失败 | 用户已离线 (用户ID: {})", senderId);
 			return;
 		}

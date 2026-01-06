@@ -1,22 +1,22 @@
 package org.doubao.user.service.dto.report.response;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 /**
  * 举报提交响应DTO
  */
-@ApiModel(value = "举报提交响应数据")
+//@ApiModel(value = "举报提交响应数据")
 public class ReportSubmitResponse {
 
-    @ApiModelProperty(value = "举报ID")
+    //@ApiModelProperty(value = "举报ID")
     private Long reportId;
 
-    @ApiModelProperty(value = "举报状态：0=待审核")
+    //@ApiModelProperty(value = "举报状态：0=待审核")
     private Integer status;
 
-    @ApiModelProperty(value = "提示信息")
+    //@ApiModelProperty(value = "提示信息")
     private String tips;
 
     public Long getReportId() {

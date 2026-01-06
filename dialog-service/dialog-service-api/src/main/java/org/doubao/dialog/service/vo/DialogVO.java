@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.vo;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 import org.doubao.dialog.service.entity.AssistantMessage;
 
 import java.time.LocalDateTime;
@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * 3. 便于管理员快速了解对话概况，进行分层管理
  * 业务说明：定义对话列表页展示的视图对象，封装对话的基本信息和状态
  */
-@ApiModel(description = "对话列表视图对象，包含对话ID、用户ID、标题、状态等信息")
+//@ApiModel(description = "对话列表视图对象，包含对话ID、用户ID、标题、状态等信息")
 public class DialogVO {
 
 	/**
@@ -27,12 +27,6 @@ public class DialogVO {
 	 * 数据格式：64位长整型
 	 * 使用场景：对话详情页跳转、对话操作、关联查询
 	 */
-	@ApiModelProperty(
-			value = "对话唯一标识ID",
-			required = true,
-			example = "123456",
-			notes = "与assistant_dialog表的主键ID保持一致"
-		)
 	private Long dialogId;
 
 	/**
@@ -44,12 +38,6 @@ public class DialogVO {
 	 * 数据格式：64位长整型
 	 * 使用场景：用户对话统计、用户行为分析、用户对话详情跳转
 	 */
-	@ApiModelProperty(
-			value = "对话所属用户ID",
-			required = true,
-			example = "789012",
-			notes = "与assistant_dialog表的user_id字段保持一致"
-		)
 	private Long userId;
 
 	/**
@@ -62,12 +50,6 @@ public class DialogVO {
 	 * 数据格式：最大50个字符
 	 * 使用场景：对话列表展示、对话快速定位
 	 */
-	@ApiModelProperty(
-			value = "对话标题（通常为第一条消息摘要）",
-			required = true,
-			example = "关于订单查询的问题",
-			notes = "通常为对话第一条消息的前30个字符摘要"
-		)
 	private String title;
 
 	/**
@@ -79,11 +61,6 @@ public class DialogVO {
 	 * 数据格式：AssistantMessage对象
 	 * 使用场景：对话列表页显示最新消息预览
 	 */
-	@ApiModelProperty(
-			value = "最后一条消息详情",
-			required = false,
-			notes = "包含最后一条消息的内容、时间、发送者等信息"
-		)
 	private AssistantMessage lastMessage;
 
 	/**
@@ -95,12 +72,6 @@ public class DialogVO {
 	 * 数据格式：整型数字
 	 * 使用场景：对话复杂度评估、用户参与度分析
 	 */
-	@ApiModelProperty(
-			value = "对话中的消息总数",
-			required = true,
-			example = "15",
-			notes = "统计该对话下所有有效消息的数量，不包含已删除消息"
-		)
 	private Integer messageCount;
 
 	public Integer getMessageCount() {
@@ -122,13 +93,6 @@ public class DialogVO {
 	 * 数据校验：必须为0、1或2
 	 * 使用场景：对话状态管理、优先级排序
 	 */
-	@ApiModelProperty(
-			value = "对话状态（0-活跃，1-已解决，2-待跟进）",
-			required = true,
-			example = "0",
-			allowableValues = "0,1,2",
-			notes = "用于管理员分层管理对话"
-		)
 	private Integer status;
 
 	/**
@@ -140,12 +104,6 @@ public class DialogVO {
 	 * 数据格式：本地时间格式
 	 * 使用场景：对话时间线展示、对话排序、历史对话检索
 	 */
-	@ApiModelProperty(
-			value = "对话创建时间",
-			required = true,
-			example = "2024-01-15T10:30:00",
-			notes = "与assistant_dialog表的created_time字段保持一致"
-		)
 	private LocalDateTime createdTime;
 
 	public String getTitle() {

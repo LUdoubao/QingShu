@@ -1,8 +1,8 @@
 package org.doubao.dialog.service.req;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import lombok.Data;
+
+
+
 
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
@@ -13,7 +13,7 @@ import javax.validation.constraints.Pattern;
  * 用于指定目标会话ID及置顶状态（1=置顶，0=取消置顶）
  * 业务说明：定义会话置顶操作的请求参数，包含目标会话ID和置顶状态
  */
-@ApiModel(description = "会话置顶/取消置顶请求参数，包含会话ID和置顶状态")
+//@ApiModel(description = "会话置顶/取消置顶请求参数，包含会话ID和置顶状态")
 public class SessionTopReq {
 
 	/**
@@ -26,12 +26,6 @@ public class SessionTopReq {
 	 * 使用场景：用户对特定会话执行置顶或取消置顶操作
 	 */
 	@NotNull(message = "会话ID不能为空，请传递合法的会话ID")
-	@ApiModelProperty(
-			value = "目标会话ID（需为当前用户名下已存在的会话）",
-			required = true,
-			example = "456",
-			notes = "会话ID可通过会话列表接口（/dialog/session/list）获取"
-	)
 	private Long sessionId;
 
 	/**
@@ -46,13 +40,6 @@ public class SessionTopReq {
 	 */
 	@NotNull(message = "置顶状态不能为空，请选择0（取消置顶）或1（置顶）")
 	@Pattern(regexp = "^[01]$", message = "置顶状态非法，仅支持0（取消置顶）或1（置顶）")
-	@ApiModelProperty(
-			value = "置顶状态：0=取消置顶，1=置顶",
-			required = true,
-			example = "1",
-			allowableValues = "0,1",
-			notes = "置顶会话会在列表顶部显示，最多支持同时置顶20个会话（后端默认限制）"
-	)
 	private Integer isTop;
 
 	public @NotNull(message = "会话ID不能为空，请传递合法的会话ID") Long getSessionId() {
