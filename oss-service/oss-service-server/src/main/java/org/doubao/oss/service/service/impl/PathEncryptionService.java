@@ -1,5 +1,6 @@
 package org.doubao.oss.service.service.impl;
 
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.oss.service.config.KeyConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -82,7 +83,7 @@ public class PathEncryptionService {
 
 			// 获取对应密钥
 			String secretKey = keyConfig.getKey(keyId);
-			if (secretKey == null) {
+			if (DoubaoUtils.isNull(secretKey)) {
 				throw new KeyNotFoundException("Key not found for ID: " + keyId);
 			}
 

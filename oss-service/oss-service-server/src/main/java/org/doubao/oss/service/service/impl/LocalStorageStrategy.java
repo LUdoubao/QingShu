@@ -2,6 +2,7 @@ package org.doubao.oss.service.service.impl;
 
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.mall.common.util.EncryptionUtil;
 import org.doubao.mall.common.util.NanoId;
 import org.doubao.oss.service.config.OssProperties;
@@ -76,7 +77,7 @@ public class LocalStorageStrategy implements StorageStrategy {
 	}
 	@Override
 	public String getFileUrl(String fileKey, String storageType) {
-		if (fileKey == null || storageType == null || !storageType.equals("local")) {
+		if (DoubaoUtils.isNull(fileKey) || DoubaoUtils.isNull(storageType) || !storageType.equals("local")) {
 			try {
 				return baseUrl  + pathEncryptionService.encryptPath(defaultAvatar);
 			} catch (Exception e) {

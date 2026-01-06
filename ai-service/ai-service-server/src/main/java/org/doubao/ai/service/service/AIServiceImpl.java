@@ -6,6 +6,7 @@ import okhttp3.*;
 import org.doubao.ai.service.dto.*;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -84,11 +85,11 @@ public class AIServiceImpl implements AIService{
 		if (isPoetry.equals("true")) {
 			url = deepseekApiUrl;
 			key = deepseekApiKey;
-			model = model == null || model.isEmpty() ? deepseekModel : model;
+			model = DoubaoUtils.isEmpty(model) ? deepseekModel : model;
 		} else {
 			url = baiduApiUrl;
 			key = baiduApiKey;
-			model = model == null || model.isEmpty() ? baiduModel : model;
+			model = DoubaoUtils.isEmpty(model) ? baiduModel : model;
 		}
 
 		// 第一次获取或二次刷新
@@ -229,7 +230,7 @@ public class AIServiceImpl implements AIService{
 				String responseJson = response.body().string();
 				LOGGER.info("=============responseJson: " + responseJson);
 				ChatResponse chatResponse = objectMapper.readValue(responseJson, ChatResponse.class);
-				if (chatResponse.getChoices() != null && !chatResponse.getChoices().isEmpty()) {
+				if (!DoubaoUtils.isEmpty(chatResponse.getChoices())) {
 					LOGGER.info("=============getContent: {} ", chatResponse.getChoices().get(0).getMessage().getContent());
 					aiResponse.setContent(chatResponse.getChoices().get(0).getMessage().getContent());
 					aiResponse.setSuccess(true);
@@ -291,13 +292,13 @@ public class AIServiceImpl implements AIService{
 			case "deepSeek":
 				url = deepseekApiUrl;
 				key = deepseekApiKey;
-				model = model == null || model.isEmpty() ? deepseekModel : model;
+				model = DoubaoUtils.isEmpty(model) ? deepseekModel : model;
 				break;
 			case "baidu":
 			default:
 				url = baiduApiUrl;
 				key = baiduApiKey;
-				model = model == null || model.isEmpty() ? baiduModel : model;
+				model = DoubaoUtils.isEmpty(model) ? baiduModel : model;
 		}
 
 		LOGGER.info("=============url: " + url);
