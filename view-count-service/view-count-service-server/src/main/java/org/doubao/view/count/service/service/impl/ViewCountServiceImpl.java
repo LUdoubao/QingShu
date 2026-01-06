@@ -286,41 +286,19 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 
 		Map<Long, Long> result = new HashMap<>(contentIds.size());
 
-		// 1. 批量从Redis获取
-		List<String> keys = contentIds.stream()
-				.map(id -> VIEW_COUNT_PREFIX + id)
-				.collect(Collectors.toList());
+		LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
+		queryWrapper.in(ContentView::getContentId, contentIds);
+		List<ContentView> contentViews = contentViewMapper.selectList(queryWrapper);
 
-		List<Object> counts = redisTemplate.opsForValue().multiGet(keys);
-
-		// 2. 处理Redis结果
-		List<Long> missContentIds = new ArrayList<>();
-
-		for (int i = 0; i < contentIds.size(); i++) {
-			Long contentId = contentIds.get(i);
-			Object countObj = counts.get(i);
-
-			if (countObj != null) {
-				result.put(contentId, Long.parseLong(countObj.toString()));
-			} else {
-				missContentIds.add(contentId);
-			}
+		List<Long> existIds = new ArrayList<>();
+		for (ContentView view : contentViews) {
+			result.put(view.getContentId(), view.getViewCount());
+			existIds.add(view.getContentId());
 		}
 
-		// 3. 从数据库获取缺失的数据
-		if (!missContentIds.isEmpty()) {
-			List<ContentView> contentViews = contentViewMapper.selectList(
-					new QueryWrapper<ContentView>().in("content_id", missContentIds));
-
-			for (ContentView view : contentViews) {
-				result.put(view.getContentId(), view.getViewCount());
-				// 同步到Redis
-				redisTemplate.opsForValue().set(VIEW_COUNT_PREFIX + view.getContentId(), view.getViewCount());
-			}
-
-			// 对于数据库中也没有的，设置为0
-			for (Long id : missContentIds) {
-				result.putIfAbsent(id, 0L);
+		for (Long id : contentIds) {
+			if (!existIds.contains(id)) {
+				result.put(id, 0L);
 			}
 		}
 
@@ -334,10 +312,10 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 
 		try {
 			// 1. 批量同步Redis数据到数据库
-			syncAllRedisDataToDb();
+			// syncAllRedisDataToDb();
 
 			// 2. 识别并清理无效数据
-			cleanInvalidViews();
+			// cleanInvalidViews();
 
 			log.info("数据清洗与校正任务执行完成");
 		} catch (Exception e) {
