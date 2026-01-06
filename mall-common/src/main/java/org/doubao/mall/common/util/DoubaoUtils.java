@@ -107,22 +107,4 @@ public class DoubaoUtils {
 	public static boolean isNotEmpty(@Nullable Map<?, ?> map) {
 		return !CollectionUtils.isEmpty(map);
 	}
-	
-	/**
-	 * 检查字符串是否为空
-	 * @param str 字符串
-	 * @return 如果字符串为空或null则返回 true，否则返回 false
-	 */
-	public static boolean isEmpty(@Nullable String str) {
-		return StringUtils.isEmpty(str);
-	}
-	
-	/**
-	 * 检查字符串是否不为空
-	 * @param str 字符串
-	 * @return 如果字符串不为null且不为空则返回 true，否则返回 false
-	 */
-	public static boolean isNotEmpty(@Nullable String str) {
-		return !StringUtils.isEmpty(str);
-	}
 }
