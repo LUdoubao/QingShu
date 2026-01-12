@@ -1,49 +1,56 @@
 package org.doubao.view.count.service.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-
 import org.doubao.mall.common.util.ConvertUtil;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.view.count.service.dto.ViewRecordDTO;
 import org.doubao.view.count.service.entity.ContentView;
 import org.doubao.view.count.service.entity.UserViewLog;
-import org.doubao.view.count.service.entity.ViewCorrectionLog;
 import org.doubao.view.count.service.mapper.ContentViewMapper;
-import org.doubao.view.count.service.mapper.UserViewLogMapper;
-import org.doubao.view.count.service.mapper.ViewCorrectionLogMapper;
+import org.doubao.view.count.service.service.UserViewLogService;
+import org.doubao.view.count.service.service.ViewCorrectionLogService;
 import org.doubao.view.count.service.service.ViewCountService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 @Service
-
 public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, ContentView> implements ViewCountService {
 
 	private static final Logger log = LoggerFactory.getLogger(ViewCountServiceImpl.class);
+	// 分布式锁前缀
+	private static final String LOCK_PREFIX = "view:lock:";
+	// 缓存空值过期时间（防穿透）
+	private static final long EMPTY_CACHE_EXPIRE = 5 * 60;
+	// 缓存过期时间随机偏移量（防雪崩）
+	private static final int RANDOM_EXPIRE_OFFSET = 600;
+
 	@Autowired
 	private ContentViewMapper contentViewMapper;
 
 	@Autowired
-	private UserViewLogMapper userViewLogMapper;
+	private UserViewLogService userViewLogService;
 
 	@Autowired
-	private ViewCorrectionLogMapper correctionLogMapper;
+	private ViewCorrectionLogService viewCorrectionLogService;
 
 	@Autowired
 	private RedisTemplate<String, Object> redisTemplate;
@@ -51,39 +58,52 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 	@Autowired
 	private RabbitTemplate rabbitTemplate;
 
-	@Value("${view-count.valid-duration}")
+	@Autowired
+	private RedissonClient redissonClient;
+
+	// 有效浏览时长（秒）
+	@Value("${view-count.valid-duration:5}")
 	private int validDuration;
 
-	@Value("${view-count.list-valid-duration}")
+	// 列表页有效浏览时长（秒）
+	@Value("${view-count.list-valid-duration:3}")
 	private int listValidDuration;
 
-	@Value("${view-count.duplicate-time-window}")
+	// 去重时间窗口（秒）
+	@Value("${view-count.duplicate-time-window:86400}")
 	private int duplicateTimeWindow;
 
-	@Value("${view-count.hot-content-threshold}")
+	// 热点内容阈值（1小时增量）
+	@Value("${view-count.hot-content-threshold:1000}")
 	private int hotContentThreshold;
 
-	@Value("${view-count.ip-limit-count}")
+	// IP限流次数
+	@Value("${view-count.ip-limit-count:10}")
 	private int ipLimitCount;
 
-	@Value("${view-count.ip-limit-period}")
+	// IP限流周期（秒）
+	@Value("${view-count.ip-limit-period:60}")
 	private int ipLimitPeriod;
 
-	@Value("${view-count.correction-notify-threshold}")
+	// 校正通知阈值（百分比）
+	@Value("${view-count.correction-notify-threshold:10}")
 	private int correctionNotifyThreshold;
 
 	// Redis key 前缀
 	private static final String VIEW_COUNT_PREFIX = "view:count:";
 	private static final String USER_VIEW_PREFIX = "view:user:";
-	private static final String VIEW_TREND_PREFIX = "view:trend:";
 	private static final String IP_LIMIT_PREFIX = "view:ip:limit:";
 	private static final String HOT_CONTENT_PREFIX = "view:hot:";
+	private static final String EMPTY_CONTENT_PREFIX = "view:empty:";
+
+	// 本地锁（防止单机重复执行）
+	private final Lock localLock = new ReentrantLock();
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
 	public boolean recordView(ViewRecordDTO record) {
 		// 1. 验证参数
-		if (record.getContentId() == null || StringUtils.isEmpty(record.getUserIdentity())) {
+		if (DoubaoUtils.isEmpty(record.getUserIdentity())) {
 			log.error("无效的浏览记录参数: {}", record);
 			return false;
 		}
@@ -107,29 +127,34 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		if (!isValid) {
 			log.info("无效浏览: contentId={}, userIdentity={}, duration={}",
 					record.getContentId(), record.getUserIdentity(), record.getViewDuration());
+			// 记录无效日志（is_valid=0）
+			saveInvalidViewLog(record);
 			return false;
 		}
 
-		// 5. 检查24小时内是否已计数（去重）
+		// 5. 检查重复浏览（去重）
 		String userViewKey = USER_VIEW_PREFIX + record.getContentId() + ":" + record.getUserIdentity();
 		Boolean isDuplicate = redisTemplate.hasKey(userViewKey);
 		if (Boolean.TRUE.equals(isDuplicate)) {
-			log.info("24小时内重复浏览，不计数: contentId={}, userIdentity={}",
-					record.getContentId(), record.getUserIdentity());
+			log.info("{}秒内重复浏览，不计数: contentId={}, userIdentity={}",
+					duplicateTimeWindow, record.getContentId(), record.getUserIdentity());
 			return false;
 		}
 
-		// 6. 记录浏览日志
+		// 6. 记录有效浏览日志
 		saveViewLog(record);
 
-		// 7. 更新Redis计数器
+		// 7. 更新Redis计数器（添加随机过期时间防雪崩）
 		String countKey = VIEW_COUNT_PREFIX + record.getContentId();
 		Long newCount = redisTemplate.opsForValue().increment(countKey);
+		// 设置过期时间（24小时 + 随机偏移）
+		long expireTime = 24 * 3600 + new Random().nextInt(RANDOM_EXPIRE_OFFSET);
+		redisTemplate.expire(countKey, expireTime, TimeUnit.SECONDS);
 
-		// 8. 设置用户浏览记录过期时间（24小时）
+		// 8. 设置用户浏览记录过期时间
 		redisTemplate.opsForValue().set(userViewKey, "1", duplicateTimeWindow, TimeUnit.SECONDS);
 
-		// 9. 检查是否为热点内容，若是则实时同步到数据库
+		// 9. 检查并同步热点内容（加分布式锁防止并发同步）
 		checkAndSyncHotContent(record.getContentId(), countKey, newCount);
 
 		log.info("成功记录有效浏览: contentId={}, userIdentity={}, newCount={}",
@@ -154,9 +179,9 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		}
 	}
 
-	// 检查IP限流
+	// 检查IP限流（修复配置参数使用错误）
 	private boolean checkIpLimit(String ipAddress) {
-		if (StringUtils.isEmpty(ipAddress)) {
+		if (DoubaoUtils.isEmpty(ipAddress)) {
 			return false;
 		}
 
@@ -167,16 +192,16 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 
 		String limitKey = IP_LIMIT_PREFIX + ipPrefix;
 
-		// 使用Redis的incr和expire实现滑动窗口限流
+		// 使用Redis的incr和expire实现滑动窗口限流（使用配置的ipLimitPeriod）
 		Long count = redisTemplate.opsForValue().increment(limitKey);
 		if (count != null && count == 1) {
-			redisTemplate.expire(limitKey, 60, TimeUnit.SECONDS);
+			redisTemplate.expire(limitKey, ipLimitPeriod, TimeUnit.SECONDS);
 		}
 
 		return count != null && count <= ipLimitCount;
 	}
 
-	// 保存浏览日志
+	// 保存有效浏览日志
 	private void saveViewLog(ViewRecordDTO record) {
 		UserViewLog log = new UserViewLog();
 		log.setContentId(record.getContentId());
@@ -188,10 +213,25 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		log.setIpAddress(record.getIpAddress());
 		log.setUserAgent(record.getUserAgent());
 
-		userViewLogMapper.insert(log);
+		userViewLogService.save(log);
 	}
 
-	// 检查并同步热点内容
+	// 保存无效浏览日志
+	private void saveInvalidViewLog(ViewRecordDTO record) {
+		UserViewLog log = new UserViewLog();
+		log.setContentId(record.getContentId());
+		log.setUserIdentity(record.getUserIdentity());
+		log.setViewTime(LocalDateTime.now());
+		log.setViewDuration(record.getViewDuration());
+		log.setIsValid(0);
+		log.setIsFromList(record.getFromList() ? 1 : 0);
+		log.setIpAddress(record.getIpAddress());
+		log.setUserAgent(record.getUserAgent());
+
+		userViewLogService.save(log);
+	}
+
+	// 检查并同步热点内容（添加分布式锁）
 	private void checkAndSyncHotContent(Long contentId, String countKey, Long newCount) {
 		if (newCount == null) {
 			return;
@@ -206,16 +246,31 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 
 		// 如果达到热点阈值，实时同步到数据库
 		if (hourlyIncrement != null && hourlyIncrement >= hotContentThreshold) {
-			syncToDatabase(contentId, countKey, newCount);
+			// 分布式锁：防止同一内容并发同步
+			String lockKey = LOCK_PREFIX + "hot:" + contentId;
+			RLock lock = redissonClient.getLock(lockKey);
+			try {
+				// 尝试获取锁（5秒等待，10秒自动释放）
+				if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
+					syncToDatabase(contentId, countKey, newCount);
+				}
+			} catch (InterruptedException e) {
+				log.error("获取热点内容同步锁失败: contentId={}", contentId, e);
+				Thread.currentThread().interrupt();
+			} finally {
+				if (lock.isHeldByCurrentThread()) {
+					lock.unlock();
+				}
+			}
 		}
 	}
 
 	// 同步到数据库
 	private void syncToDatabase(Long contentId, String countKey, Long newCount) {
 		try {
-			// 检查记录是否存在
-			ContentView contentView = contentViewMapper.selectOne(
-					new QueryWrapper<ContentView>().eq("content_id", contentId));
+			LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.eq(ContentView::getContentId, contentId);
+			ContentView contentView = contentViewMapper.selectOne(queryWrapper);
 
 			if (contentView == null) {
 				// 新增记录
@@ -224,25 +279,47 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 				contentView.setViewCount(newCount);
 				contentView.setTodayCount(1);
 				contentView.setYesterdayCount(0);
+				contentView.setCreatedTime(LocalDateTime.now());
+				contentView.setUpdatedTime(LocalDateTime.now());
 				contentViewMapper.insert(contentView);
+
+				// 同步Redis的浏览量，添加随机过期时间
+				long expireTime = 24 * 3600 + new Random().nextInt(RANDOM_EXPIRE_OFFSET);
+				redisTemplate.opsForValue().set(countKey, newCount, expireTime, TimeUnit.SECONDS);
 			} else {
-				// 更新记录
-				contentView.setViewCount(newCount);
-				// 判断是否是今天
 				LocalDate today = LocalDate.now();
-				LocalDate updateDate = contentView.getUpdatedTime().toLocalDate();
+				LocalDate updateDate = contentView.getUpdatedTime() != null ?
+						contentView.getUpdatedTime().toLocalDate() : LocalDate.now().minusDays(1);
+
+				int todayCount = contentView.getTodayCount();
+				int yesterdayCount = contentView.getYesterdayCount();
 
 				if (today.equals(updateDate)) {
-					contentView.setTodayCount(contentView.getTodayCount() + 1);
+					todayCount += 1;
 				} else if (today.minusDays(1).equals(updateDate)) {
-					contentView.setYesterdayCount(contentView.getTodayCount());
-					contentView.setTodayCount(1);
+					yesterdayCount = contentView.getTodayCount();
+					todayCount = 1;
 				} else {
-					contentView.setYesterdayCount(0);
-					contentView.setTodayCount(1);
+					yesterdayCount = 0;
+					todayCount = 1;
 				}
 
-				contentViewMapper.updateById(contentView);
+				// 直接更新
+				LambdaUpdateWrapper<ContentView> updateWrapper = new LambdaUpdateWrapper<>();
+				updateWrapper.eq(ContentView::getContentId, contentId)
+						.set(ContentView::getViewCount, newCount)
+						.set(ContentView::getTodayCount, todayCount)
+						.set(ContentView::getYesterdayCount, yesterdayCount)
+						.set(ContentView::getUpdatedTime, LocalDateTime.now());
+
+				int updateRows = contentViewMapper.update(null, updateWrapper);
+				if (updateRows == 0) {
+					log.warn("浏览量更新失败: contentId={}", contentId);
+				}
+
+				// 同步Redis的浏览量，添加随机过期时间
+				long expireTime = 24 * 3600 + new Random().nextInt(RANDOM_EXPIRE_OFFSET);
+				redisTemplate.opsForValue().set(countKey, newCount, expireTime, TimeUnit.SECONDS);
 			}
 
 			log.info("热点内容浏览量同步到数据库: contentId={}, count={}", contentId, newCount);
@@ -258,24 +335,50 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		}
 
 		String countKey = VIEW_COUNT_PREFIX + contentId;
+		String emptyKey = EMPTY_CONTENT_PREFIX + contentId;
 
-		// 先从Redis获取
-		Object countObj = redisTemplate.opsForValue().get(countKey);
-		if (countObj != null) {
-			return Long.parseLong(countObj.toString());
+		// 1. 检查是否是缓存空值（防穿透）
+		if (Boolean.TRUE.equals(redisTemplate.hasKey(emptyKey))) {
+			return 0L;
 		}
 
-		// Redis没有则从数据库获取
-		LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
-		queryWrapper.eq(ContentView::getContentId, contentId);
-		ContentView contentView = this.getOne(queryWrapper);
+		// 2. 先从Redis获取
+		Object countObj = redisTemplate.opsForValue().get(countKey);
+		if (DoubaoUtils.isNotEmpty(countObj)) {
+			try {
+				return Long.parseLong(countObj.toString());
+			} catch (NumberFormatException e) {
+				log.warn("Redis中浏览量数据格式错误: key={}, value={}", countKey, countObj);
+			}
+		}
 
-		Long count = contentView != null ? contentView.getViewCount() : 0L;
+		// 3. Redis没有则从数据库获取（加本地锁防止缓存击穿）
+		localLock.lock();
+		try {
+			// 双重检查：防止多线程重复查询数据库
+			countObj = redisTemplate.opsForValue().get(countKey);
+			if (countObj != null) {
+				return Long.parseLong(countObj.toString());
+			}
 
-		// 同步到Redis
-		redisTemplate.opsForValue().set(countKey, count);
+			LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.eq(ContentView::getContentId, contentId);
+			ContentView contentView = this.getOne(queryWrapper);
 
-		return count;
+			Long count = contentView != null ? contentView.getViewCount() : 0L;
+
+			// 4. 同步到Redis（防穿透：空值设置短过期，非空设置随机过期）
+			if (count == 0) {
+				redisTemplate.opsForValue().set(emptyKey, "1", EMPTY_CACHE_EXPIRE, TimeUnit.SECONDS);
+			} else {
+				long expireTime = 24 * 3600 + new Random().nextInt(RANDOM_EXPIRE_OFFSET);
+				redisTemplate.opsForValue().set(countKey, count, expireTime, TimeUnit.SECONDS);
+			}
+
+			return count;
+		} finally {
+			localLock.unlock();
+		}
 	}
 
 	@Override
@@ -285,43 +388,74 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		}
 
 		Map<Long, Long> result = new HashMap<>(contentIds.size());
+		List<Long> needFetchFromDb = new ArrayList<>();
 
-		LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
-		queryWrapper.in(ContentView::getContentId, contentIds);
-		List<ContentView> contentViews = contentViewMapper.selectList(queryWrapper);
+		// 1. Redis批量获取（mget提升效率）
+		List<String> countKeys = contentIds.stream()
+				.map(id -> VIEW_COUNT_PREFIX + id)
+				.collect(Collectors.toList());
+		List<Object> countObjs = redisTemplate.opsForValue().multiGet(countKeys);
 
-		List<Long> existIds = new ArrayList<>();
-		for (ContentView view : contentViews) {
-			result.put(view.getContentId(), view.getViewCount());
-			existIds.add(view.getContentId());
+		// 2. 解析Redis结果
+		for (int i = 0; i < contentIds.size(); i++) {
+			Long contentId = contentIds.get(i);
+			Object countObj = DoubaoUtils.notNull(countObjs) ? countObjs.get(i) : null;
+
+			// 检查空值缓存
+			if (Boolean.TRUE.equals(redisTemplate.hasKey(EMPTY_CONTENT_PREFIX + contentId))) {
+				result.put(contentId, 0L);
+				continue;
+			}
+
+			if (DoubaoUtils.isNotEmpty(countObj)) {
+				try {
+					result.put(contentId, Long.parseLong(countObj.toString()));
+				} catch (NumberFormatException e) {
+					log.warn("Redis中浏览量数据格式错误: contentId={}, value={}", contentId, countObj);
+					needFetchFromDb.add(contentId);
+				}
+			} else {
+				needFetchFromDb.add(contentId);
+			}
 		}
 
-		for (Long id : contentIds) {
-			if (!existIds.contains(id)) {
-				result.put(id, 0L);
+		// 3. 批量从数据库获取缺失数据
+		if (!CollectionUtils.isEmpty(needFetchFromDb)) {
+			LambdaQueryWrapper<ContentView> queryWrapper = new LambdaQueryWrapper<>();
+			queryWrapper.in(ContentView::getContentId, needFetchFromDb);
+			List<ContentView> contentViews = contentViewMapper.selectList(queryWrapper);
+
+			// 构建数据库结果映射
+			Map<Long, Long> dbResult = contentViews.stream()
+					.collect(Collectors.toMap(ContentView::getContentId, ContentView::getViewCount));
+
+			// 4. 同步到Redis并更新结果
+			Map<String, Object> redisBatchSet = new HashMap<>();
+			for (Long contentId : needFetchFromDb) {
+				Long count = dbResult.getOrDefault(contentId, 0L);
+				result.put(contentId, count);
+
+				// 防穿透：空值设置短过期，非空设置随机过期
+				if (count == 0) {
+					redisTemplate.opsForValue().set(EMPTY_CONTENT_PREFIX + contentId, "1", EMPTY_CACHE_EXPIRE, TimeUnit.SECONDS);
+				} else {
+					String countKey = VIEW_COUNT_PREFIX + contentId;
+					long expireTime = 24 * 3600 + new Random().nextInt(RANDOM_EXPIRE_OFFSET);
+					redisBatchSet.put(countKey, count);
+					redisTemplate.expire(countKey, expireTime, TimeUnit.SECONDS);
+				}
+			}
+
+			// 批量设置Redis（减少交互）
+			if (!redisBatchSet.isEmpty()) {
+				redisTemplate.opsForValue().multiSet(redisBatchSet);
 			}
 		}
 
 		return result;
 	}
 
-	@Override
-	@Scheduled(cron = "0 0 2 * * ?") // 每天凌晨2点执行
-	public void cleanAndCorrectData() {
-		log.info("开始执行数据清洗与校正任务");
 
-		try {
-			// 1. 批量同步Redis数据到数据库
-			// syncAllRedisDataToDb();
-
-			// 2. 识别并清理无效数据
-			// cleanInvalidViews();
-
-			log.info("数据清洗与校正任务执行完成");
-		} catch (Exception e) {
-			log.error("数据清洗与校正任务执行失败", e);
-		}
-	}
 
 	@Override
 	public Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params) {
@@ -341,7 +475,7 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		}
 
 		// 2. 调用Mapper查询指定日期和文章的有效浏览量总和（按日期分组）
-		List<Map<String, Object>> dailyCounts = userViewLogMapper.selectDailyViewCounts(contentIds, dates);
+		List<Map<String, Object>> dailyCounts = userViewLogService.selectDailyViewCounts(contentIds, dates);
 
 		// 3. 转换查询结果为Map<LocalDate, Long>（日期→当日总浏览量）
 		Map<LocalDate, Long> resultMap = new HashMap<>(dates.size());
@@ -354,7 +488,6 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		// 填充查询到的计数（覆盖初始的0）
 		for (Map<String, Object> countMap : dailyCounts) {
 			// 从查询结果中提取日期和计数
-
 			LocalDate statDate = ConvertUtil.safeParseLocalDate(countMap.get("stat_date"));
 			Long totalCount = ConvertUtil.safeParseLong(countMap.get("total_count"));
 
@@ -366,121 +499,5 @@ public class ViewCountServiceImpl extends ServiceImpl<ContentViewMapper, Content
 		log.info("批量查询每日浏览量完成：日期范围={}至{}, 文章数量={}, 结果={}",
 				dates.get(0), dates.get(dates.size() - 1), contentIds.size(), resultMap);
 		return resultMap;
-	}
-
-	// 批量同步Redis数据到数据库
-	private void syncAllRedisDataToDb() {
-		// 实现批量同步逻辑
-		// 省略具体实现...
-	}
-
-	// 清理无效数据
-	private void cleanInvalidViews() {
-		// 1. 查询需要清理的无效浏览记录
-		List<UserViewLog> invalidLogs = userViewLogMapper.selectList(
-				new QueryWrapper<UserViewLog>()
-						.eq("is_valid", false)
-						.lt("create_time", LocalDateTime.now().minusDays(1)));
-
-		if (CollectionUtils.isEmpty(invalidLogs)) {
-			log.info("没有需要清理的无效浏览记录");
-			return;
-		}
-
-		// 2. 按contentId分组统计需要减去的浏览量
-		Map<Long, Long> correctionMap = invalidLogs.stream()
-				.collect(Collectors.groupingBy(
-						UserViewLog::getContentId,
-						Collectors.counting()
-				));
-
-		// 3. 逐个校正内容的浏览量
-		for (Map.Entry<Long, Long> entry : correctionMap.entrySet()) {
-			Long contentId = entry.getKey();
-			Long reduceCount = entry.getValue();
-
-			// 更新数据库
-			ContentView contentView = contentViewMapper.selectOne(
-					new QueryWrapper<ContentView>().eq("content_id", contentId));
-
-			if (contentView == null) {
-				continue;
-			}
-
-			Long beforeCount = contentView.getViewCount();
-			Long afterCount = Math.max(0, beforeCount - reduceCount);
-
-			// 计算变化百分比
-			int changePercent = (int) ((beforeCount - afterCount) * 100 / beforeCount);
-
-			// 更新浏览量
-			contentView.setViewCount(afterCount);
-			contentViewMapper.updateById(contentView);
-
-			// 更新Redis
-			redisTemplate.opsForValue().set(VIEW_COUNT_PREFIX + contentId, afterCount);
-
-			// 记录校正日志
-			ViewCorrectionLog viewCorrectionLog = new ViewCorrectionLog();
-			viewCorrectionLog.setContentId(contentId);
-			viewCorrectionLog.setBeforeCount(beforeCount);
-			viewCorrectionLog.setAfterCount(afterCount);
-			viewCorrectionLog.setCorrectionTime(LocalDateTime.now());
-			viewCorrectionLog.setReason("清理无效浏览记录");
-			viewCorrectionLog.setOperator("system");
-			correctionLogMapper.insert(viewCorrectionLog);
-
-			log.info("校正浏览量: contentId={}, before={}, after={}, reduce={}",
-					contentId, beforeCount, afterCount, reduceCount);
-
-			// 如果变化超过阈值，发送通知
-			if (changePercent >= correctionNotifyThreshold) {
-				// sendCorrectionNotification(contentId, beforeCount, afterCount, changePercent);
-			}
-		}
-
-		// 4. 删除清理掉的日志记录
-		List<Long> logIds = invalidLogs.stream()
-				.map(UserViewLog::getId)
-				.collect(Collectors.toList());
-
-		userViewLogMapper.deleteBatchIds(logIds);
-		log.info("清理无效浏览记录: {} 条", logIds.size());
-	}
-
-	// 发送校正通知
-	private void sendCorrectionNotification(Long contentId, Long beforeCount, Long afterCount, int changePercent) {
-		Long authorId = getAuthorIdByContentId(contentId);
-
-		if (authorId == null) {
-			log.warn("无法获取内容作者信息: contentId={}", contentId);
-			return;
-		}
-
-		// 2. 构建通知消息
-		// ViewCorrectionNotificationDTO notification = new ViewCorrectionNotificationDTO();
-		// notification.setUserId(authorId);
-		// notification.setContentId(contentId);
-		// notification.setBeforeCount(beforeCount);
-		// notification.setAfterCount(afterCount);
-		// notification.setChangePercent(changePercent);
-		// notification.setNotifyTime(LocalDateTime.now());
-		// notification.setTitle("内容浏览量校正通知");
-		// notification.setContent(String.format(
-		// 		"您的内容（ID: %d）浏览量因系统清理无效数据已校正，从 %d 调整为 %d，变动率为 %d%%。",
-		// 		contentId, beforeCount, afterCount, changePercent));
-		//
-		// // 3. 发送到消息队列
-		// rabbitTemplate.convertAndSend(
-		// 		"view.correction.notify.exchange",
-		// 		"view.correction.notify.key",
-		// 		notification);
-
-		log.info("发送浏览量校正通知: userId={}, contentId={}", authorId, contentId);
-	}
-
-	// 获取内容作者ID（实际应通过Feign调用content-service）
-	private Long getAuthorIdByContentId(Long contentId) {
-		return null;
 	}
 }

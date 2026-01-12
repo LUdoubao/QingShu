@@ -38,10 +38,5 @@ public interface ViewCountService extends IService<ContentView> {
 	 */
 	// List<ViewTrendDTO> getViewTrend(Long contentId, int days);
 
-	/**
-	 * 执行数据清洗与校正
-	 */
-	void cleanAndCorrectData();
-
 	Map<LocalDate, Long> batchSumDailyCounts(Map<String, Object> params);
 }
