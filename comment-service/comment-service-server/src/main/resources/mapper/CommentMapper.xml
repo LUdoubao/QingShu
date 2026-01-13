@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.comment.service.mapper.CommentMapper">
+
+    <!-- 
+        根据文章ID查询评论列表
+        查询指定文章下的所有评论，按创建时间倒序排列
+        用于获取文章下的主评论列表
+    -->
+    <select id="selectByPostId" resultType="org.doubao.comment.service.entity.Comment">
+        SELECT
+        *
+        FROM comments
+        WHERE post_id = #{postId}
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 
+        查询评论的回复
+        查询指定评论的前N条回复，按创建时间倒序排列
+        用于在评论详情中展示部分回复内容
+    -->
+    <select id="selectReplies" resultType="org.doubao.comment.service.entity.Comment">
+        SELECT
+        *
+        FROM comments
+        WHERE root_id = #{commentId}
+        AND parent_id IS NOT NULL
+        AND status in (0, 1)
+        AND deleted = 0
+        ORDER BY created_time DESC
+        LIMIT #{count}
+    </select>
+
+    <!-- 
+        根据主评论ID分页查询回复列表
+        分页查询指定主评论下的所有回复
+        用于评论详情页的回复列表分页展示
+    -->
+    <select id="selectRepliesByCommentId" resultType="org.doubao.comment.service.entity.Comment">
+        SELECT
+        *
+        FROM
+        comments c
+        WHERE
+        c.root_id = #{rootId}
+        AND c.parent_id IS NOT NULL
+        AND c.status in (0, 1)
+        AND c.deleted = 0
+        ORDER BY
+        c.created_time DESC
+    </select>
+    
+    <!-- 
+        根据文章ID列表查询评论数
+        统计指定文章ID列表中每个文章的评论数量
+        用于批量获取文章评论数的场景
+    -->
+    <select id="countCommentsByPostIds" resultType="org.doubao.comment.service.vo.CommentCountVo">
+        SELECT
+        post_id as postId,
+        COUNT(*) as commentCount
+        FROM comments
+        WHERE post_id IN
+        <foreach collection="postIds" item="postId" open="(" close=")" separator=",">
+            #{postId}
+        </foreach>
+        AND status in (0, 1)
+        AND deleted = 0
+        AND (parent_id IS NULL OR parent_id = '')
+        GROUP BY post_id
+    </select>
+
+    <!-- 
+        查询指定文章在多个日期的每日有效评论数总和
+        统计指定文章在给定日期范围内每日的评论总数
+        用于数据统计和报表功能
+    -->
+    <select id="selectDailyCommentCounts" resultType="java.util.Map">
+        SELECT
+        DATE(created_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM comments
+        WHERE
+        post_id IN
+        <foreach collection="postIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND status in (0, 1)
+        AND deleted = 0
+        AND (parent_id IS NULL OR parent_id = '')
+        AND DATE(created_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(created_time)
+    </select>
+</mapper>

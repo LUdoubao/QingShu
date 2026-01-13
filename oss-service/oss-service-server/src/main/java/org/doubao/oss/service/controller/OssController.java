@@ -1,0 +1,28 @@
+package org.doubao.oss.service.controller;
+
+import org.doubao.mall.common.dto.FileUploadResult;
+import org.doubao.mall.common.entity.Result;
+import org.doubao.oss.service.service.OssService;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import javax.annotation.Resource;
+
+@RestController
+@RequestMapping("/oss")
+public class OssController {
+
+	@Resource
+	private OssService ossService;
+	@PostMapping("/upload")
+	public Result<FileUploadResult> uploadFile(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam(value = "type", defaultValue = "file") String type) {
+		return ossService.uploadFile(file, type);
+	}
+
+	@GetMapping({"/url"})
+	public Result<String> generateAccessUrl(@RequestParam(required = false,name = "fileKey") String fileKey, @RequestParam(name = "storageType") String storageType) {
+		return Result.success(ossService.generateAccessUrl(fileKey, storageType));
+	}
+}

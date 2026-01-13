@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.user.service.mapper.relation.UserRelationMapper">
+    <!-- int existsRelation(
+			@Param("userId") Long userId,
+			@Param("targetUserId") Long targetUserId,
+			@Param("relationType") Integer relationType
+	); -->
+    <select id="existsRelation" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM user_relation
+        WHERE user_id = #{userId}
+        AND target_user_id = #{targetUserId}
+        AND relation_type = #{relationType}
+    </select>
+
+    <!-- void batchInsert(@Param("list") List<UserRelation> relations); -->
+    <insert id="batchInsert">
+        INSERT INTO user_relation (user_id, target_user_id, relation_type, is_mutual, created_time, updated_time)
+        VALUES
+        <foreach item="item" index="index" collection="list" separator=",">
+            (#{item.userId}, #{item.targetUserId}, #{item.relationType}, #{item.isMutual}, #{item.createdTime}, #{item.updatedTime})
+        </foreach>
+    </insert>
+
+    <!-- void batchDelete(
+			@Param("userId") Long userId,
+			@Param("targetUserIds") List<Long> targetUserIds,
+			@Param("relationType") Integer relationType
+	); -->
+    <delete id="batchDelete">
+        DELETE FROM user_relation
+        WHERE user_id = #{userId}
+        AND target_user_id IN
+        <foreach item="item" index="index" collection="targetUserIds" separator=",">
+            #{item}
+        </foreach>
+        AND relation_type = #{relationType}
+    </delete>
+
+    <!-- 查询粉丝ID列表 -->
+    <select id="selectFollowerIds" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_relation
+        WHERE target_user_id = #{targetUserId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+    <select id="selectAllFollowerIds" resultType="java.lang.Long">
+        SELECT user_id
+        FROM user_relation
+        WHERE target_user_id = #{targetUserId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
+    </select>
+    <!-- 查询关注ID列表 -->
+    <select id="selectFollowingIds" resultType="java.lang.Long">
+        SELECT target_user_id
+        FROM user_relation
+        WHERE user_id = #{userId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+    <select id="selectAllFollowingIds" resultType="java.lang.Long">
+        SELECT target_user_id
+        FROM user_relation
+        WHERE user_id = #{userId}
+        AND relation_type = #{relationType}
+        ORDER BY created_Time DESC
+    </select>
+
+    <!-- 统计粉丝总数 -->
+    <select id="countFollowers" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_relation
+        WHERE target_user_id = #{targetUserId}
+        AND relation_type = #{relationType}
+    </select>
+
+    <!-- 统计关注总数 -->
+    <select id="countFollowing" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM user_relation
+        WHERE user_id = #{userId}
+        AND relation_type = #{relationType}
+    </select>
+
+    <select id="isFollowRaw" resultType="org.doubao.user.service.vo.relation.FollowResult">
+        SELECT
+        target_user_id as targetUserId,
+        IF(COUNT(*) > 0, TRUE, FALSE) AS isFollow
+        FROM user_relation
+        WHERE user_id = #{currentUserId}
+        AND target_user_id IN
+        <foreach item="item" collection="userIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY target_user_id
+    </select>
+
+    <!-- List<FollowerCount> getFollowerCounts(@Param("userIds") List<Long> userIds); -->
+    <select id="getFollowerCounts" resultType="org.doubao.user.service.dto.relation.FollowerCount">
+        SELECT
+        target_user_id AS userId,
+        COUNT(*) AS count
+        FROM user_relation
+        WHERE target_user_id IN
+        <foreach item="item" collection="userIds" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+        GROUP BY target_user_id
+    </select>
+</mapper>

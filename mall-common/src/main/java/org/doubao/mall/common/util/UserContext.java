@@ -1,18 +1,18 @@
 package org.doubao.mall.common.util;
 
 
-import org.doubao.mall.common.entity.UserInfo;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.vo.UserLoginVo;
 
 public class UserContext {
-	private static final ThreadLocal<UserInfo> currentUser = new ThreadLocal<>();
+	private static final ThreadLocal<UserLoginVo> currentUser = new ThreadLocal<>();
 
-	public static void setUser(UserInfo user) {
+	public static void setUser(UserLoginVo user) {
 		currentUser.set(user);
 	}
 
-	public static UserInfo getUser() {
+	public static UserLoginVo getUser() {
 		return currentUser.get();
 	}
 
@@ -22,10 +22,10 @@ public class UserContext {
 
 	public static Long getUserId() {
 		// 获取当前用户ID
-		UserInfo userInfo = UserContext.getUser();
+		UserLoginVo userInfo = UserContext.getUser();
 		if (userInfo == null || userInfo.getId() == null) {
 			throw new BusinessException(ErrorCode.USER_NOT_LOGIN);
 		}
-		return Long.valueOf(userInfo.getId());
+		return userInfo.getId();
 	}
 }

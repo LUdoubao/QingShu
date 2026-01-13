@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.quote.service.mapper.TagMapper">
+    <select id="selectTopTags" resultType="org.doubao.quote.service.dto.TagCountVo">
+        SELECT
+        t.id,
+        t.name,
+        COUNT(qt.tag_id) AS quoteCount
+        FROM
+        tag t
+        JOIN
+        quote_tag qt ON t.id = qt.tag_id
+        GROUP BY
+        qt.tag_id
+        ORDER BY
+        quoteCount DESC
+        LIMIT #{limit}
+    </select>
+    <select id="selectTagWithQuoteCount" resultType="org.doubao.quote.service.dto.TagCountDTO">
+        SELECT
+        t.id AS tagId,
+        t.name AS tagName,
+        COUNT(qt.quote_id) AS quoteCount
+        FROM tag t
+        LEFT JOIN quote_tag qt ON t.id = qt.tag_id
+        WHERE t.name LIKE CONCAT('%', #{keyword}, '%')
+        GROUP BY t.id, t.name
+    </select>
+
+    <select id="selectTagIdsByName" resultType="java.lang.Long">
+        SELECT id FROM tag WHERE name LIKE CONCAT('%', #{keyword}, '%')
+    </select>
+</mapper>

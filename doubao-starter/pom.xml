@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <groupId>com.doubao</groupId>
+        <artifactId>SpringCloudDemo</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>doubao-starter</artifactId>
+    <name>doubao-starter</name>
+    <description>Doubao Monolith Starter - A single application that integrates all services</description>
+    <dependencies>
+        <!-- 引入所有服务模块 -->
+        <!-- 认证服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>auth-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 用户服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>user-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 语录服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>quote-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- AI服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>ai-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 点赞服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>like-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 评论服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>comment-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 收藏服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>favorite-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 对话服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>dialog-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 分享服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>share-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 观看计数服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>view-count-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 消息推送服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>notification-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 搜索服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>search-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 信息流服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>feed-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- 扇出服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>fanout-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+        
+        <!-- OSS服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>oss-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                    <encoding>UTF-8</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+                <configuration>
+                    <mainClass>org.doubao.starter.DoubaoStarterApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>repackage</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

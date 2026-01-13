@@ -1,6 +1,6 @@
 package org.doubao.api.gateway.filter;
 
-import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.impl.DefaultClaims;
 import org.apache.http.auth.AuthenticationException;
 import org.slf4j.Logger;
@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
+import org.springframework.cloud.gateway.support.ServiceUnavailableException;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -33,6 +34,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 		"/user/login",
 		"/user/register",
 		"/user/verify",
+		"/user/forgot-password",
 		"/public/",
 		"/dialog/ws"
 	);
@@ -73,7 +75,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 				.retrieve()  // 发送请求并获取响应
 				.onStatus(HttpStatus::isError, clientResponse ->  // 处理HTTP错误状态
 						// 转换错误响应为异常流
-						Mono.error(new RuntimeException("Token validation failed: " +
+						Mono.error(new JwtException("Token validation failed: " +
 								clientResponse.statusCode()))
 				)
 				.bodyToMono(DefaultClaims.class)  // 将响应体转换为String类型
@@ -90,16 +92,36 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 				})
 				.onErrorResume(e -> {       // 处理所有验证异常
 					// 记录详细错误日志
-					LOG.error("JWT 解析失败：{}", e.getMessage());
+					LOG.error("JWT 解析失败", e);
 
-					// 设置401未授权响应状态
-					exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					// 检查根原因是否为服务不可用异常
+					Throwable rootCause = e;
+					while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+						rootCause = rootCause.getCause();
+					}
+
+					LOG.error("根异常类型：{}", rootCause.getClass().getName());
+
+					// 判断异常类型并设置响应状态
+					if (rootCause instanceof ServiceUnavailableException) {
+						// 服务不可用
+						exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+					} else if (isAuthenticationException(e)) {
+						// 认证错误（JWT相关异常）
+						exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+					} else {
+						// 其他非认证错误统一视为服务不可用
+						exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+					}
 
 					// 立即结束响应
 					return exchange.getResponse().setComplete();
 				});
 	}
-
+	// 辅助方法：判断是否为认证相关异常
+	private boolean isAuthenticationException(Throwable e) {
+		return e instanceof JwtException;     // JWT错误
+	}
 	@Override
 	public int getOrder() {
 		return -1;

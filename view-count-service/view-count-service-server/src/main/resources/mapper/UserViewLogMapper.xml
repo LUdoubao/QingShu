@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.view.count.service.mapper.UserViewLogMapper">
+    <select id="selectDailyViewCounts" resultType="java.util.Map">
+        SELECT
+        DATE(view_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM user_view_log
+        WHERE
+        content_id IN
+        <foreach collection="contentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND is_valid = 1
+        AND DATE(view_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(view_time)
+    </select>
+</mapper>

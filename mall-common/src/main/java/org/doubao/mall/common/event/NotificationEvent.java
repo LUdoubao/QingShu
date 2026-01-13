@@ -6,7 +6,8 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 public abstract class NotificationEvent implements Serializable {
-	private String type;           // 事件类型 (AUDIT, SYSTEM, LIKE.)
+	private String action;         // 事件动作
+	private String type;           // 事件类型
 	private Long userId;           // 接收通知的用户ID
 	@JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss.SSS")
 	private LocalDateTime eventTime; // 事件创建时间
@@ -19,10 +20,26 @@ public abstract class NotificationEvent implements Serializable {
 		this();
 		this.type = type;
 	}
-
 	protected NotificationEvent(String type, Long userId) {
 		this(type);
 		this.userId = userId;
+	}
+
+	protected NotificationEvent(String type, String action) {
+		this(type);
+		this.action = action;
+	}
+	protected NotificationEvent(String type, Long userId, String action) {
+		this(type, action);
+		this.userId = userId;
+	}
+
+	public String getAction() {
+		return action;
+	}
+
+	public void setAction(String action) {
+		this.action = action;
 	}
 
 	// Getters and Setters

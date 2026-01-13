@@ -1,15 +1,9 @@
 package org.doubao.mall.common.entity;
 
-import lombok.Builder;
-import org.doubao.mall.common.enums.ErrorCode;
-import org.doubao.mall.common.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 
-import lombok.Data;
-import org.springframework.http.HttpStatus;
-import java.time.Instant;
 import java.util.Map;
 
 /**

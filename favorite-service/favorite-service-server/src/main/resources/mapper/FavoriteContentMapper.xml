@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.favorite.service.mapper.FavoriteContentMapper">
+    <select id="selectByFolderId" resultType="org.doubao.favorite.service.entity.FavoriteContent">
+        SELECT *
+        FROM favorite_content
+        WHERE folder_id = #{folderId}
+        AND deleted = 0
+    </select>
+
+    <select id="selectByUserAndQuote" resultType="org.doubao.favorite.service.entity.FavoriteContent">
+        SELECT *
+        FROM favorite_content
+        WHERE user_id = #{userId}
+        AND quote_id = #{quoteId}
+        AND deleted = 0
+        <if test="folderId != null">
+            AND folder_id = #{folderId}
+        </if>
+        LIMIT 1
+    </select>
+
+    <select id="countByFolderId" resultType="int">
+        SELECT COUNT(*)
+        FROM favorite_content
+        WHERE folder_id = #{folderId}
+        AND deleted = 0
+    </select>
+
+    <select id="countByUser" resultType="int">
+        SELECT COUNT(*)
+        FROM favorite_content
+        WHERE user_id = #{userId}
+        AND deleted = 0
+    </select>
+
+    <select id="selectFavoriteIdsByUserAndQuotes" resultType="java.lang.Long">
+        SELECT quote_id
+        FROM favorite_content
+        WHERE user_id = #{userId}
+        AND quote_id IN
+        <foreach item="id" collection="quoteIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND deleted = 0
+    </select>
+
+    <select id="selectByFolderIdPaged" resultType="org.doubao.favorite.service.entity.FavoriteContent">
+        SELECT *
+        FROM favorite_content
+        WHERE folder_id = #{folderId}
+        AND deleted = 0
+        ORDER BY created_time DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 批量查询指定quote的收藏数量 -->
+    <select id="countQuotes" resultType="org.doubao.favorite.service.dto.QuoteCountDTO">
+        SELECT
+        fc.quote_id AS quoteId,
+        COUNT(*) AS count
+        FROM favorite_content fc
+        INNER JOIN favorite_folder ff ON fc.folder_id = ff.id
+        WHERE fc.quote_id IN
+        <foreach item="id" collection="quoteIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND fc.deleted = 0
+        AND ff.deleted = 0        <!-- 确保收藏夹未删除 -->
+        AND ff.is_default = 1     <!-- 仅统计默认收藏夹 -->
+        GROUP BY fc.quote_id
+    </select>
+    <select id="removeByFolderId" resultType="int">
+        UPDATE favorite_content
+        SET deleted = 1
+        WHERE folder_id = #{folderId}
+    </select>
+
+    <update id="batchDelete">
+        UPDATE favorite_content
+        SET deleted = 1
+        WHERE folder_id = #{folderId}
+        AND user_id = #{userId}
+        AND quote_id IN
+        <foreach item="id" collection="quoteIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+    <select id="selectDailyFavoriteCounts" resultType="java.util.Map">
+        SELECT
+        DATE(fc.created_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM favorite_content fc
+        INNER JOIN favorite_folder ff ON fc.folder_id = ff.id
+        WHERE
+        fc.quote_id IN
+        <foreach collection="quoteIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND fc.deleted = 0
+        AND ff.deleted = 0
+        AND ff.is_default = 1
+        AND DATE(fc.created_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(fc.created_time)
+    </select>
+
+</mapper>

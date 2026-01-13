@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.quote.service.mapper.QuoteMapper">
+    <resultMap id="categoryCountResultMap" type="org.doubao.quote.service.vo.CategoryCountVO">
+        <result property="categoryId" column="categoryId"/>
+        <result property="categoryName" column="categoryName"/>
+        <result property="quoteCount" column="quoteCount"/>
+    </resultMap>
+    <select id="countByTagIdsAndCategory" resultType="long">
+        SELECT COUNT(DISTINCT q.id)
+        FROM quote q
+        WHERE q.deleted = 0
+        <if test="categoryId != null">
+            AND q.category_id = #{categoryId}
+        </if>
+        <if test="status != null">
+            AND q.status = #{status}
+        </if>
+        <if test="userId != null">
+            AND q.created_id = #{userId}
+        </if>
+        <if test="original != null">
+            AND q.original = #{original}
+        </if>
+        <if test="quoteKeyword != null">
+            AND q.content LIKE CONCAT('%', #{quoteKeyword}, '%')
+        </if>
+        <if test="tagIds != null and !tagIds.isEmpty()">
+            AND q.id IN (
+            SELECT quote_id
+            FROM quote_tag
+            WHERE tag_id IN
+            <foreach item="tagId" collection="tagIds" open="(" separator="," close=")">
+                #{tagId}
+            </foreach>
+            GROUP BY quote_id
+            HAVING COUNT(DISTINCT tag_id) = #{tagIdsSize}
+            )
+        </if>
+    </select>
+    <select id="selectByTagIdsAndCategory" resultType="org.doubao.quote.service.entity.Quote">
+        SELECT q.*
+        FROM quote q
+        WHERE q.deleted = 0
+        <if test="categoryId != null">
+            AND q.category_id = #{categoryId}
+        </if>
+        <if test="status != null">
+            AND q.status = #{status}
+        </if>
+        <if test="userId != null">
+            AND q.created_id = #{userId}
+        </if>
+        <if test="original != null">
+            AND q.original = #{original}
+        </if>
+        <if test="quoteKeyword != null">
+            AND q.content LIKE CONCAT('%', #{quoteKeyword}, '%')
+        </if>
+        <!-- 标签条件（非空且非空数组时生效） -->
+        <if test="tagIds != null and tagIds.size > 0">
+            AND q.id IN (
+            SELECT quote_id
+            FROM quote_tag
+            WHERE tag_id IN
+            <foreach item="tagId" collection="tagIds" open="(" separator="," close=")">
+                #{tagId}
+            </foreach>
+            GROUP BY quote_id
+            HAVING COUNT(DISTINCT tag_id) = #{tagIdsSize}
+            )
+        </if>
+        ORDER BY q.created_time DESC
+        LIMIT #{pageNum}, #{pageSize}
+    </select>
+
+    <select id="getQuoteType" resultType="Integer">
+        SELECT q.original
+        FROM quote q
+        WHERE q.id = #{quoteId}
+    </select>
+    <!-- boolean checkQuoteExists(@Param("quoteId") String quoteId);-->
+    <select id="checkQuoteExists" resultType="boolean">
+        SELECT EXISTS(
+        SELECT 1
+        FROM quote q
+        WHERE q.id = #{quoteId}
+        AND q.deleted = 0
+        AND q.status = 1
+        )
+    </select>
+
+
+    <select id="selectTopCategoriesByKeyword" resultMap="categoryCountResultMap">
+        SELECT
+        c.id AS categoryId,
+        c.name AS categoryName,
+        COUNT(q.id) AS quoteCount
+        FROM quote q
+        INNER JOIN category c ON q.category_id = c.id
+        WHERE
+        AND c.name LIKE CONCAT('%', #{keyword}, '%')
+        GROUP BY q.category_id, c.id, c.name
+        ORDER BY quoteCount DESC
+        LIMIT 3
+    </select>
+
+    <!-- List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount); -->
+    <select id="selectRandomQuotes" resultType="org.doubao.quote.service.entity.Quote">
+        SELECT *
+        FROM quote
+        WHERE deleted = 0
+        AND status = 1
+        <if test="keyword != null">
+            AND content LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY RAND()
+        LIMIT #{quoteCount}
+    </select>
+
+    <!-- QuoteStatusCountVo queryStatusCount();-->
+    <select id="queryStatusCount" resultType="org.doubao.quote.service.vo.QuoteStatusCountVo">
+        SELECT
+        COUNT(id) AS allCount,
+        COUNT(CASE WHEN status = 0 THEN 1 END) AS auditWaitCount,
+        COUNT(CASE WHEN status = 1 THEN 1 END) AS auditPassCount,
+        COUNT(CASE WHEN status = 2 THEN 1 END) AS blockCount,
+        COUNT(CASE WHEN status = 3 THEN 1 END) AS draftCount,
+        COUNT(CASE WHEN status = 4 THEN 1 END) AS auditRejectCount,
+        COUNT(CASE WHEN status = 5 THEN 1 END) AS offShelfCount
+        FROM quote
+        WHERE deleted = 0
+        AND created_id = #{userId}
+    </select>
+
+    <!-- void updateQuoteStatus(@Param("quoteId")Long quoteId,@Param("code") int code); -->
+    <update id="updateQuoteStatus">
+        UPDATE quote
+        SET status = #{code}
+        WHERE id = #{quoteId}
+    </update>
+</mapper>

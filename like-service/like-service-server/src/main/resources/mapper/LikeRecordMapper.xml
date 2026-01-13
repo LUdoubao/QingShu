@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.like.service.mapper.LikeRecordMapper">
+    <!-- 通用查询结果映射 -->
+    <resultMap id="BaseResultMap" type="org.doubao.like.service.entity.LikeRecord">
+        <id column="like_id" property="likeId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="entity_type" property="entityType" jdbcType="INTEGER"/>
+        <result column="entity_id" property="entityId" jdbcType="BIGINT"/>
+        <result column="liked" property="liked" jdbcType="TINYINT"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <!-- selectByUserAndEntities -->
+    <select id="selectByUserAndEntities" resultType="org.doubao.like.service.entity.LikeRecord">
+        SELECT *
+        FROM like_records
+        WHERE user_id = #{userId}
+        AND entity_type = #{entityType}
+        <if test="entityIds != null and entityIds.size > 0">
+            AND entity_id IN
+            <foreach item="entityId" collection="entityIds" open="(" separator="," close=")">
+                #{entityId}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- List<LikeCountDTO> countByEntities(
+			@Param("entityType") Integer entityType,
+			@Param("entityIds") List<Long> entityIds
+	); -->
+    <select id="countByEntities" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        <if test="entityIds != null and entityIds.size > 0">
+            AND entity_id IN
+            <foreach item="entityId" collection="entityIds" open="(" separator="," close=")">
+                #{entityId}
+            </foreach>
+        </if>
+        group by entity_id
+    </select>
+
+    <!-- void insertOrUpdate(LikeRecord likeRecord, LambdaUpdateWrapper<LikeRecord> set); -->
+    <insert id="insertOrUpdate">
+        INSERT INTO like_records (user_id, entity_type, entity_id, liked, created_time)
+        VALUES (#{likeRecord.userId}, #{likeRecord.entityType}, #{likeRecord.entityId}, #{likeRecord.liked}, #{likeRecord.createdTime})
+        ON DUPLICATE KEY UPDATE
+        <if test="likeRecord.liked != null">
+            liked = #{likeRecord.liked},
+        </if>
+        updated_time = NOW()
+    </insert>
+    <!-- 基础查询，只返回有点赞记录的entityId -->
+    <select id="countLikesByEntityIds" resultType="org.doubao.like.service.dto.response.LikeCountVo">
+        SELECT
+        entity_id as quoteId,
+        COUNT(*) as likeCount
+        FROM like_records
+        WHERE entity_id IN
+        <foreach collection="entityIds" item="entityId" open="(" close=")" separator=",">
+            #{entityId}
+        </foreach>
+        AND liked = 1
+        AND entity_type = 0
+        GROUP BY entity_id
+    </select>
+
+    <select id="selectDailyLikeCounts" resultType="java.util.Map">
+        SELECT
+        DATE(created_time) AS stat_date,
+        COUNT(*) AS total_count
+        FROM like_records
+        WHERE
+        entity_id IN
+        <foreach collection="entityIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND entity_type = #{entityType}
+        AND liked = 1
+        AND DATE(created_time) IN
+        <foreach collection="dates" item="date" open="(" separator="," close=")">
+            #{date}
+        </foreach>
+        GROUP BY DATE(created_time)
+    </select>
+</mapper>

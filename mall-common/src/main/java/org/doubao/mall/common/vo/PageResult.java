@@ -1,6 +1,5 @@
 package org.doubao.mall.common.vo;
 
-import lombok.Data;
 
 import java.io.Serializable;
 import java.util.List;
@@ -8,7 +7,6 @@ import java.util.List;
 /**
  * 分页结果通用VO
  */
-@Data
 public class PageResult<T> implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private int page; // 当前页码

@@ -28,7 +28,9 @@
 		<module>dialog-service</module>
 		<module>fanout-service</module>
 		<module>feed-service</module>
-	</modules>
+		<module>search-service</module>
+        <module>doubao-starter</module>
+    </modules>
 
 	<properties>
 		<java.version>1.8</java.version>

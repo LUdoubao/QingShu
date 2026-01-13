@@ -9,6 +9,10 @@ spring:
     #        client-ip: 127.0.0.1
     gateway:
       routes:
+        - id: search-service
+          uri: lb://search-service
+          predicates:
+            - Path=/search/**
         - id: feed-service
           uri: lb://feed-service
           predicates:
@@ -53,10 +57,6 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/user/**
-        - id: product-service
-          uri: lb://product-service
-          predicates:
-            - Path=/products/**
         - id: quote-service
           uri: lb://quote-service
           predicates:
@@ -75,17 +75,13 @@ spring:
                 key-resolver: "#{@ipAndPathKeyResolver}"      # 根据客户端IP和路径进行限流
                 # 当key解析为空时是否拒绝请求
                 denyEmptyKey: true                     # 防止无法获取客户端IP的用户无限访问
-            # 熔断器过滤器（基于Resilience4j）
-            - name: CircuitBreaker
-              args:
-                # 熔断器实例名称（对应Resilience4j配置中的实例名）
-                name: productCircuitBreaker           # 使用在Resilience4j配置中的productCircuitBreaker实例
-                # 熔断触发时的降级端点
-                fallbackUri: forward:/fallback/products/circuit   # 服务熔断时调用内部降级接口
-        - id: order-service
-          uri: lb://order-service
-          predicates:
-            - Path=/order/**
+#            # 熔断器过滤器（基于Resilience4j）
+#            - name: CircuitBreaker
+#              args:
+#                # 熔断器实例名称（对应Resilience4j配置中的实例名）
+#                name: productCircuitBreaker           # 使用在Resilience4j配置中的productCircuitBreaker实例
+#                # 熔断触发时的降级端点
+#                fallbackUri: forward:/fallback/products/circuit   # 服务熔断时调用内部降级接口
         - id: view-count-service
           uri: lb://view-count-service
           predicates:
@@ -131,30 +127,24 @@ resilience4j:
         # 慢调用率阈值：100%（当慢调用率>=100%时触发熔断）
         slowCallRateThreshold: 100
 
-    # 具体熔断器实例配置
-    instances:
-      # 为"product-service"服务命名的熔断器
-      productCircuitBreaker:
-        # 继承默认配置模板
-        baseConfig: default
-
-  # 限时器配置
-  timelimiter:
-    # 限时器实例配置
-    instances:
-      # 与熔断器同名的限时器（自动关联）
-      productCircuitBreaker:
-        # ⏳ 调用超时时间：3秒内必须响应
-        timeoutDuration: 3s
-
-        # 超时时取消异步调用：强制中断长时间阻塞的调用
-        cancelRunningFuture: true
-
-logging:
-  level:
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty: DEBUG
-    io.github.resilience4j: DEBUG
+#    # 具体熔断器实例配置
+#    instances:
+#      # 为"product-service"服务命名的熔断器
+#      productCircuitBreaker:
+#        # 继承默认配置模板
+#        baseConfig: default
+#
+#  # 限时器配置
+#  timelimiter:
+#    # 限时器实例配置
+#    instances:
+#      # 与熔断器同名的限时器（自动关联）
+#      productCircuitBreaker:
+#        # ⏳ 调用超时时间：3秒内必须响应
+#        timeoutDuration: 3s
+#
+#        # 超时时取消异步调用：强制中断长时间阻塞的调用
+#        cancelRunningFuture: true
 
 # Spring Boot Actuator 监控配置
 management:
