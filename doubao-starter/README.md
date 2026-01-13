@@ -115,7 +115,7 @@ doubao-starter 是一个集成了多个微服务的单体应用，包括用户�
 - RabbitMQ (端口 5672)
 
 ### 配置文件
-应用使用 [application.yml](file:///D:/workspace/doubao/SpringCloudDemo/doubao-starter/src/main/resources/application.yml) 进行配置，主要配置项包括：
+应用使用 [application.yml](file:///D:/workspace/doubao/QingShu/doubao-starter/src/main/resources/application.yml) 进行配置，主要配置项包括：
 
 ```yaml
 server:

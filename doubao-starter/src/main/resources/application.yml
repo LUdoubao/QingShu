@@ -89,7 +89,7 @@ oss:
     bucket-name:
   # 本地存储配置
   local:
-    storage-path: D:\workspace\doubao\SpringCloudDemo\files\uploads
+    storage-path: D:\workspace\doubao\QingShu\files\uploads
     base-url: http://localhost/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
