@@ -19,10 +19,10 @@ oss:
     type: local # aliyun or local
   # 阿里云配置
   aliyun:
-    endpoint: oss-cn-beijing.aliycs.com
-    access-key-id: LTAI5tRJLT1Lr5fHLycXq9YW
-    access-key-secret: o5BT9TkluD3esZIYaChrk11F1t8Lhk
-    bucket-name: doubao-1017
+    endpoint:
+    access-key-id:
+    access-key-secret:
+    bucket-name:
   # 本地存储配置
   local:
     storage-path: /home/java/doubao/file/uploads

@@ -1,11 +1,11 @@
 api:
   baidu:
     url: https://qianfan.baidubce.com/v2/chat/completions
-    key: bce-v3/ALTAK-QjIUJiQHeiq0ChgFXhTVg/c183d631ea14675aab70a10f5231e3714b4ab222
+    key:
     model: ernie-speed-128k
   deepseek :
     url: https://api.deepseek.com/chat/completions
-    key: sk-7385b5bcbaca45ae950b56c64b3bb10f
+    key:
     model: deepseek-reasoner
 
 server:

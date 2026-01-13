@@ -83,10 +83,10 @@ oss:
     type: local # aliyun or local
   # 阿里云配置
   aliyun:
-    endpoint: oss-cn-beijing.aliyuncs.com
-    access-key-id: LTAI5tRJLT1Lr5fHLycXq9YW
-    access-key-secret: o5BT9TkluD3esZIYaChrk11F1t8Lhk
-    bucket-name: doubao-1017
+    endpoint:
+    access-key-id:
+    access-key-secret:
+    bucket-name:
   # 本地存储配置
   local:
     storage-path: D:\workspace\doubao\SpringCloudDemo\files\uploads
@@ -105,11 +105,11 @@ feed:
 api:
   baidu:
     url: https://qianfan.baidubce.com/v2/chat/completions
-    key: bce-v3/ALTAK-QjIUJiQHeiq0ChgFXhTVg/c183d631ea14675aab70a10f5231e3714b4ab222
+    key:
     model: ernie-3.5-8k
   deepseek :
     url: https://api.deepseek.com/chat/completions
-    key: sk-7385b5bcbaca45ae950b56c64b3bb10f
+    key:
     model: deepseek-reasoner
 # Fanout服务自定义配置
 fanout:
