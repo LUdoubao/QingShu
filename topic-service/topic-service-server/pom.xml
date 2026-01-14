@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.doubao</groupId>
+        <artifactId>topic-service</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>topic-service-server</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>topic-service-api</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+    <profiles>
+        <!-- 单体模式 -->
+        <profile>
+            <id>monolith</id>
+            <activation>
+                <activeByDefault>true</activeByDefault> <!-- 默认激活 -->
+            </activation>
+            <dependencies>
+                <!-- 仅在单体模式下依赖 user-service -->
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>user-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>quote-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+            <properties>
+                <service.run-mode>monolith</service.run-mode>
+            </properties>
+        </profile>
+
+        <!-- 微服务模式 -->
+        <profile>
+            <id>microservice</id>
+            <properties>
+                <service.run-mode>microservice</service.run-mode>
+            </properties>
+        </profile>
+    </profiles>
+</project>

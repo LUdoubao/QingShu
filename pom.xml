@@ -29,6 +29,7 @@
 		<module>fanout-service</module>
 		<module>feed-service</module>
 		<module>search-service</module>
+		<module>topic-service</module>
         <module>doubao-starter</module>
     </modules>
 
