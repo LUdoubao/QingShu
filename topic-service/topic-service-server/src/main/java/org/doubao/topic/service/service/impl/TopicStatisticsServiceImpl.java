@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.mapper.TopicStatisticsMapper;
@@ -16,9 +18,6 @@ import javax.annotation.Resource;
 /**
  * 话题统计服务实现类
  * 提供话题相关统计数据的增减和查询功能的具体实现
- *
- * @author lingma
- * @since 1.0.0
  */
 @Service
 public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMapper, TopicStatistics> implements TopicStatisticsService {
@@ -39,7 +38,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> incrementQuoteCount(Long topicId, Long userId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         // 更新引用数量和活跃用户数
@@ -69,11 +68,11 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> decrementQuoteCount(Long topicId, Long userId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         if (statistics.getQuoteCount() <= 0) {
-            return Result.error("引用数量不能小于0");
+            throw new BusinessException(ErrorCode.TOPIC_QUOTE_COUNT_ZERO);
         }
 
         LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
@@ -96,7 +95,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> incrementFollowCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
@@ -119,11 +118,11 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> decrementFollowCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         if (statistics.getFollowCount() <= 0) {
-            return Result.error("关注数量不能小于0");
+            throw new BusinessException(ErrorCode.TOPIC_FOLLOW_COUNT_ZERO);
         }
 
         LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
@@ -146,7 +145,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> incrementViewCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
@@ -167,7 +166,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<TopicStatistics> getStatisticsByTopicId(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         return Result.success(statistics);
@@ -186,7 +185,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> updateHotQuote(Long topicId, Long quoteId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         statistics.setHotQuoteId(quoteId);
@@ -207,7 +206,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public Result<Boolean> updateTodayQuoteCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            return Result.error("统计记录不存在");
+            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
         LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();

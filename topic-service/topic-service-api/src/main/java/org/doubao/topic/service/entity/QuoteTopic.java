@@ -14,30 +14,30 @@ import java.time.LocalDateTime;
  */
 @TableName("quote_topic")
 public class QuoteTopic extends BaseDel {
-    @TableId(type = IdType.AUTO)
     /**
      * 关联ID（主键）
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField(value = "quote_id")
     /**
      * 文案ID（关联quote表）
      */
+    @TableField(value = "quote_id")
     private Long quoteId;
-    @TableField(value = "topic_id")
     /**
      * 话题ID（关联topic表）
      */
+    @TableField(value = "topic_id")
     private Long topicId;
-    @TableField(value = "bind_time")
     /**
      * 绑定时间
      */
+    @TableField(value = "bind_time")
     private LocalDateTime bindTime;
-    @TableField(value = "binder_id")
     /**
-     * 绑定人ID（用户/管理员）
+     * 绑定者ID（关联user表）
      */
+    @TableField(value = "binder_id")
     private Long binderId;
 
     public Long getId() {

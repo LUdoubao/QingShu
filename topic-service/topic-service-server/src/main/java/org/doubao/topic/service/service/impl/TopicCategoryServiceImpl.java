@@ -3,6 +3,8 @@ package org.doubao.topic.service.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.topic.service.entity.TopicCategory;
 import org.doubao.topic.service.mapper.TopicCategoryMapper;
@@ -19,9 +21,6 @@ import java.util.stream.Collectors;
 /**
  * 话题分类服务实现类
  * 提供话题分类的创建、管理、查询等功能的具体实现
- *
- * @author lingma
- * @since 1.0.0
  */
 @Service
 public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, TopicCategory> implements TopicCategoryService {
@@ -43,7 +42,7 @@ public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, T
     @Override
     public Result<Long> createCategory(String name, String description, Long parentId, Integer sort, Integer status) {
         if (DoubaoUtils.isEmpty(name)) {
-            return Result.error("分类名称不能为空");
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
         TopicCategory category = new TopicCategory();
@@ -73,7 +72,7 @@ public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, T
     public Result<Boolean> updateCategory(Long id, String name, String description, Long parentId, Integer sort, Integer status) {
         TopicCategory category = this.getById(id);
         if (category == null) {
-            return Result.error("分类不存在");
+            throw new BusinessException(ErrorCode.TOPIC_INVALID_CATEGORY);
         }
 
         category.setName(name);
@@ -97,7 +96,7 @@ public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, T
     public Result<Boolean> deleteCategory(Long id) {
         TopicCategory category = this.getById(id);
         if (category == null) {
-            return Result.error("分类不存在");
+            throw new BusinessException(ErrorCode.TOPIC_INVALID_CATEGORY);
         }
 
         // 检查是否有子分类
@@ -105,7 +104,7 @@ public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, T
         wrapper.eq(TopicCategory::getParentId, id);
         int count = this.count(wrapper);
         if (count > 0) {
-            return Result.error("该分类下存在子分类，无法删除");
+            throw new BusinessException(ErrorCode.TOPIC_HAS_CHILDREN);
         }
 
         boolean result = this.removeById(id);
@@ -122,7 +121,7 @@ public class TopicCategoryServiceImpl extends ServiceImpl<TopicCategoryMapper, T
     public Result<TopicCategoryVO> getCategoryById(Long id) {
         TopicCategory category = this.getById(id);
         if (category == null) {
-            return Result.error("分类不存在");
+            throw new BusinessException(ErrorCode.TOPIC_INVALID_CATEGORY);
         }
 
         TopicCategoryVO vo = new TopicCategoryVO();

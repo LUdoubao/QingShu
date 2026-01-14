@@ -13,46 +13,46 @@ import java.time.LocalDateTime;
  * 冗余统计数据，提升查询性能
  */
 @TableName("topic_statistics")
-public class TopicStatistics extends BaseEntity {
-    @TableId(value = "topic_id")
+public class TopicStatistics {
     /**
      * 话题ID（主键，关联topic表）
      */
+    @TableId(value = "topic_id")
     private Long topicId;
-    @TableField(value = "quote_count")
     /**
      * 关联文案总数
      */
+    @TableField(value = "quote_count")
     private Integer quoteCount;
-    @TableField(value = "active_user_count")
     /**
      * 参与用户数（发布文案的独立用户数）
      */
+    @TableField(value = "active_user_count")
     private Integer activeUserCount;
-    @TableField(value = "follow_count")
     /**
      * 关注用户总数
      */
+    @TableField(value = "follow_count")
     private Integer followCount;
-    @TableField(value = "view_count")
     /**
      * 话题总浏览量
      */
+    @TableField(value = "view_count")
     private Long viewCount;
-    @TableField(value = "today_quote_count")
     /**
      * 今日新增文案数
      */
+    @TableField(value = "today_quote_count")
     private Integer todayQuoteCount;
-    @TableField(value = "hot_quote_id")
     /**
      * 热门文案ID（点赞数最高，便于快速展示）
      */
+    @TableField(value = "hot_quote_id")
     private Long hotQuoteId;
-    @TableField(value = "updated_time")
     /**
      * 统计更新时间
      */
+    @TableField(value = "updated_time")
     private LocalDateTime updatedTime;
 
     public Long getTopicId() {

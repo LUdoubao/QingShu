@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.topic.service.dto.TopicBindDTO;
 import org.doubao.topic.service.dto.TopicCreateDTO;
@@ -18,7 +20,6 @@ import org.doubao.topic.service.mapper.TopicMapper;
 import org.doubao.topic.service.service.TopicService;
 import org.doubao.topic.service.service.TopicStatisticsService;
 import org.doubao.topic.service.service.UserTopicFollowService;
-import org.doubao.topic.service.service.TopicTimelineService;
 import org.doubao.topic.service.vo.TopicVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,13 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 话题服务实现类
  * 提供话题创建、管理、关注等功能的具体实现
- *
- * @author lingma
- * @since 1.0.0
  */
 @Service
 public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements TopicService {
@@ -50,8 +50,6 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Autowired
     private UserTopicFollowService userTopicFollowService;
 
-    @Autowired
-    private TopicTimelineService topicTimelineService;
 
     /**
      * 创建话题
@@ -66,7 +64,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public Result<Long> createTopic(TopicCreateDTO dto, Long userId) {
         // 验证参数
         if (DoubaoUtils.isEmpty(dto.getName())) {
-            return Result.error("话题名称不能为空");
+            throw new BusinessException(ErrorCode.TOPIC_NAME_EMPTY);
         }
 
         // 检查话题名称是否已存在
@@ -75,7 +73,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         wrapper.eq(Topic::getDeleted, 0); // 未删除的
         Topic existingTopic = this.getOne(wrapper);
         if (existingTopic != null) {
-            return Result.error("话题名称已存在");
+            throw new BusinessException(ErrorCode.TOPIC_NAME_EXISTS);
         }
 
         // 创建话题
@@ -83,7 +81,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         topic.setName(dto.getName());
         topic.setDescription(dto.getDescription());
         topic.setCoverKey(dto.getCoverKey());
-        topic.setCreatorId(userId);
+        topic.setCreatedId(userId);
         topic.setCategoryId(dto.getCategoryId());
         topic.setStatus(0); // 审核中
         topic.setIsRecommend(0);
@@ -120,12 +118,12 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public Result<Boolean> updateTopic(TopicUpdateDTO dto, Long userId) {
         Topic existingTopic = this.getById(dto.getId());
         if (existingTopic == null) {
-            return Result.error("话题不存在");
+            throw new BusinessException(ErrorCode.TOPIC_NOT_FOUND);
         }
 
         // 检查权限（只有创建者或管理员才能修改）
-        if (!existingTopic.getCreatorId().equals(userId)) {
-            return Result.error("没有权限修改该话题");
+        if (!existingTopic.getCreatedId().equals(userId)) {
+            throw new BusinessException(ErrorCode.TOPIC_NO_PERMISSION);
         }
 
         existingTopic.setName(dto.getName());
@@ -151,12 +149,12 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public Result<Boolean> deleteTopic(Long topicId, Long userId) {
         Topic topic = this.getById(topicId);
         if (topic == null) {
-            return Result.error("话题不存在");
+            throw new BusinessException(ErrorCode.TOPIC_NOT_FOUND);
         }
 
         // 检查权限（只有创建者或管理员才能删除）
-        if (!topic.getCreatorId().equals(userId)) {
-            return Result.error("没有权限删除该话题");
+        if (!topic.getCreatedId().equals(userId)) {
+            throw new BusinessException(ErrorCode.TOPIC_NO_PERMISSION);
         }
 
         // 逻辑删除
@@ -179,7 +177,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     public Result<TopicVO> getTopicById(Long topicId) {
         Topic topic = this.getById(topicId);
         if (topic == null) {
-            return Result.error("话题不存在");
+            throw new BusinessException(ErrorCode.TOPIC_NOT_FOUND);
         }
 
         TopicVO vo = new TopicVO();
@@ -263,7 +261,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         // 检查话题是否存在且已发布
         Topic topic = this.getById(dto.getTopicId());
         if (topic == null || topic.getStatus() != 1) { // 1: 已发布
-            return Result.error("话题不存在或未发布");
+            throw new BusinessException(ErrorCode.TOPIC_NOT_FOUND_OR_NOT_PUBLISHED);
         }
 
         // 检查是否已绑定
@@ -273,7 +271,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
                 .eq(QuoteTopic::getDeleted, 0);
         QuoteTopic existing = quoteTopicMapper.selectOne(wrapper);
         if (existing != null) {
-            return Result.error("该文案已绑定到此话题");
+            throw new BusinessException(ErrorCode.QUOTE_ALREADY_BOUND_TO_TOPIC);
         }
 
         // 创建绑定关系
@@ -286,9 +284,6 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
         // 更新统计信息
         topicStatisticsService.incrementQuoteCount(dto.getTopicId(), dto.getBinderId());
-
-        // 创建话题动态
-        topicTimelineService.createTimelineEvent(dto.getTopicId(), 1, dto.getQuoteId(), dto.getBinderId());
 
         return Result.success(true);
     }
@@ -399,9 +394,38 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         LambdaQueryWrapper<UserTopicFollow> followWrapper = new LambdaQueryWrapper<>();
         followWrapper.eq(UserTopicFollow::getUserId, userId)
                 .eq(UserTopicFollow::getIsValid, 1);
+        List<Long> topicIdList = userTopicFollowService.list(followWrapper)
+                .stream()
+                .map(UserTopicFollow::getTopicId)
+                .collect(Collectors.toList());
+        if (DoubaoUtils.isEmpty(topicIdList)) {
+            return Result.success(new Page<>());
+        }
+        Page<Topic> topicPage = new Page<>(page, size);
+        LambdaQueryWrapper<Topic> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Topic::getDeleted, 0) // 未删除的
+                .eq(Topic::getStatus, 1) // 已发布的
+                .in(Topic::getId, topicIdList);
+        this.page(topicPage, wrapper);
+        Page<TopicVO> voPage = new Page<>();
+        BeanUtils.copyProperties(topicPage, voPage);
 
-        // TODO: 实现获取用户关注话题的逻辑
-        return Result.success(new Page<>());
+        for (Topic topic : topicPage.getRecords()) {
+            TopicVO vo = new TopicVO();
+            BeanUtils.copyProperties(topic, vo);
+
+            // 获取统计信息
+            TopicStatistics statistics = topicStatisticsService.getById(topic.getId());
+            if (statistics != null) {
+                vo.setQuoteCount(statistics.getQuoteCount());
+                vo.setFollowCount(statistics.getFollowCount());
+                vo.setViewCount(statistics.getViewCount());
+            }
+
+            voPage.getRecords().add(vo);
+        }
+
+        return Result.success(voPage);
     }
 
     /**

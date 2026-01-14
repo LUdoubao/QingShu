@@ -13,15 +13,14 @@ import java.time.LocalDateTime;
  */
 @TableName("topic_tag")
 public class TopicTag extends BaseEntity {
-    @TableId
     /**
      * 话题ID（关联topic表）
      */
     private Long topicId;
-    @TableField(value = "tag_id")
     /**
      * 标签ID（关联现有tag表）
      */
+    @TableField(value = "tag_id")
     private Long tagId;
 
     public Long getTopicId() {

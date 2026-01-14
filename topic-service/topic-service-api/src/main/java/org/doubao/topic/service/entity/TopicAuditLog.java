@@ -14,35 +14,35 @@ import java.time.LocalDateTime;
  */
 @TableName("topic_audit_log")
 public class TopicAuditLog extends BaseEntity {
-    @TableId(type = IdType.AUTO)
     /**
      * 日志ID（主键）
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField(value = "topic_id")
     /**
-     * 话题ID（关联topic表）
+     * 话题ID
      */
+    @TableField(value = "topic_id")
     private Long topicId;
-    @TableField(value = "audit_status")
     /**
      * 审核结果：0-待审核 1-通过 2-拒绝
      */
+    @TableField(value = "audit_status")
     private Integer auditStatus;
-    @TableField(value = "audit_reason")
     /**
      * 审核理由
      */
+    @TableField(value = "audit_reason")
     private String auditReason;
-    @TableField(value = "auditor_id")
     /**
      * 审核员ID（关联user表，管理员角色）
      */
+    @TableField(value = "auditor_id")
     private Long auditorId;
-    @TableField(value = "audit_time")
     /**
      * 审核时间
      */
+    @TableField(value = "audit_time")
     private LocalDateTime auditTime;
 
     public Long getId() {

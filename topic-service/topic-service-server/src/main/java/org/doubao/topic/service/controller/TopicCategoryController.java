@@ -12,9 +12,6 @@ import java.util.List;
 /**
  * 话题分类控制器
  * 提供话题分类相关的REST API接口
- *
- * @author lingma
- * @since 1.0.0
  */
 @RestController
 @RequestMapping("/topic-category")

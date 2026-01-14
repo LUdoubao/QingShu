@@ -14,35 +14,35 @@ import java.time.LocalDateTime;
  */
 @TableName("user_topic_follow")
 public class UserTopicFollow extends BaseEntity {
-    @TableId(type = IdType.AUTO)
     /**
      * 关注ID（主键）
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField(value = "user_id")
     /**
      * 用户ID（关联user表）
      */
+    @TableField(value = "user_id")
     private Long userId;
-    @TableField(value = "topic_id")
     /**
      * 话题ID（关联topic表）
      */
+    @TableField(value = "topic_id")
     private Long topicId;
-    @TableField(value = "follow_time")
     /**
      * 关注时间
      */
+    @TableField(value = "follow_time")
     private LocalDateTime followTime;
-    @TableField(value = "unfollow_time")
     /**
      * 取消关注时间（NULL=未取消）
      */
+    @TableField(value = "unfollow_time")
     private LocalDateTime unfollowTime;
-    @TableField(value = "is_valid")
     /**
      * 是否有效：0-已取消 1-有效
      */
+    @TableField(value = "is_valid")
     private Integer isValid;
 
     public Long getId() {

@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
+import org.doubao.mall.common.enums.ErrorCode;
+import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.entity.UserTopicFollow;
@@ -20,9 +22,6 @@ import java.time.LocalDateTime;
 /**
  * 用户话题关注服务实现类
  * 提供用户关注话题、取消关注、查询关注状态等功能的具体实现
- *
- * @author lingma
- * @since 1.0.0
  */
 @Service
 public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMapper, UserTopicFollow> implements UserTopicFollowService {
@@ -45,7 +44,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
     @Transactional
     public Result<Boolean> followTopic(Long userId, Long topicId) {
         if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicId)) {
-            return Result.error("用户ID和话题ID不能为空");
+            throw new BusinessException(ErrorCode.TOPIC_OR_USER_ID_EMPTY);
         }
 
         // 检查是否已关注
@@ -56,7 +55,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
         if (existingFollow != null) {
             if (existingFollow.getIsValid() == 1) {
-                return Result.error("已关注该话题");
+                throw new BusinessException(ErrorCode.USER_ALREADY_FOLLOWED_TOPIC);
             } else {
                 // 重新关注，更新状态
                 UserTopicFollow updateFollow = new UserTopicFollow();
@@ -104,7 +103,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
     @Transactional
     public Result<Boolean> unfollowTopic(Long userId, Long topicId) {
         if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicId)) {
-            return Result.error("用户ID和话题ID不能为空");
+            throw new BusinessException(ErrorCode.TOPIC_OR_USER_ID_EMPTY);
         }
 
         LambdaQueryWrapper<UserTopicFollow> wrapper = new LambdaQueryWrapper<>();
@@ -114,7 +113,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
         UserTopicFollow follow = this.getOne(wrapper);
         if (follow == null) {
-            return Result.error("未关注该话题");
+            throw new BusinessException(ErrorCode.USER_NOT_FOLLOW_TOPIC);
         }
 
         // 更新关注状态
@@ -144,7 +143,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
     @Override
     public Result<Boolean> isUserFollowingTopic(Long userId, Long topicId) {
         if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicId)) {
-            return Result.error("用户ID和话题ID不能为空");
+            throw new BusinessException(ErrorCode.TOPIC_OR_USER_ID_EMPTY);
         }
 
         LambdaQueryWrapper<UserTopicFollow> wrapper = new LambdaQueryWrapper<>();
@@ -168,7 +167,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
     @Override
     public Result<Integer> getUserFollowedTopicCount(Long userId) {
         if (DoubaoUtils.isEmpty(userId)) {
-            return Result.error("用户ID不能为空");
+            throw new BusinessException(ErrorCode.USER_ID_EMPTY);
         }
 
         LambdaQueryWrapper<UserTopicFollow> wrapper = new LambdaQueryWrapper<>();
@@ -189,7 +188,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
     @Override
     public Result<Integer> getTopicFollowersCount(Long topicId) {
         if (DoubaoUtils.isEmpty(topicId)) {
-            return Result.error("话题ID不能为空");
+            throw new BusinessException(ErrorCode.TOPIC_ID_EMPTY);
         }
 
         LambdaQueryWrapper<UserTopicFollow> wrapper = new LambdaQueryWrapper<>();

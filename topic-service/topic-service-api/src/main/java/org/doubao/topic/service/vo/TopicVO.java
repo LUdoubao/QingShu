@@ -44,10 +44,6 @@ public class TopicVO {
      */
     private Integer weight;
     /**
-     * 逻辑删除：0-未删 1-已删
-     */
-    private Integer deleted;
-    /**
      * 创建时间
      */
     private LocalDateTime createdTime;
@@ -138,14 +134,6 @@ public class TopicVO {
 
     public void setWeight(Integer weight) {
         this.weight = weight;
-    }
-
-    public Integer getDeleted() {
-        return deleted;
-    }
-
-    public void setDeleted(Integer deleted) {
-        this.deleted = deleted;
     }
 
     public LocalDateTime getCreatedTime() {

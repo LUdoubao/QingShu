@@ -12,50 +12,45 @@ import org.doubao.mall.common.entity.BaseDel;
  */
 @TableName("topic")
 public class Topic extends BaseDel {
-    @TableId(type = IdType.AUTO)
     /**
      * 话题ID
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField(value = "name")
     /**
      * 话题名称
      */
+    @TableField(value = "name")
     private String name;
-    @TableField(value = "description")
     /**
      * 话题描述
      */
+    @TableField(value = "description")
     private String description;
+    /**
+     * 话题封面图KEY
+     */
     @TableField(value = "cover_key")
-    /**
-     * 封面图KEY
-     */
     private String coverKey;
-    @TableField(value = "creator_id")
-    /**
-     * 创建人ID
-     */
-    private Long creatorId;
-    @TableField(value = "category_id")
     /**
      * 分类ID
      */
+    @TableField(value = "category_id")
     private Long categoryId;
-    @TableField(value = "status")
     /**
      * 状态
      */
+    @TableField(value = "status")
     private Integer status;
-    @TableField(value = "is_recommend")
     /**
      * 是否推荐
      */
+    @TableField(value = "is_recommend")
     private Integer isRecommend;
-    @TableField(value = "weight")
     /**
      * 排序权重
      */
+    @TableField(value = "weight")
     private Integer weight;
 
     public Long getId() {
@@ -88,14 +83,6 @@ public class Topic extends BaseDel {
 
     public void setCoverKey(String coverKey) {
         this.coverKey = coverKey;
-    }
-
-    public Long getCreatorId() {
-        return creatorId;
-    }
-
-    public void setCreatorId(Long creatorId) {
-        this.creatorId = creatorId;
     }
 
     public Long getCategoryId() {

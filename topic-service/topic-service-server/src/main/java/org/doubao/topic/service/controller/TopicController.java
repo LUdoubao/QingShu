@@ -14,9 +14,6 @@ import javax.annotation.Resource;
 /**
  * 话题控制器
  * 提供话题相关的REST API接口，包括话题创建、管理、关注等功能
- *
- * @author lingma
- * @since 1.0.0
  */
 @RestController
 @RequestMapping("/topic")

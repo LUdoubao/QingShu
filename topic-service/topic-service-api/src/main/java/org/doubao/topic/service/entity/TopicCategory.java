@@ -12,35 +12,35 @@ import org.doubao.mall.common.entity.BaseEntity;
  */
 @TableName("topic_category")
 public class TopicCategory extends BaseEntity {
-    @TableId(type = IdType.AUTO)
     /**
      * 分类ID（主键）
      */
+    @TableId(type = IdType.AUTO)
     private Long id;
-    @TableField(value = "parent_id")
     /**
      * 父分类ID：0=一级分类，支持多级嵌套
      */
+    @TableField(value = "parent_id")
     private Long parentId;
-    @TableField(value = "name")
     /**
      * 分类名称
      */
+    @TableField(value = "name")
     private String name;
-    @TableField(value = "description")
     /**
      * 分类说明
      */
+    @TableField(value = "description")
     private String description;
-    @TableField(value = "sort")
     /**
      * 排序权重：值越小越靠前
      */
+    @TableField(value = "sort")
     private Integer sort;
-    @TableField(value = "status")
     /**
      * 状态：0-禁用 1-启用
      */
+    @TableField(value = "status")
     private Integer status;
 
     public Long getId() {
