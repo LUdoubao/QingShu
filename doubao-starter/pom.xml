@@ -116,6 +116,13 @@
             <artifactId>oss-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+
+        <!-- 话题服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>topic-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
