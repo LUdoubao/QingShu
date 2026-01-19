@@ -72,7 +72,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
                 if (result) {
                     // 更新统计信息
-                    // topicStatisticsService.incrementFollowCount(topicId);
+                    topicStatisticsService.incrementFollowCount(topicId);
                 }
 
                 return Result.success(result);
@@ -90,7 +90,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
         if (result) {
             // 更新统计信息
-            // topicStatisticsService.incrementFollowCount(topicId);
+            topicStatisticsService.incrementFollowCount(topicId);
         }
 
         return Result.success(result);

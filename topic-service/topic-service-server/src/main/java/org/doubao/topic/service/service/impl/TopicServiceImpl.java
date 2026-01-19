@@ -96,7 +96,6 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         TopicStatistics statistics = new TopicStatistics();
         statistics.setTopicId(topic.getId());
         statistics.setQuoteCount(0);
-        statistics.setActiveUserCount(0);
         statistics.setFollowCount(0);
         statistics.setViewCount(0L);
         statistics.setTodayQuoteCount(0);

@@ -15,4 +15,8 @@ public interface TopicStatisticsMapper extends BaseMapper<TopicStatistics> {
 	void decrementQuoteCount(@Param("topicId") Long topicId);
 
 	void decrementQuoteCountBatch(@Param("topicIds") List<Long> topicIds);
+
+	void incrementFollowCount(@Param("topicId") Long topicId);
+
+	void decrementFollowCount(@Param("topicId")Long topicId);
 }

@@ -22,10 +22,22 @@
         SET quote_count = quote_count - 1,
         updated_time = now()
         WHERE topic_id IN
-        <foreach item="item" index="index" collection="list"
+        <foreach item="item" index="index" collection="topicIds"
                  open="(" separator="," close=")">
             #{item}
         </foreach>
+    </update>
+    <update id="incrementFollowCount">
+        UPDATE topic_statistics
+        SET follow_count = follow_count + 1,
+        updated_time = now()
+        WHERE topic_id = #{topicId}
+    </update>
+    <update id="decrementFollowCount">
+        UPDATE topic_statistics
+        SET follow_count = follow_count - 1,
+        updated_time = now()
+        WHERE topic_id = #{topicId}
     </update>
 
 

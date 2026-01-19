@@ -24,6 +24,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,8 +42,7 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
 		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
-		wrapper.in(QuoteTopic::getQuoteId, quoteIds)
-				.eq(QuoteTopic::getDeleted, 0);
+		wrapper.in(QuoteTopic::getQuoteId, quoteIds);
 		List<QuoteTopic> list = this.list(wrapper);
 		if (DoubaoUtils.isEmpty(list)) {
 			return;
@@ -66,21 +66,24 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 		// 检查是否已绑定
 		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
 		wrapper.eq(QuoteTopic::getQuoteId, dto.getQuoteId())
-				.eq(QuoteTopic::getTopicId, dto.getTopicId())
-				.eq(QuoteTopic::getDeleted, 0);
+				.eq(QuoteTopic::getTopicId, dto.getTopicId());
 		QuoteTopic existing = this.getOne(wrapper);
 		if (existing != null) {
+			Integer status = existing.getStatus();
 			// 更新
 			existing.setStatus(dto.getStatus());
 			existing.setBindTime(LocalDateTime.now());
 			this.updateById(existing);
-			if (dto.getStatus() == 1) {
-				// 增加话题引用计数
-				topicStatisticsService.incrementQuoteCount(dto.getTopicId());
-			} else {
-				// 减少话题引用计数
-				topicStatisticsService.decrementQuoteCount(dto.getTopicId());
+			if (!Objects.equals(dto.getStatus(), status)) {
+				if (dto.getStatus() == 1) {
+					// 增加话题引用计数
+					topicStatisticsService.incrementQuoteCount(dto.getTopicId());
+				} else {
+					// 减少话题引用计数
+					topicStatisticsService.decrementQuoteCount(dto.getTopicId());
+				}
 			}
+
 			return;
 		}
 
@@ -97,20 +100,22 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 	@Override
 	public void updateQuoteBind(TopicBindDTO dto) {
 		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
-		wrapper.eq(QuoteTopic::getQuoteId, dto.getQuoteId())
-				.eq(QuoteTopic::getDeleted, 0);
+		wrapper.eq(QuoteTopic::getQuoteId, dto.getQuoteId());
 		QuoteTopic quoteTopic = this.getOne(wrapper);
 		if (DoubaoUtils.isNotEmpty(quoteTopic)) {
+			Integer status = quoteTopic.getStatus();
+
 			quoteTopic.setStatus(dto.getStatus());
 			quoteTopic.setBindTime(LocalDateTime.now());
 			this.updateById(quoteTopic);
-
-			if (dto.getStatus() == 1) {
-				// 添加话题引用计数
-				topicStatisticsService.incrementQuoteCount(dto.getTopicId());
-			} else {
-				// 减少话题引用计数
-				topicStatisticsService.decrementQuoteCount(dto.getTopicId());
+			if (!Objects.equals(dto.getStatus(), status)) {
+				if (dto.getStatus() == 1) {
+					// 添加话题引用计数
+					topicStatisticsService.incrementQuoteCount(quoteTopic.getTopicId());
+				} else {
+					// 减少话题引用计数
+					topicStatisticsService.decrementQuoteCount(quoteTopic.getTopicId());
+				}
 			}
 		}
 	}
@@ -122,8 +127,7 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 		Integer size = queryDTO.getSize();
 		Page<QuoteTopic> voPage = new Page<>(page, size);
 		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<QuoteTopic>()
-				.eq(QuoteTopic::getTopicId, topicId)
-				.eq(QuoteTopic::getDeleted, 0);
+				.eq(QuoteTopic::getTopicId, topicId);
 		Page<QuoteTopic> quoteTopicPage = this.page(voPage, wrapper);
 		List<QuoteTopic> records = quoteTopicPage.getRecords();
 		if (DoubaoUtils.isEmpty(records)) {

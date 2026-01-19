@@ -89,18 +89,12 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
      */
     @Override
     @Transactional
-    public Result<Boolean> incrementFollowCount(Long topicId) {
+    public void incrementFollowCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
             throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
-
-        LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(TopicStatistics::getTopicId, topicId)
-                .setSql("follow_count = follow_count + 1");
-
-        boolean result = this.update(updateWrapper);
-        return Result.success(result);
+        topicStatisticsMapper.incrementFollowCount(topicId);
     }
 
     /**
@@ -112,7 +106,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
      */
     @Override
     @Transactional
-    public Result<Boolean> decrementFollowCount(Long topicId) {
+    public void decrementFollowCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
             throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
@@ -121,13 +115,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
         if (statistics.getFollowCount() <= 0) {
             throw new BusinessException(ErrorCode.TOPIC_FOLLOW_COUNT_ZERO);
         }
-
-        LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(TopicStatistics::getTopicId, topicId)
-                .setSql("follow_count = follow_count - 1");
-
-        boolean result = this.update(updateWrapper);
-        return Result.success(result);
+        topicStatisticsMapper.decrementFollowCount(topicId);
     }
 
     /**
