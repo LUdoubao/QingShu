@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.topic.service.entity.TopicStatistics;
 
+import java.util.Set;
+
 /**
  * 话题统计服务接口
  * 提供话题相关统计数据的增减和查询功能
@@ -14,20 +16,20 @@ public interface TopicStatisticsService extends IService<TopicStatistics> {
      * 当有新文案绑定到话题时调用
      *
      * @param topicId 话题ID
-     * @param userId 用户ID
-     * @return 操作结果
      */
-    Result<Boolean> incrementQuoteCount(Long topicId, Long userId);
+    void incrementQuoteCount(Long topicId);
 
     /**
      * 减少话题文案引用数
      * 当文案从话题解绑时调用
      *
      * @param topicId 话题ID
-     * @param userId 用户ID
-     * @return 操作结果
      */
-    Result<Boolean> decrementQuoteCount(Long topicId, Long userId);
+    void decrementQuoteCount(Long topicId);
+
+    void decrementQuoteCount(Set<Long> topicIds);
+
+
 
     /**
      * 增加话题关注数
@@ -63,16 +65,6 @@ public interface TopicStatisticsService extends IService<TopicStatistics> {
      * @return 话题统计信息
      */
     Result<TopicStatistics> getStatisticsByTopicId(Long topicId);
-
-    /**
-     * 更新话题热门文案
-     * 设置话题中最受欢迎的文案ID
-     *
-     * @param topicId 话题ID
-     * @param quoteId 文案ID
-     * @return 操作结果
-     */
-    Result<Boolean> updateHotQuote(Long topicId, Long quoteId);
 
     /**
      * 更新话题今日新增文案数

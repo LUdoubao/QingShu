@@ -41,6 +41,20 @@ public class QuoteTopic extends BaseSingleDel {
     @TableField(value = "binder_id")
     private Long binderId;
 
+    /**
+     * 状态
+     */
+    @TableField(value = "status")
+    private Integer status;
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
     public Long getId() {
         return id;
     }

@@ -12,7 +12,13 @@ import java.util.List;
 public interface QuoteTopicService extends IService<QuoteTopic> {
 	void deleteQuoteBind(List<Long> quoteIds);
 
+	/**
+	 * 绑定
+	 * @param dto 绑定信息
+	 */
 	void bindQuoteToTopic(TopicBindDTO dto);
+
+	void updateQuoteBind(TopicBindDTO dto);
 
 	Page<TopicQuoteVO> queryTopicQuotes(TopicQuoteQueryDTO queryDTO);
 }

@@ -24,11 +24,7 @@ public class TopicStatistics {
      */
     @TableField(value = "quote_count")
     private Integer quoteCount;
-    /**
-     * 参与用户数（发布文案的独立用户数）
-     */
-    @TableField(value = "active_user_count")
-    private Integer activeUserCount;
+
     /**
      * 关注用户总数
      */
@@ -44,11 +40,7 @@ public class TopicStatistics {
      */
     @TableField(value = "today_quote_count")
     private Integer todayQuoteCount;
-    /**
-     * 热门文案ID（点赞数最高，便于快速展示）
-     */
-    @TableField(value = "hot_quote_id")
-    private Long hotQuoteId;
+
     /**
      * 统计更新时间
      */
@@ -101,14 +93,6 @@ public class TopicStatistics {
 
     public void setTodayQuoteCount(Integer todayQuoteCount) {
         this.todayQuoteCount = todayQuoteCount;
-    }
-
-    public Long getHotQuoteId() {
-        return hotQuoteId;
-    }
-
-    public void setHotQuoteId(Long hotQuoteId) {
-        this.hotQuoteId = hotQuoteId;
     }
 
     public LocalDateTime getUpdatedTime() {
