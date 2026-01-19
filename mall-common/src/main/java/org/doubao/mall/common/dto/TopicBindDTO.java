@@ -17,6 +17,28 @@ public class TopicBindDTO {
      * 绑定者ID
      */
     private Long binderId;
+
+    /**
+     * 绑定状态
+     */
+    private Integer status;
+
+    public TopicBindDTO() {
+    }
+
+    public TopicBindDTO(Long quoteId, Integer status) {
+        this.quoteId = quoteId;
+        this.status = status;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
     public Long getQuoteId() {
         return quoteId;
     }
