@@ -13,11 +13,14 @@ import java.util.List;
 @FeignClient(name = "Topic-service")
 @ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
 public interface TopicClient {
-	@PostMapping("/deleteQuoteBind")
+	@PostMapping("/topicQuote/deleteQuoteBind")
 	public Result<Boolean> deleteQuoteBind(@RequestBody List<Long> quoteIds);
 
-	@PostMapping("/bind-quote")
+	@PostMapping("/topicQuote/bind-quote")
 	public Result<Boolean> bindQuoteToTopic(@RequestBody TopicBindDTO dto);
+
+	@PostMapping("/update-bind-quote")
+	public Result<Boolean> updateBindQuote(@RequestBody TopicBindDTO dto);
 
 	@GetMapping("/getName/{id}")
 	public Result<TopicNameVo> getNameById(@RequestParam("id") Long id);
