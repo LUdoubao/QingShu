@@ -14,6 +14,12 @@ import javax.annotation.Resource;
 public class TopicQuoteController {
 	@Resource
 	private QuoteTopicService topicQuoteService;
+
+	/**
+	 * 查询话题下的所有关联的引文
+	 * @param queryDTO 查询参数
+	 * @return 查询结果
+	 */
 	@PostMapping("/list")
 	public Result<Page<TopicQuoteVO>> queryTopicQuotes(@RequestBody TopicQuoteQueryDTO queryDTO) {
 		return Result.success(topicQuoteService.queryTopicQuotes(queryDTO));

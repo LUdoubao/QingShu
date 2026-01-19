@@ -29,8 +29,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -186,6 +186,12 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         TopicVO vo = new TopicVO();
         BeanUtils.copyProperties(topic, vo);
 
+        Long userId = UserContext.getUserId();
+        List<TopicFollowVo> data = userTopicFollowService.isUserFollowingTopic(userId, Collections.singletonList(topicId));
+        if (DoubaoUtils.isNotEmpty(data)) {
+            vo.setFollowed(data.get(0).getFollowed());
+        }
+
         // 获取统计信息
         TopicStatistics statistics = topicStatisticsService.getById(topicId);
         if (statistics != null) {
@@ -236,7 +242,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
 
         List<Long> topicIds = topicPage.getRecords().stream().map(Topic::getId).collect(Collectors.toList());
         Long userId = UserContext.getUserId();
-        List<TopicFollowVo> data = userTopicFollowService.isUserFollowingTopic(userId, topicIds).getData();
+        List<TopicFollowVo> data = userTopicFollowService.isUserFollowingTopic(userId, topicIds);
         List<Topic> records = topicPage.getRecords();
         List<TopicVO> voList = new ArrayList<>();
         for (Topic topic : records) {

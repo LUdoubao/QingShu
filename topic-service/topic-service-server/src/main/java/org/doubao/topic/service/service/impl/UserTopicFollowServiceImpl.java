@@ -13,12 +13,15 @@ import org.doubao.topic.service.mapper.UserTopicFollowMapper;
 import org.doubao.topic.service.service.TopicStatisticsService;
 import org.doubao.topic.service.service.UserTopicFollowService;
 import org.doubao.topic.service.vo.TopicFollowVo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,6 +31,7 @@ import java.util.List;
 @Service
 public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMapper, UserTopicFollow> implements UserTopicFollowService {
 
+    private static final Logger log = LoggerFactory.getLogger(UserTopicFollowServiceImpl.class);
     @Resource
     private UserTopicFollowMapper userTopicFollowMapper;
 
@@ -142,12 +146,12 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
      * @return 是否关注
      */
     @Override
-    public Result<List<TopicFollowVo>> isUserFollowingTopic(Long userId, List<Long> topicIds) {
+    public List<TopicFollowVo> isUserFollowingTopic(Long userId, List<Long> topicIds) {
         if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicIds)) {
-            throw new BusinessException(ErrorCode.TOPIC_OR_USER_ID_EMPTY);
+            log.error(ErrorCode.TOPIC_OR_USER_ID_EMPTY.getMessage());
+            return new ArrayList<>();
         }
-        List<TopicFollowVo> topicFollowVos = userTopicFollowMapper.isUserFollowingTopic(userId, topicIds);
-        return Result.success(topicFollowVos);
+		return userTopicFollowMapper.isUserFollowingTopic(userId, topicIds);
     }
 
     /**
