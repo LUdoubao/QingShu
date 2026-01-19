@@ -40,7 +40,7 @@ public interface UserTopicFollowService extends IService<UserTopicFollow> {
      * @param topicIds 话题 ID集合
      * @return 是否关注
      */
-    Result<List<TopicFollowVo>> isUserFollowingTopic(Long userId, List<Long> topicIds);
+   List<TopicFollowVo> isUserFollowingTopic(Long userId, List<Long> topicIds);
 
     /**
      * 获取用户关注的话题数量
