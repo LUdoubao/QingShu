@@ -12,12 +12,14 @@ import org.doubao.topic.service.entity.UserTopicFollow;
 import org.doubao.topic.service.mapper.UserTopicFollowMapper;
 import org.doubao.topic.service.service.TopicStatisticsService;
 import org.doubao.topic.service.service.UserTopicFollowService;
+import org.doubao.topic.service.vo.TopicFollowVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户话题关注服务实现类
@@ -61,13 +63,12 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
                 UserTopicFollow updateFollow = new UserTopicFollow();
                 updateFollow.setId(existingFollow.getId());
                 updateFollow.setIsValid(1);
-                updateFollow.setUnfollowTime(null);
                 updateFollow.setFollowTime(LocalDateTime.now());
                 boolean result = this.updateById(updateFollow);
 
                 if (result) {
                     // 更新统计信息
-                    topicStatisticsService.incrementFollowCount(topicId);
+                    // topicStatisticsService.incrementFollowCount(topicId);
                 }
 
                 return Result.success(result);
@@ -85,7 +86,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
         if (result) {
             // 更新统计信息
-            topicStatisticsService.incrementFollowCount(topicId);
+            // topicStatisticsService.incrementFollowCount(topicId);
         }
 
         return Result.success(result);
@@ -126,7 +127,7 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
 
         if (result) {
             // 更新统计信息
-            topicStatisticsService.decrementFollowCount(topicId);
+            // topicStatisticsService.decrementFollowCount(topicId);
         }
 
         return Result.success(result);
@@ -137,24 +138,16 @@ public class UserTopicFollowServiceImpl extends ServiceImpl<UserTopicFollowMappe
      * 判断用户与话题之间是否存在有效的关注关系
      *
      * @param userId 用户ID
-     * @param topicId 话题ID
+     * @param topicIds 话题ID
      * @return 是否关注
      */
     @Override
-    public Result<Boolean> isUserFollowingTopic(Long userId, Long topicId) {
-        if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicId)) {
+    public Result<List<TopicFollowVo>> isUserFollowingTopic(Long userId, List<Long> topicIds) {
+        if (DoubaoUtils.isEmpty(userId) || DoubaoUtils.isEmpty(topicIds)) {
             throw new BusinessException(ErrorCode.TOPIC_OR_USER_ID_EMPTY);
         }
-
-        LambdaQueryWrapper<UserTopicFollow> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(UserTopicFollow::getUserId, userId)
-                .eq(UserTopicFollow::getTopicId, topicId)
-                .eq(UserTopicFollow::getIsValid, 1);
-
-        UserTopicFollow follow = this.getOne(wrapper);
-        boolean isFollowing = follow != null;
-
-        return Result.success(isFollowing);
+        List<TopicFollowVo> topicFollowVos = userTopicFollowMapper.isUserFollowingTopic(userId, topicIds);
+        return Result.success(topicFollowVos);
     }
 
     /**

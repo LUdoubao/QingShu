@@ -1,15 +1,18 @@
 package org.doubao.topic.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.doubao.mall.common.dto.TopicBindDTO;
+import org.doubao.mall.common.dto.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.topic.service.dto.*;
 import org.doubao.topic.service.service.TopicService;
+import org.doubao.topic.service.vo.TopicSelectVo;
 import org.doubao.topic.service.vo.TopicVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * 话题控制器
@@ -73,6 +76,11 @@ public class TopicController {
         return topicService.getTopicById(id);
     }
 
+    @GetMapping("/getName/{id}")
+    public Result<TopicNameVo> getNameById(@PathVariable("id") Long id) {
+        return topicService.getNameById(id);
+    }
+
     /**
      * 查询话题列表
      * 根据查询条件获取话题列表，支持关键词、分类、状态等筛选
@@ -80,9 +88,19 @@ public class TopicController {
      * @param queryDTO 查询条件DTO
      * @return 话题分页列表
      */
-    @GetMapping("/list")
-    public Result<Page<TopicVO>> queryTopics(TopicQueryDTO queryDTO) {
+    @PostMapping("/list")
+    public Result<Page<TopicVO>> queryTopics(@RequestBody TopicQueryDTO queryDTO) {
         return topicService.queryTopics(queryDTO);
+    }
+    @PostMapping("/selectList")
+    public Result<List<TopicSelectVo>> querySelectTopics(@RequestBody TopicSelectQuery queryDTO) {
+        return topicService.querySelectTopics(queryDTO);
+    }
+
+    @PostMapping("/deleteQuoteBind")
+    public Result<Boolean> deleteQuoteBind(@RequestBody List<Long> quoteIds) {
+         topicService.deleteQuoteBind(quoteIds);
+         return Result.success(true);
     }
 
     /**
@@ -94,7 +112,8 @@ public class TopicController {
      */
     @PostMapping("/bind-quote")
     public Result<Boolean> bindQuoteToTopic(@RequestBody TopicBindDTO dto) {
-        return topicService.bindQuoteToTopic(dto);
+        topicService.bindQuoteToTopic(dto);
+        return Result.success(true);
     }
 
     /**

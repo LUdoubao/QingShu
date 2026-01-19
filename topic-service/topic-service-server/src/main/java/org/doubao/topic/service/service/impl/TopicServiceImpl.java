@@ -3,23 +3,25 @@ package org.doubao.topic.service.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import org.doubao.mall.common.dto.TopicBindDTO;
+import org.doubao.mall.common.dto.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.util.DoubaoUtils;
-import org.doubao.topic.service.dto.TopicBindDTO;
-import org.doubao.topic.service.dto.TopicCreateDTO;
-import org.doubao.topic.service.dto.TopicQueryDTO;
-import org.doubao.topic.service.dto.TopicUpdateDTO;
+import org.doubao.mall.common.util.UserContext;
+import org.doubao.topic.service.dto.*;
 import org.doubao.topic.service.entity.Topic;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.entity.UserTopicFollow;
 import org.doubao.topic.service.entity.QuoteTopic;
-import org.doubao.topic.service.mapper.QuoteTopicMapper;
 import org.doubao.topic.service.mapper.TopicMapper;
+import org.doubao.topic.service.service.QuoteTopicService;
 import org.doubao.topic.service.service.TopicService;
 import org.doubao.topic.service.service.TopicStatisticsService;
 import org.doubao.topic.service.service.UserTopicFollowService;
+import org.doubao.topic.service.vo.TopicFollowVo;
+import org.doubao.topic.service.vo.TopicSelectVo;
 import org.doubao.topic.service.vo.TopicVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +44,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Resource
     private TopicMapper topicMapper;
     @Resource
-    private QuoteTopicMapper quoteTopicMapper;
+    private QuoteTopicService quoteTopicService;
 
 
     @Autowired
@@ -204,7 +207,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Override
     public Result<Page<TopicVO>> queryTopics(TopicQueryDTO queryDTO) {
         LambdaQueryWrapper<Topic> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Topic::getDeleted, 0); // 未删除的
+        wrapper.eq(Topic::getDeleted, 0)
+                .eq(Topic::getStatus, 1);
 
         if (DoubaoUtils.isNotEmpty(queryDTO.getKeyword())) {
             wrapper.and(w -> w.like(Topic::getName, queryDTO.getKeyword())
@@ -230,20 +234,30 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         Page<TopicVO> voPage = new Page<>();
         BeanUtils.copyProperties(topicPage, voPage);
 
-        for (Topic topic : topicPage.getRecords()) {
+        List<Long> topicIds = topicPage.getRecords().stream().map(Topic::getId).collect(Collectors.toList());
+        Long userId = UserContext.getUserId();
+        List<TopicFollowVo> data = userTopicFollowService.isUserFollowingTopic(userId, topicIds).getData();
+        List<Topic> records = topicPage.getRecords();
+        List<TopicVO> voList = new ArrayList<>();
+        for (Topic topic : records) {
             TopicVO vo = new TopicVO();
             BeanUtils.copyProperties(topic, vo);
-
+            voList.add(vo);
+        }
+        for (TopicVO vo : voList) {
             // 获取统计信息
-            TopicStatistics statistics = topicStatisticsService.getById(topic.getId());
+            TopicStatistics statistics = topicStatisticsService.getById(vo.getId());
             if (statistics != null) {
                 vo.setQuoteCount(statistics.getQuoteCount());
                 vo.setFollowCount(statistics.getFollowCount());
                 vo.setViewCount(statistics.getViewCount());
             }
 
-            voPage.getRecords().add(vo);
+            data.stream().filter(d -> d.getTopicId().equals(vo.getId()))
+                    .findFirst()
+                    .ifPresent(d -> vo.setFollowed(d.getFollowed()));
         }
+        voPage.setRecords(voList);
 
         return Result.success(voPage);
     }
@@ -257,35 +271,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
      */
     @Override
     @Transactional
-    public Result<Boolean> bindQuoteToTopic(TopicBindDTO dto) {
-        // 检查话题是否存在且已发布
-        Topic topic = this.getById(dto.getTopicId());
-        if (topic == null || topic.getStatus() != 1) { // 1: 已发布
-            throw new BusinessException(ErrorCode.TOPIC_NOT_FOUND_OR_NOT_PUBLISHED);
-        }
-
-        // 检查是否已绑定
-        LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuoteTopic::getQuoteId, dto.getQuoteId())
-                .eq(QuoteTopic::getTopicId, dto.getTopicId())
-                .eq(QuoteTopic::getDeleted, 0);
-        QuoteTopic existing = quoteTopicMapper.selectOne(wrapper);
-        if (existing != null) {
-            throw new BusinessException(ErrorCode.QUOTE_ALREADY_BOUND_TO_TOPIC);
-        }
-
-        // 创建绑定关系
-        QuoteTopic quoteTopic = new QuoteTopic();
-        quoteTopic.setQuoteId(dto.getQuoteId());
-        quoteTopic.setTopicId(dto.getTopicId());
-        quoteTopic.setBinderId(dto.getBinderId());
-        quoteTopic.setBindTime(LocalDateTime.now());
-        quoteTopicMapper.insert(quoteTopic);
-
-        // 更新统计信息
-        topicStatisticsService.incrementQuoteCount(dto.getTopicId(), dto.getBinderId());
-
-        return Result.success(true);
+    public void bindQuoteToTopic(TopicBindDTO dto) {
+        quoteTopicService.bindQuoteToTopic(dto);
     }
 
     /**
@@ -426,6 +413,61 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         }
 
         return Result.success(voPage);
+    }
+
+    @Override
+    public Result<List<TopicSelectVo>> querySelectTopics(TopicSelectQuery queryDTO) {
+        String topicName = queryDTO.getTopicName();
+        List<Long> ids = queryDTO.getIds();
+        List<TopicSelectVo> topicSelectVos  = new ArrayList<>();
+        if ((topicName == null || topicName.isEmpty()) && (ids == null || ids.isEmpty())) {
+            // 查询被绑定的标签最多的10条
+            topicSelectVos = topicMapper.selectTopTopics(10);
+        } else {
+            if (topicName != null && !topicName.isEmpty()) {
+                // 按名称模糊查询
+                List<Topic> list = this.list(new LambdaQueryWrapper<Topic>()
+                        .like(Topic::getName, topicName)
+                        .eq(Topic::getStatus, 1));
+                topicSelectVos = list.stream().map(topic -> {
+                    TopicSelectVo topicSelectVo = new TopicSelectVo();
+                    topicSelectVo.setId(topic.getId());
+                    topicSelectVo.setName(topic.getName());
+                    return topicSelectVo;
+                }).collect(Collectors.toList());
+            } else {
+                // 按id查询
+                topicSelectVos = this.listByIds(ids).stream().map(topic -> {
+                    TopicSelectVo topicSelectVo = new TopicSelectVo();
+                    topicSelectVo.setId(topic.getId());
+                    topicSelectVo.setName(topic.getName());
+                    return topicSelectVo;
+                }).collect(Collectors.toList());
+            }
+        }
+        return Result.success(topicSelectVos);
+    }
+
+    @Override
+    public void deleteQuoteBind(List<Long> quoteIds) {
+       quoteTopicService.deleteQuoteBind(quoteIds);
+    }
+
+    @Override
+    public Result<TopicNameVo> getNameById(Long id) {
+        LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(QuoteTopic::getQuoteId, id);
+        List<QuoteTopic> quoteTopics = quoteTopicService.list(wrapper);
+        if (DoubaoUtils.isEmpty(quoteTopics)) {
+            return Result.error("该引用未绑定话题");
+        }
+        Long topicId = quoteTopics.get(0).getTopicId();
+        Topic topic = this.getById(topicId);
+        if (DoubaoUtils.isEmpty(topic)) {
+            return Result.error("话题不存在");
+        }
+
+        return Result.success(new TopicNameVo(topic.getId(), topic.getName()));
     }
 
     /**
