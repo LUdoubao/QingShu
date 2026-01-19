@@ -37,6 +37,12 @@ public class TopicClientLocalImpl implements TopicClient {
 	}
 
 	@Override
+	public Result<Boolean> updateBindQuote(TopicBindDTO dto) {
+		quoteTopicService.updateQuoteBind(dto);
+		return Result.success(true);
+	}
+
+	@Override
 	public Result<TopicNameVo> getNameById(Long id) {
 		return topicService.getNameById(id);
 	}
