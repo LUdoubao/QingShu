@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang.StringUtils;
+import org.doubao.mall.common.dto.TopicBindDTO;
+import org.doubao.mall.common.dto.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.quote.service.dto.*;
@@ -72,6 +75,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Resource
 	private FeedClient feedClient;
 	@Resource
+	private TopicClient topicClient;
+	@Resource
 	private CitationCheckService citationCheckService;
 	@Override
 	@SuppressWarnings("unchecked")
@@ -95,15 +100,21 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
-		q.setCategoryId(dto.getCategoryId());
 		q.setOriginal(dto.getOriginal());
 		// 默认引文状态为待审核
 		q.setStatus(QuoteStatus.AUDITING.getCode());
 		this.saveOrUpdate(q);
+
+
 		Long qId = q.getId();
 		if (quoteId != null) {
+			// 删除旧标签绑定
 			quoteTagMapper.deleteByQuoteId(quoteId);
+			// 删除旧话题绑定
+			topicClient.deleteQuoteBind(Collections.singletonList(quoteId));
 		}
+
+		// 添加标签绑定
 		List<Long> tagIds = dto.getTagIds();
 		List<Tag> tags = new ArrayList<>();
 		List<QuoteTag> quoteTags = new ArrayList<>();
@@ -117,6 +128,17 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quoteTagMapper.insertBatch(quoteTags);
 		}
+
+		// 添加话题绑定
+		List<Long> topicIds = dto.getTopicIds();
+		if (DoubaoUtils.isNotEmpty(topicIds)) {
+			TopicBindDTO topicBindDTO = new TopicBindDTO();
+			topicBindDTO.setQuoteId(qId);
+			topicBindDTO.setTopicId(topicIds.get(0));
+			topicBindDTO.setBinderId(q.getCreatedId());
+			topicClient.bindQuoteToTopic(topicBindDTO);
+		}
+
 
 		// 同步到审核表
 		QuoteVerify quoteVerify = new QuoteVerify();
@@ -252,6 +274,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		BeanUtils.copyProperties(quote, quoteVo);
 		Long createdId = quoteVo.getCreatedId();
 		List<UserInfoDes> userInfos = userClient.getUsersByIds(Collections.singleton(createdId)).getData();
+
+		TopicNameVo topicNameVo = topicClient.getNameById(quote.getId()).getData();
+		if (DoubaoUtils.isNotEmpty(topicNameVo)) {
+			quoteVo.setTopic(topicNameVo);
+		}
 
 		List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(Collections.singletonList(id));
 		Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
@@ -529,6 +556,73 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		return Result.success(mapList);
 	}
 
+	@Override
+	public Result<List<Map<String, Object>>> topicBatch(List<Long> ids) {
+		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
+				.in(Quote::getId, ids)
+				.eq(Quote::getDeleted, 0)
+				.eq(Quote::getStatus,  QuoteStatus.PUBLISHED.getCode());
+		List<Quote> quotes = this.list(queryWrapper);
+
+		List<Map<String, Object>> mapList = new ArrayList<>();
+		if (!quotes.isEmpty()) {
+			List<QuoteVo> quoteVoList = quotes.stream().map(quote -> {
+				QuoteVo quoteVo = new QuoteVo();
+				BeanUtils.copyProperties(quote, quoteVo);
+				return quoteVo;
+			}).collect(Collectors.toList());
+
+			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
+			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+			// 获取创建者信息
+			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
+			List<UserInfoDes> userInfos = userClient.getUsersByIds(createdIds).getData();
+
+
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
+			Map<Long, String> categoryMap = new HashMap<>();
+			if (!categoryIds.isEmpty()) {
+				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
+				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
+			}
+
+			// 构建 quoteId -> List<Tag>
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+
+			// 设置 tags 字段
+			for (QuoteVo quoteVo : quoteVoList) {
+				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+			}
+			//quoteVoList转mapList
+			mapList = quoteVoList.stream().map(quoteVo -> {
+				Map<String, Object> map = new HashMap<>();
+				map.put("id", quoteVo.getId());
+				map.put("content", quoteVo.getContent());
+				map.put("author", quoteVo.getAuthor());
+				map.put("source", quoteVo.getSource());
+				map.put("original", quoteVo.getOriginal());
+				map.put("createdTime", quoteVo.getCreatedTime());
+				// 设置用户信息
+				Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+				map.put("userInfo", first.orElse(new UserInfoDes()));
+				return map;
+			}).collect(Collectors.toList());
+		}
+		return Result.success(mapList);
+	}
 	@Override
 	public String getQuoteType(String quoteId) {
 		int quoteType = quoteMapper.getQuoteType(quoteId);
@@ -887,7 +981,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quote.setContent(dto.getContent());
 			quote.setAuthor(dto.getAuthor());
 			quote.setSource(dto.getSource());
-			quote.setCategoryId(dto.getCategoryId());
 			quote.setOriginal(dto.getOriginal());
 			this.updateById(quote);
 
@@ -912,7 +1005,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
-		q.setCategoryId(dto.getCategoryId());
 		q.setOriginal(dto.getOriginal());
 		q.setStatus(QuoteStatus.DRAFT.getCode());
 		this.save(q);

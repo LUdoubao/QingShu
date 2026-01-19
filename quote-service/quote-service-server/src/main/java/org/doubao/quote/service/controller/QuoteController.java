@@ -80,6 +80,13 @@ public class QuoteController {
 		return quoteService.batch(ids);
 	}
 
+	@PostMapping("/topic_batch")
+	public Result<List<Map<String, Object>>> topicBatch(@RequestBody List<Long> ids) {
+		return quoteService.topicBatch(ids);
+	}
+
+
+
 	@GetMapping("/{quoteId}/type")
 	public String getQuoteType(@PathVariable("quoteId") String quoteId) {
 		return quoteService.getQuoteType(quoteId);
