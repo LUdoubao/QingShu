@@ -1,4 +1,4 @@
-package org.doubao.topic.service.dto;
+package org.doubao.mall.common.dto;
 
 /**
  * 话题绑定数据传输对象
