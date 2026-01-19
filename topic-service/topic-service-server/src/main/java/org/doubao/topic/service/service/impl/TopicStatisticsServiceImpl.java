@@ -1,12 +1,10 @@
 package org.doubao.topic.service.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
-import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.mapper.TopicStatisticsMapper;
 import org.doubao.topic.service.service.TopicStatisticsService;
@@ -14,6 +12,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 话题统计服务实现类
@@ -30,29 +32,16 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
      * 当有新文案绑定到话题时调用
      *
      * @param topicId 话题ID
-     * @param userId 用户ID
-     * @return 操作结果
      */
     @Override
     @Transactional
-    public Result<Boolean> incrementQuoteCount(Long topicId, Long userId) {
+    public void incrementQuoteCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
             throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
         }
 
-        // 更新引用数量和活跃用户数
-        LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(TopicStatistics::getTopicId, topicId)
-                .setSql("quote_count = quote_count + 1")
-                .setSql("active_user_count = CASE WHEN active_user_count = 0 THEN 1 ELSE active_user_count END"); // 简化处理，实际可能需要更复杂的逻辑
-
-        boolean result = this.update(updateWrapper);
-        
-        // 更新今日新增数量
-        updateTodayQuoteCount(topicId);
-        
-        return Result.success(result);
+        topicStatisticsMapper.incrementQuoteCount(topicId);
     }
 
     /**
@@ -60,12 +49,10 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
      * 当文案从话题解绑时调用
      *
      * @param topicId 话题ID
-     * @param userId 用户ID
-     * @return 操作结果
      */
     @Override
     @Transactional
-    public Result<Boolean> decrementQuoteCount(Long topicId, Long userId) {
+    public void decrementQuoteCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
             throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
@@ -75,12 +62,22 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
             throw new BusinessException(ErrorCode.TOPIC_QUOTE_COUNT_ZERO);
         }
 
-        LambdaUpdateWrapper<TopicStatistics> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(TopicStatistics::getTopicId, topicId)
-                .setSql("quote_count = quote_count - 1");
+        topicStatisticsMapper.decrementQuoteCount(topicId);
+    }
 
-        boolean result = this.update(updateWrapper);
-        return Result.success(result);
+    @Override
+    public void decrementQuoteCount(Set<Long> topicIds) {
+        if (topicIds == null || topicIds.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST);
+        }
+        List<Long> newTopicIds = new ArrayList<>(topicIds);
+        List<TopicStatistics> topicStatistics = this.listByIds(topicIds);
+        for (TopicStatistics topicStatistic : topicStatistics) {
+            if (topicStatistic.getQuoteCount() > 0) {
+                newTopicIds.add(topicStatistic.getTopicId());
+            }
+        }
+        topicStatisticsMapper.decrementQuoteCountBatch(newTopicIds);
     }
 
     /**
@@ -170,28 +167,6 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
         }
 
         return Result.success(statistics);
-    }
-
-    /**
-     * 更新话题热门文案
-     * 设置话题中最受欢迎的文案ID
-     *
-     * @param topicId 话题ID
-     * @param quoteId 文案ID
-     * @return 操作结果
-     */
-    @Override
-    @Transactional
-    public Result<Boolean> updateHotQuote(Long topicId, Long quoteId) {
-        TopicStatistics statistics = this.getById(topicId);
-        if (statistics == null) {
-            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
-        }
-
-        statistics.setHotQuoteId(quoteId);
-
-        boolean result = this.updateById(statistics);
-        return Result.success(result);
     }
 
     /**

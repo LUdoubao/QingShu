@@ -97,25 +97,6 @@ public class TopicController {
         return topicService.querySelectTopics(queryDTO);
     }
 
-    @PostMapping("/deleteQuoteBind")
-    public Result<Boolean> deleteQuoteBind(@RequestBody List<Long> quoteIds) {
-         topicService.deleteQuoteBind(quoteIds);
-         return Result.success(true);
-    }
-
-    /**
-     * 绑定文案到话题
-     * 建立文案与话题的关联关系
-     *
-     * @param dto 绑定DTO
-     * @return 操作结果
-     */
-    @PostMapping("/bind-quote")
-    public Result<Boolean> bindQuoteToTopic(@RequestBody TopicBindDTO dto) {
-        topicService.bindQuoteToTopic(dto);
-        return Result.success(true);
-    }
-
     /**
      * 关注话题
      * 创建当前用户与指定话题的关注关系

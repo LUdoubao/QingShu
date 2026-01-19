@@ -16,6 +16,7 @@ import org.doubao.topic.service.feign.QuoteClient;
 import org.doubao.topic.service.mapper.QuoteTopicMapper;
 import org.doubao.topic.service.mapper.TopicMapper;
 import org.doubao.topic.service.service.QuoteTopicService;
+import org.doubao.topic.service.service.TopicStatisticsService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,13 +33,25 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 	private TopicMapper topicMapper;
 	@Resource
 	private QuoteClient quoteClient;
+	@Resource
+	private TopicStatisticsService topicStatisticsService;
 	@Override
 	public void deleteQuoteBind(List<Long> quoteIds) {
 		if (quoteIds == null || quoteIds.isEmpty()) {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
+		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
+		wrapper.in(QuoteTopic::getQuoteId, quoteIds)
+				.eq(QuoteTopic::getDeleted, 0);
+		List<QuoteTopic> list = this.list(wrapper);
+		if (DoubaoUtils.isEmpty(list)) {
+			return;
+		}
+		Set<Long> topicIds = list.stream().map(QuoteTopic::getTopicId).collect(Collectors.toSet());
 		this.remove(new LambdaQueryWrapper<QuoteTopic>()
 				.in(QuoteTopic::getQuoteId, quoteIds));
+
+		topicStatisticsService.decrementQuoteCount(topicIds);
 	}
 
 	@Override
@@ -56,7 +70,18 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 				.eq(QuoteTopic::getDeleted, 0);
 		QuoteTopic existing = this.getOne(wrapper);
 		if (existing != null) {
-			throw new BusinessException(ErrorCode.QUOTE_ALREADY_BOUND_TO_TOPIC);
+			// 更新
+			existing.setStatus(dto.getStatus());
+			existing.setBindTime(LocalDateTime.now());
+			this.updateById(existing);
+			if (dto.getStatus() == 1) {
+				// 增加话题引用计数
+				topicStatisticsService.incrementQuoteCount(dto.getTopicId());
+			} else {
+				// 减少话题引用计数
+				topicStatisticsService.decrementQuoteCount(dto.getTopicId());
+			}
+			return;
 		}
 
 		// 创建绑定关系
@@ -65,10 +90,29 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 		quoteTopic.setTopicId(dto.getTopicId());
 		quoteTopic.setBinderId(dto.getBinderId());
 		quoteTopic.setBindTime(LocalDateTime.now());
+		quoteTopic.setStatus(dto.getStatus());
 		this.save(quoteTopic);
+	}
 
-		// 更新统计信息
-		// topicStatisticsService.incrementQuoteCount(dto.getTopicId(), dto.getBinderId());
+	@Override
+	public void updateQuoteBind(TopicBindDTO dto) {
+		LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
+		wrapper.eq(QuoteTopic::getQuoteId, dto.getQuoteId())
+				.eq(QuoteTopic::getDeleted, 0);
+		QuoteTopic quoteTopic = this.getOne(wrapper);
+		if (DoubaoUtils.isNotEmpty(quoteTopic)) {
+			quoteTopic.setStatus(dto.getStatus());
+			quoteTopic.setBindTime(LocalDateTime.now());
+			this.updateById(quoteTopic);
+
+			if (dto.getStatus() == 1) {
+				// 添加话题引用计数
+				topicStatisticsService.incrementQuoteCount(dto.getTopicId());
+			} else {
+				// 减少话题引用计数
+				topicStatisticsService.decrementQuoteCount(dto.getTopicId());
+			}
+		}
 	}
 
 	@Override
