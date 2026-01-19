@@ -3,6 +3,9 @@ package org.doubao.topic.service.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.topic.service.entity.UserTopicFollow;
+import org.doubao.topic.service.vo.TopicFollowVo;
+
+import java.util.List;
 
 /**
  * 用户话题关注服务接口
@@ -34,10 +37,10 @@ public interface UserTopicFollowService extends IService<UserTopicFollow> {
      * 判断用户与话题之间是否存在有效的关注关系
      *
      * @param userId 用户ID
-     * @param topicId 话题ID
+     * @param topicIds 话题 ID集合
      * @return 是否关注
      */
-    Result<Boolean> isUserFollowingTopic(Long userId, Long topicId);
+    Result<List<TopicFollowVo>> isUserFollowingTopic(Long userId, List<Long> topicIds);
 
     /**
      * 获取用户关注的话题数量

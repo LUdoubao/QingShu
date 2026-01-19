@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
  * 记录用户关注话题的关系，支撑动态推送
  */
 @TableName("user_topic_follow")
-public class UserTopicFollow extends BaseEntity {
+public class UserTopicFollow {
     /**
      * 关注ID（主键）
      */

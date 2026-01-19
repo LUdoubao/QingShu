@@ -64,6 +64,19 @@ public class TopicVO {
      */
     private Long viewCount;
 
+    /**
+     * 是否已关注
+     */
+    private boolean isFollowed;
+
+    public boolean isFollowed() {
+        return isFollowed;
+    }
+
+    public void setFollowed(boolean followed) {
+        isFollowed = followed;
+    }
+
     public Long getId() {
         return id;
     }

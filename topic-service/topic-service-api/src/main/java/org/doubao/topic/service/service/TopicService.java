@@ -2,13 +2,15 @@ package org.doubao.topic.service.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.doubao.mall.common.dto.TopicBindDTO;
+import org.doubao.mall.common.dto.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.topic.service.dto.TopicBindDTO;
-import org.doubao.topic.service.dto.TopicCreateDTO;
-import org.doubao.topic.service.dto.TopicQueryDTO;
-import org.doubao.topic.service.dto.TopicUpdateDTO;
+import org.doubao.topic.service.dto.*;
 import org.doubao.topic.service.entity.Topic;
+import org.doubao.topic.service.vo.TopicSelectVo;
 import org.doubao.topic.service.vo.TopicVO;
+
+import java.util.List;
 
 /**
  * 话题服务接口
@@ -70,7 +72,7 @@ public interface TopicService extends IService<Topic> {
      * @param dto 绑定DTO
      * @return 操作结果
      */
-    Result<Boolean> bindQuoteToTopic(TopicBindDTO dto);
+    void bindQuoteToTopic(TopicBindDTO dto);
 
     /**
      * 关注话题
@@ -120,4 +122,10 @@ public interface TopicService extends IService<Topic> {
      * @return 关注话题分页列表
      */
     Result<Page<TopicVO>> getFollowedTopics(Long userId, Integer page, Integer size);
+
+    Result<List<TopicSelectVo>> querySelectTopics(TopicSelectQuery queryDTO);
+
+	void deleteQuoteBind(List<Long> quoteIds);
+
+    Result<TopicNameVo> getNameById(Long id);
 }

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import org.doubao.mall.common.entity.BaseDel;
+import org.doubao.mall.common.entity.BaseSingleDel;
 
 import java.time.LocalDateTime;
 
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
  * 存储文案与话题之间的多对多关联关系
  */
 @TableName("quote_topic")
-public class QuoteTopic extends BaseDel {
+public class QuoteTopic extends BaseSingleDel {
     /**
      * 关联ID（主键）
      */
