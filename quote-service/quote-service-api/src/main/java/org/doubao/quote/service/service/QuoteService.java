@@ -94,6 +94,8 @@ public interface QuoteService extends IService<Quote> {
 	 */
 	Result<List<Map<String, Object>>> batch(List<Long> ids);
 
+	Result<List<Map<String, Object>>> topicBatch(List<Long> ids);
+
 	/**
 	 * 根据引文ID获取引文类型
 	 * @param quoteId 引文ID

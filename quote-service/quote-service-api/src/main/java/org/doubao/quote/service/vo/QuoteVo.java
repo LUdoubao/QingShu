@@ -1,5 +1,6 @@
 package org.doubao.quote.service.vo;
 
+import org.doubao.mall.common.dto.TopicNameVo;
 import org.doubao.mall.common.entity.BaseEntity;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.quote.service.entity.Tag;
@@ -54,6 +55,16 @@ public class QuoteVo extends BaseEntity {
 	 * 状态
 	 */
 	private Integer status;
+
+	private TopicNameVo topic;
+
+	public TopicNameVo getTopic() {
+		return topic;
+	}
+
+	public void setTopic(TopicNameVo topic) {
+		this.topic = topic;
+	}
 
 	public Integer getStatus() {
 		return status;
