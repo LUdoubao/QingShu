@@ -36,18 +36,16 @@ public interface TopicStatisticsService extends IService<TopicStatistics> {
      * 当用户关注话题时调用
      *
      * @param topicId 话题ID
-     * @return 操作结果
      */
-    Result<Boolean> incrementFollowCount(Long topicId);
+    void incrementFollowCount(Long topicId);
 
     /**
      * 减少话题关注数
      * 当用户取消关注话题时调用
      *
      * @param topicId 话题ID
-     * @return 操作结果
      */
-    Result<Boolean> decrementFollowCount(Long topicId);
+    void decrementFollowCount(Long topicId);
 
     /**
      * 增加话题浏览量

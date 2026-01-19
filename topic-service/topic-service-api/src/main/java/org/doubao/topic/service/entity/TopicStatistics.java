@@ -1,10 +1,8 @@
 package org.doubao.topic.service.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import org.doubao.mall.common.entity.BaseEntity;
 
 import java.time.LocalDateTime;
 
@@ -61,14 +59,6 @@ public class TopicStatistics {
 
     public void setQuoteCount(Integer quoteCount) {
         this.quoteCount = quoteCount;
-    }
-
-    public Integer getActiveUserCount() {
-        return activeUserCount;
-    }
-
-    public void setActiveUserCount(Integer activeUserCount) {
-        this.activeUserCount = activeUserCount;
     }
 
     public Integer getFollowCount() {
