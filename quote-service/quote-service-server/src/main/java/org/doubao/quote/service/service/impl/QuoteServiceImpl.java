@@ -443,8 +443,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quote.setContent(quoteVerify.getContent());
 			this.updateById(quote);
 
-			bindTopic(quote.getId(), DoubaoUtils.isNotEmpty(dto.getTopicIds()) ? dto.getTopicIds().get(0) : null,
-					quote.getCreatedId(), QuoteStatus.AUDITING.getCode());
+			topicClient.updateBindQuote(new  TopicBindDTO(quoteId, QuoteStatus.PUBLISHED.getCode()));
 
 			quoteEventPublisher.pushQuoteVerifyNotification(
 					quoteId,
@@ -971,6 +970,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
+	@Transactional
 	public Long saveAsDraft(QuoteDTO dto) {
 		Long id = dto.getId();
 		if (id != null) {
