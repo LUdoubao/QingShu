@@ -1212,8 +1212,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	 * @param status 状态
 	 */
 	private void bindTopic(Long quoteId, Long topicId, Long createdId, int status) {
-		// 删除旧话题绑定
-		topicClient.deleteQuoteBind(Collections.singletonList(quoteId));
 		if (DoubaoUtils.isNotEmpty(topicId)) {
 			TopicBindDTO topicBindDTO = new TopicBindDTO();
 			topicBindDTO.setQuoteId(quoteId);
