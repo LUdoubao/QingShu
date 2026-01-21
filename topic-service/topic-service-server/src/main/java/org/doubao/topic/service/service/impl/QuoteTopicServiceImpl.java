@@ -17,6 +17,8 @@ import org.doubao.topic.service.mapper.QuoteTopicMapper;
 import org.doubao.topic.service.mapper.TopicMapper;
 import org.doubao.topic.service.service.QuoteTopicService;
 import org.doubao.topic.service.service.TopicStatisticsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,7 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 	private QuoteClient quoteClient;
 	@Resource
 	private TopicStatisticsService topicStatisticsService;
+	private static final Logger logger = LoggerFactory.getLogger(QuoteTopicServiceImpl.class);
 	@Override
 	public void deleteQuoteBind(List<Long> quoteIds) {
 		if (quoteIds == null || quoteIds.isEmpty()) {
@@ -75,6 +78,7 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 			existing.setBindTime(LocalDateTime.now());
 			this.updateById(existing);
 			if (!Objects.equals(dto.getStatus(), status)) {
+				logger.info("更新话题引用关系，话题id:{} , 更新状态:{}", dto.getTopicId(), dto.getStatus());
 				if (dto.getStatus() == 1) {
 					// 增加话题引用计数
 					topicStatisticsService.incrementQuoteCount(dto.getTopicId());

@@ -8,6 +8,8 @@ import org.doubao.mall.common.exception.BusinessException;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.mapper.TopicStatisticsMapper;
 import org.doubao.topic.service.service.TopicStatisticsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,7 +28,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
 
     @Resource
     private TopicStatisticsMapper topicStatisticsMapper;
-
+    private static final Logger logger = LoggerFactory.getLogger(TopicStatisticsServiceImpl.class);
     /**
      * 增加话题文案引用数
      * 当有新文案绑定到话题时调用
@@ -42,6 +44,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
         }
 
         topicStatisticsMapper.incrementQuoteCount(topicId);
+        logger.info("增加话题引用数成功，话题ID：{}", topicId);
     }
 
     /**
@@ -63,6 +66,7 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
         }
 
         topicStatisticsMapper.decrementQuoteCount(topicId);
+        logger.info("减少话题引用数成功，话题ID：{}", topicId);
     }
 
     @Override
