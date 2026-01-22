@@ -3,7 +3,7 @@ package org.doubao.topic.service.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import org.doubao.mall.common.dto.TopicBindDTO;
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.topic.service.dto.*;
 import org.doubao.topic.service.entity.Topic;
@@ -11,6 +11,7 @@ import org.doubao.topic.service.vo.TopicSelectVo;
 import org.doubao.topic.service.vo.TopicVO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 话题服务接口
@@ -128,4 +129,6 @@ public interface TopicService extends IService<Topic> {
 	void deleteQuoteBind(List<Long> quoteIds);
 
     Result<TopicNameVo> getNameById(Long id);
+
+    Result<Map<Long, TopicNameVo>> getNameByIds(List<Long> quoteIds);
 }

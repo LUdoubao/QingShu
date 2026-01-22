@@ -32,6 +32,10 @@ public class Topic extends BaseDel {
      */
     @TableField(value = "cover_key")
     private String coverKey;
+
+    @TableField(value = "storage_type")
+    private String storageType = "local"; // 默认本地存储
+
     /**
      * 分类ID
      */
@@ -52,6 +56,14 @@ public class Topic extends BaseDel {
      */
     @TableField(value = "weight")
     private Integer weight;
+
+    public String getStorageType() {
+        return storageType;
+    }
+
+    public void setStorageType(String storageType) {
+        this.storageType = storageType;
+    }
 
     public Long getId() {
         return id;

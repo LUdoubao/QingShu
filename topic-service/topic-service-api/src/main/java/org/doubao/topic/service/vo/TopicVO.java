@@ -20,9 +20,9 @@ public class TopicVO {
      */
     private String description;
     /**
-     * 话题封面图KEY（关联文件存储）
+     * 话题封面图Url
      */
-    private String coverKey;
+    private String coverUrl;
     /**
      * 创建人ID（关联user表）
      */
@@ -101,12 +101,12 @@ public class TopicVO {
         this.description = description;
     }
 
-    public String getCoverKey() {
-        return coverKey;
+    public String getCoverUrl() {
+        return coverUrl;
     }
 
-    public void setCoverKey(String coverKey) {
-        this.coverKey = coverKey;
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
     }
 
     public Long getCreatorId() {

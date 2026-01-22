@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.doubao.mall.common.dto.TopicBindDTO;
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
@@ -15,6 +15,7 @@ import org.doubao.topic.service.entity.Topic;
 import org.doubao.topic.service.entity.TopicStatistics;
 import org.doubao.topic.service.entity.UserTopicFollow;
 import org.doubao.topic.service.entity.QuoteTopic;
+import org.doubao.topic.service.feign.OssClient;
 import org.doubao.topic.service.mapper.TopicMapper;
 import org.doubao.topic.service.service.QuoteTopicService;
 import org.doubao.topic.service.service.TopicService;
@@ -29,9 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -53,6 +52,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Autowired
     private UserTopicFollowService userTopicFollowService;
 
+    @Resource
+    private OssClient ossClient;
 
     /**
      * 创建话题
@@ -247,6 +248,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         for (Topic topic : records) {
             TopicVO vo = new TopicVO();
             BeanUtils.copyProperties(topic, vo);
+            vo.setCoverUrl(ossClient.generateAccessUrl(topic.getCoverKey(), topic.getStorageType()).getData());
             voList.add(vo);
         }
         for (TopicVO vo : voList) {
@@ -461,7 +463,8 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
     @Override
     public Result<TopicNameVo> getNameById(Long id) {
         LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(QuoteTopic::getQuoteId, id);
+        wrapper.eq(QuoteTopic::getQuoteId, id)
+                .eq(QuoteTopic::getStatus, 1);
         List<QuoteTopic> quoteTopics = quoteTopicService.list(wrapper);
         if (DoubaoUtils.isEmpty(quoteTopics)) {
             return Result.error("该引用未绑定话题");
@@ -473,6 +476,33 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         }
 
         return Result.success(new TopicNameVo(topic.getId(), topic.getName()));
+    }
+
+    @Override
+    public Result<Map<Long, TopicNameVo>> getNameByIds(List<Long> quoteIds) {
+        LambdaQueryWrapper<QuoteTopic> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(QuoteTopic::getQuoteId, quoteIds)
+                .eq(QuoteTopic::getStatus, 1);
+        List<QuoteTopic> quoteTopics = quoteTopicService.list(wrapper);
+        if (DoubaoUtils.isEmpty(quoteTopics)) {
+            return Result.error("引用未绑定话题");
+        }
+        List<Long> topicIds = quoteTopics.stream()
+                .map(QuoteTopic::getTopicId)
+                .collect(Collectors.toList());
+        List<Topic> topics = this.listByIds(topicIds);
+        Map<Long, TopicNameVo> topicNameVoMap = new HashMap<>();
+        for (QuoteTopic quoteTopic : quoteTopics) {
+            Topic topic = topics.stream()
+                    .filter(t -> t.getId().equals(quoteTopic.getTopicId()))
+                    .findFirst()
+                    .orElse(null);
+            if (DoubaoUtils.isEmpty(topic)) {
+                continue;
+            }
+            topicNameVoMap.put(quoteTopic.getQuoteId(), new TopicNameVo(topic.getId(), topic.getName()));
+        }
+        return Result.success(topicNameVoMap);
     }
 
     /**

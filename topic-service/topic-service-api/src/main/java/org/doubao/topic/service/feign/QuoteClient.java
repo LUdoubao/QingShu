@@ -1,5 +1,6 @@
 package org.doubao.topic.service.feign;
 
+import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -25,5 +26,5 @@ public interface QuoteClient {
 	 * @return 文案信息列表
 	 */
 	@PostMapping("/topic_batch")
-	Result<List<Map<String, Object>>> topicBatch(@RequestBody List<Long> ids);
+	Result<List<Map<String, Object>>> topicBatch(@RequestBody TopicContentDto topicContentDto);
 }

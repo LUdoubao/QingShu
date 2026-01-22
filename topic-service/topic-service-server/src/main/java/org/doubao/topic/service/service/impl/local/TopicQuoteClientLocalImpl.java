@@ -1,5 +1,6 @@
 package org.doubao.topic.service.service.impl.local;
 
+import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.service.QuoteService;
 import org.doubao.topic.service.feign.QuoteClient;
@@ -20,9 +21,9 @@ public class TopicQuoteClientLocalImpl implements QuoteClient {
     private QuoteService quoteService;
 
     @Override
-    public Result<List<Map<String, Object>>> topicBatch(List<Long> ids) {
+    public Result<List<Map<String, Object>>> topicBatch(TopicContentDto dto) {
         try {
-            return quoteService.topicBatch(ids);
+            return quoteService.topicBatch(dto);
         } catch (Exception e) {
             return Result.error("quote-service-server is not available");
         }

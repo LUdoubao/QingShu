@@ -37,6 +37,11 @@
                     <artifactId>quote-service-api</artifactId>
                     <version>0.0.1-SNAPSHOT</version>
                 </dependency>
+                <dependency>
+                    <groupId>com.doubao</groupId>
+                    <artifactId>oss-service-api</artifactId>
+                    <version>0.0.1-SNAPSHOT</version>
+                </dependency>
             </dependencies>
             <properties>
                 <service.run-mode>monolith</service.run-mode>

@@ -3,7 +3,9 @@ package org.doubao.topic.service.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import org.doubao.mall.common.dto.TopicQuoteVO;
+import org.doubao.mall.common.dto.TopicContentDto;
+import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.TopicQuoteVO;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
@@ -138,7 +140,11 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 			return new Page<>();
 		}
 		List<Long> quoteIds = records.stream().map(QuoteTopic::getQuoteId).collect(Collectors.toList());
-		List<Map<String, Object>> data = quoteClient.topicBatch(quoteIds).getData();
+		Long userId = UserContext.getUserId();
+		TopicContentDto topicContentDto = new TopicContentDto();
+		topicContentDto.setContentIds(quoteIds);
+		topicContentDto.setCurrentUserId(userId);
+		List<Map<String, Object>> data = quoteClient.topicBatch(topicContentDto).getData();
 		if (DoubaoUtils.isEmpty(data)) {
 			return new Page<>();
 		}
@@ -151,6 +157,7 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 			topicQuoteVO.setOriginal(Integer.parseInt(item.get("original").toString()));
 			topicQuoteVO.setUserInfo((UserInfoDes) item.get("userInfo"));
 			topicQuoteVO.setCreatedTime(LocalDateTime.parse(item.get("createdTime").toString()));
+			topicQuoteVO.setFollow(item.get("follow").toString().equals("true"));
 			return topicQuoteVO;
 		}).collect(Collectors.toList());
 		Page<TopicQuoteVO> pageVO = new Page<>();

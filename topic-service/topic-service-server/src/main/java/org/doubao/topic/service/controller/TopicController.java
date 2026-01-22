@@ -1,8 +1,7 @@
 package org.doubao.topic.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import org.doubao.mall.common.dto.TopicBindDTO;
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.topic.service.dto.*;
@@ -13,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 话题控制器
@@ -79,6 +79,10 @@ public class TopicController {
     @GetMapping("/getName/{id}")
     public Result<TopicNameVo> getNameById(@PathVariable("id") Long id) {
         return topicService.getNameById(id);
+    }
+    @GetMapping("/getNameByIds")
+    public Result<Map<Long, TopicNameVo>> getNameByIds(@RequestBody List<Long> quoteIds) {
+        return topicService.getNameByIds(quoteIds);
     }
 
     /**
