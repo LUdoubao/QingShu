@@ -1,14 +1,14 @@
 package org.doubao.quote.service.feign;
 
 import org.doubao.mall.common.dto.TopicBindDTO;
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
-import org.doubao.quote.service.dto.UpdateValidDto;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @FeignClient(name = "Topic-service")
 @ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
@@ -24,4 +24,7 @@ public interface TopicClient {
 
 	@GetMapping("/getName/{id}")
 	public Result<TopicNameVo> getNameById(@RequestParam("id") Long id);
+
+	@GetMapping("/getNameByIds")
+	public Result<Map<Long, TopicNameVo>> getNameByIds(@RequestBody List<Long> quoteIds);
 }

@@ -6,7 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.apache.commons.lang.StringUtils;
 import org.doubao.mall.common.dto.TopicBindDTO;
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.dto.TopicContentDto;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfoDes;
@@ -350,7 +351,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}).collect(Collectors.toList());
 
 			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
-			List<Long> categoryIds = quoteVoList.stream().map(QuoteVo::getCategoryId).collect(Collectors.toList());
+
+			Map<Long, TopicNameVo> topicNameVoMap = topicClient.getNameByIds(quoteIds).getData();
 
 			// 获取创建者信息
 			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
@@ -359,11 +361,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, createdIds).getData();
 
 			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
-			Map<Long, String> categoryMap = new HashMap<>();
-			if (!categoryIds.isEmpty()) {
-				List<Category> categoryList = categoryService.list(new LambdaQueryWrapper<Category>().in(Category::getId, categoryIds));
-				categoryMap = categoryList.stream().collect(Collectors.toMap(Category::getId, Category::getName));
-			}
+
 
 			// 构建 quoteId -> List<Tag>
 			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
@@ -382,7 +380,8 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			// 移除quoteVoList，removeQuoteIds中的
 			// 设置 tags 字段
 			for (QuoteVo quoteVo : quoteVoList) {
-				quoteVo.setCategoryName(categoryMap.getOrDefault(quoteVo.getCategoryId(), "其他"));
+				quoteVo.setTopic(DoubaoUtils.isNotEmpty(topicNameVoMap) ?
+						topicNameVoMap.getOrDefault(quoteVo.getId(), null) : null);
 				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
 				// 设置用户信息
 				Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
@@ -558,7 +557,9 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
-	public Result<List<Map<String, Object>>> topicBatch(List<Long> ids) {
+	public Result<List<Map<String, Object>>> topicBatch(TopicContentDto topicContentDto) {
+		List<Long> ids = topicContentDto.getContentIds();
+		Long currentUserId = topicContentDto.getCurrentUserId();
 		LambdaQueryWrapper<Quote> queryWrapper = new LambdaQueryWrapper<Quote>()
 				.in(Quote::getId, ids)
 				.eq(Quote::getDeleted, 0)
@@ -579,6 +580,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			// 获取创建者信息
 			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
 			List<UserInfoDes> userInfos = userClient.getUsersByIds(createdIds).getData();
+			Map<Long, Boolean> followMap	 = userClient.isFollow(currentUserId, createdIds).getData();
 
 
 			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
@@ -619,6 +621,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				// 设置用户信息
 				Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
 				map.put("userInfo", first.orElse(new UserInfoDes()));
+				map.put("follow", followMap.getOrDefault(quoteVo.getCreatedId(), false));
 				return map;
 			}).collect(Collectors.toList());
 		}

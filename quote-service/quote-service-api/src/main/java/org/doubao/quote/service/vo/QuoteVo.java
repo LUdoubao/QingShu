@@ -1,6 +1,6 @@
 package org.doubao.quote.service.vo;
 
-import org.doubao.mall.common.dto.TopicNameVo;
+import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.BaseEntity;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.quote.service.entity.Tag;

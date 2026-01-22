@@ -2,6 +2,7 @@ package org.doubao.quote.service.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.*;
 import org.doubao.quote.service.entity.Quote;
@@ -94,7 +95,7 @@ public interface QuoteService extends IService<Quote> {
 	 */
 	Result<List<Map<String, Object>>> batch(List<Long> ids);
 
-	Result<List<Map<String, Object>>> topicBatch(List<Long> ids);
+	Result<List<Map<String, Object>>> topicBatch(TopicContentDto topicContentDto);
 
 	/**
 	 * 根据引文ID获取引文类型
