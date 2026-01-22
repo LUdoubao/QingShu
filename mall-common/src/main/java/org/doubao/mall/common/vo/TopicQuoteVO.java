@@ -1,4 +1,4 @@
-package org.doubao.mall.common.dto;
+package org.doubao.mall.common.vo;
 
 import org.doubao.mall.common.entity.BaseEntity;
 import org.doubao.mall.common.entity.UserInfoDes;

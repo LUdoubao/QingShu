@@ -1,4 +1,4 @@
-package org.doubao.mall.common.dto;
+package org.doubao.mall.common.vo;
 
 public class TopicNameVo {
 	private Long id;
