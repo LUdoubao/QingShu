@@ -211,10 +211,12 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
      * @return 话题分页列表
      */
     @Override
+    @SuppressWarnings("unchecked")
     public Result<Page<TopicVO>> queryTopics(TopicQueryDTO queryDTO) {
         LambdaQueryWrapper<Topic> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Topic::getDeleted, 0)
                 .eq(Topic::getStatus, 1);
+        wrapper.orderByDesc(Topic::getWeight, Topic::getCreatedTime);
 
         if (DoubaoUtils.isNotEmpty(queryDTO.getKeyword())) {
             wrapper.and(w -> w.like(Topic::getName, queryDTO.getKeyword())
