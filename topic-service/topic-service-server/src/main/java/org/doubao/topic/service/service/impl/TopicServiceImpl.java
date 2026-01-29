@@ -199,6 +199,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
             vo.setFollowCount(statistics.getFollowCount());
             vo.setViewCount(statistics.getViewCount());
         }
+        vo.setCoverUrl(ossClient.generateAccessUrl(topic.getCoverKey(), topic.getStorageType()).getData());
 
         return Result.success(vo);
     }
