@@ -151,7 +151,8 @@ public class FavoriteServiceImpl extends ServiceImpl<FavoriteContentMapper, Favo
 		// 查询用户是否收藏了这些quote
 		Set<Long> favoritedIds = favoriteMapper.selectFavoriteIdsByUserAndQuotes(userId, quoteIds);
 
-		return quoteIds.stream().collect(Collectors.toMap(
+		Set<Long> quoteIdsSet = new HashSet<>(quoteIds);
+		return quoteIdsSet.stream().collect(Collectors.toMap(
 				id -> id,
 				favoritedIds::contains
 		));
