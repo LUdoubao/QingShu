@@ -2,6 +2,7 @@ package org.doubao.mall.common.handler;
 
 import org.doubao.mall.common.entity.ErrorResponse;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.exception.RateLimitExceededException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
@@ -30,6 +31,20 @@ public class GlobalExceptionHandler {
 
 		return ResponseEntity
 				.status(ex.getHttpStatus())
+				.body(errorResponse);
+	}
+	@ExceptionHandler(RateLimitExceededException.class)
+	public ResponseEntity<ErrorResponse> handleRateLimitExceededException(
+			RateLimitExceededException ex, WebRequest request) {
+		LOG.warn("RateLimitExceededException: {}", ex.getMessage());
+		ErrorResponse errorResponse = ErrorResponse.builder()
+				.status(HttpStatus.TOO_MANY_REQUESTS)
+				.errorCode("RATE_LIMIT_EXCEEDED")
+				.message(ex.getMessage())
+				.path(request.getDescription(false).replace("uri=", ""))
+				.build();
+		return ResponseEntity
+				.status(HttpStatus.TOO_MANY_REQUESTS)
 				.body(errorResponse);
 	}
 	@ExceptionHandler(Exception.class)
