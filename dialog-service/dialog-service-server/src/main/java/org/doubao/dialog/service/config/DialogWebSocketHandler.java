@@ -365,7 +365,7 @@ public class DialogWebSocketHandler extends TextWebSocketHandler {
 	 */
 	@Override
 	public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-		Long userId = (Long) session.getAttributes().get(SESSION_ATTR_USER_ID);
+		Long userId = Long.valueOf(String.valueOf(session.getAttributes().get(SESSION_ATTR_USER_ID)));
 		log.error("WebSocket传输错误 | 用户ID: {}, 会话ID: {}, 错误信息: {}",
 				userId, session.getId(), exception.getMessage(), exception);
 
