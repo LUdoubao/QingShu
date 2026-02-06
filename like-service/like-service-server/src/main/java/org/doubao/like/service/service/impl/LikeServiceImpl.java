@@ -17,7 +17,6 @@ import org.doubao.like.service.mapper.LikeCountMapper;
 import org.doubao.like.service.mapper.LikeRecordMapper;
 import org.doubao.like.service.messaging.LikeEventPublisher;
 import org.doubao.like.service.service.LikeService;
-import org.doubao.like.service.utils.RateLimiterUtil;
 import org.doubao.like.service.utils.RedisKeyUtil;
 import org.doubao.mall.common.constant.Constants;
 import org.doubao.mall.common.entity.Result;
@@ -25,6 +24,8 @@ import org.doubao.mall.common.entity.ResultCode;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.ratelimit.annotation.RateLimit;
+import org.doubao.mall.common.ratelimit.enums.RateLimitDimension;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
 import org.doubao.mall.common.util.ConvertUtil;
 import org.slf4j.Logger;
@@ -64,9 +65,6 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	private LikeCountMapper likeCountMapper;
 
 	@Autowired
-	private RateLimiterUtil rateLimiterUtil;
-
-	@Autowired
 	private LikeEventPublisher likeEventPublisher;
 
 	@Autowired
@@ -78,18 +76,13 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	private static final Integer LIKE_HEAT_VALUE_WEIGHT = 100;
 	@Override
 	@Transactional
+	@RateLimit(
+			dimensions = {RateLimitDimension.USER, RateLimitDimension.IP},
+			timeUnit = TimeUnit.MINUTES
+	)
 	public ToggleLikeResponse toggleLike(ToggleLikeRequest request) {
 		Long userId = request.getUserId();
 		Long operatorUserId = request.getOperatorUserId();
-
-		// 限流检查 (10次/分钟)
-		if (!rateLimiterUtil.tryAcquire(
-				RedisKeyUtil.getRateLimitKey(operatorUserId),
-				10,
-				60)) {
-			LOGGER.warn("Rate limit exceeded for user: {}", operatorUserId);
-			throw new BusinessException(ErrorCode.RATE_LIMIT_EXCEEDED);
-		}
 
 		String operatorUserName = Constants.DEFAULT_USER_NAME;
 		String operatorUserAvatar = "";
