@@ -1,8 +1,8 @@
 server:
-  port: 9401 #启动端口号
+  port: 9406 #启动端口号
 spring:
   application:
-    name: comment-service #服务名
+    name: fanout-service #服务名
   main:
     allow-bean-definition-overriding: true
     allow-circular-reference: true
