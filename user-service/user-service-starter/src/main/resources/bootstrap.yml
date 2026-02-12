@@ -1,15 +1,15 @@
 spring:
   cloud:
-    config:
+    nacos:
       discovery:
-        enabled: true                 # 开启服务发现方式拉取配置
-        service-id: config-server     # 指定配置中心服务名（注册到 Eureka 的名字）
-      profile: dev                    # 拉取的配置环境（对应 product-service-dev.yml）
-      name: user-service           # 拉取的配置文件名（不含 profile 和扩展名）
+        server-addr: localhost:8848    # Nacos服务器地址
+      config:
+        server-addr: localhost:8848    # Nacos配置中心地址
+        file-extension: yaml           # 配置文件格式
+  config:
+    import:
+      - nacos:user-service-dev.yaml   # 从Nacos加载配置文件
 
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+spring:
+  application:
+    name: user-service

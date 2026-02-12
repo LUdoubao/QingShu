@@ -1,5 +1,10 @@
-# Starter模块的配置
-# 实际配置在server模块中管理
 spring:
   application:
     name: view-count-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848    # Nacos服务器地址
+  config:
+    import:
+      - nacos:view-count-service-dev.yaml   # 从Nacos加载配置文件
