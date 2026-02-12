@@ -1,15 +1,40 @@
+server:
+  port: 9101 #启动端口号
 spring:
+  application:
+    name: like-service #服务名
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-reference: true
   cloud:
-    config:
+    nacos:
       discovery:
-        enabled: true                 # 开启服务发现方式拉取配置
-        service-id: config-server     # 指定配置中心服务名（注册到 Eureka 的名字）
-      profile: dev                    # 拉取的配置环境（对应 product-service-dev.yml）
-      name: like-service           # 拉取的配置文件名（不含 profile 和扩展名）
+        ip: 192.168.0.105
+        #register-enabled: false
+        server-addr: 115.191.9.196:8848
+        username: nacos
+        password: nacos
+        namespace: public
+        connect-timeout: 30000
+      config:
+        server-addr: 115.191.9.196:8848 #nacos服务地址
+        username: nacos
+        password: nacos
+        file-extension: yml #配置文件后缀
+        namespace: public
 
-eureka:
-  client:
-    register-with-eureka: true
-    fetch-registry: true
-    service-url:
-      defaultZone: http://localhost:8761/eureka
+        shared-configs:
+          - data-id: application-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-datasource-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-redis-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-mongodb-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+  profiles:
+    active: dev #指定环境
