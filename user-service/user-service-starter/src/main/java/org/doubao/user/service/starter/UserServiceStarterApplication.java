@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 @SpringBootApplication(scanBasePackages = "org.doubao.user.service")
 @EnableDiscoveryClient
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
         "org.doubao.user.service.mapper.report",
         "org.doubao.user.service.mapper.log"
 })
+@EnableMongoRepositories("org.doubao.user.service.repository")
 @EnableFeignClients({
         "org.doubao.user.service.feign.core",
         "org.doubao.user.service.feign.report"
