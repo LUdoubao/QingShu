@@ -15,12 +15,22 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
-
+	private static final String[] EXCLUDE_URLS = {
+			"/auth/**",
+			"/user/login",
+			"/user/register",
+			"/user/verify",
+			"/user/forgot-password",
+			"/public/**",
+			"/dialog/ws/**"
+	};
 	@Autowired
 	private Environment environment;
 
@@ -44,7 +54,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 		http.csrf().disable()
 				.authorizeRequests()
-				.antMatchers("/auth/**", "/user/login", "/user/register", "/user/verify").permitAll()
+				.antMatchers(EXCLUDE_URLS).permitAll()
 				.anyRequest().authenticated()
 				.and()
 				.addFilterBefore(getJwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
