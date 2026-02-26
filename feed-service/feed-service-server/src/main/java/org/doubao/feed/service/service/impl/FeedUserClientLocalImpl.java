@@ -1,6 +1,7 @@
 package org.doubao.feed.service.service.impl;
 
 import org.doubao.feed.service.feign.UserClient;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.user.service.service.core.UserService;
@@ -14,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class FeedUserClientLocalImpl implements UserClient {
 
 	@Resource

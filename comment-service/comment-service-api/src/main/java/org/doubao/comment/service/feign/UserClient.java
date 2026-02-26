@@ -2,6 +2,7 @@ package org.doubao.comment.service.feign;
 
 import org.doubao.comment.service.config.FeignErrorDecoderConfig;
 import org.doubao.comment.service.feign.back.UserServiceFallback;
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -20,7 +21,7 @@ import java.util.Set;
  */
 @FeignClient(name = "user-service", fallbackFactory = UserServiceFallback.class,
 		configuration = FeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface UserClient {
 	
 	/**

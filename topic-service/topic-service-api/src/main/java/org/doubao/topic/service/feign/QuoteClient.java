@@ -1,5 +1,6 @@
 package org.doubao.topic.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 
@@ -18,7 +19,7 @@ import java.util.Map;
  * 用于与文案服务进行远程通信，仅在微服务模式下启用
  */
 @FeignClient(name = "quote-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface QuoteClient {
 	/**
 	 * 批量获取文案基础信息

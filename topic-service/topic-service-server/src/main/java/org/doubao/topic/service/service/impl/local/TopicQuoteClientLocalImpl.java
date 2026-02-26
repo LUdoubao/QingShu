@@ -1,5 +1,6 @@
 package org.doubao.topic.service.service.impl.local;
 
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.service.QuoteService;
@@ -13,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class TopicQuoteClientLocalImpl implements QuoteClient {
 
     @Resource

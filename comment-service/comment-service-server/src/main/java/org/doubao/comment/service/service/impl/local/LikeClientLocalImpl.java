@@ -6,6 +6,7 @@ import org.doubao.like.service.dto.request.ToggleLikeRequest;
 import org.doubao.like.service.dto.response.BatchLikeStatusResponse;
 import org.doubao.like.service.dto.response.ToggleLikeResponse;
 import org.doubao.like.service.service.LikeService;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
  * 避免了微服务间的网络调用，提高性能
  */
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class LikeClientLocalImpl implements LikeClient {
 
 	@Resource

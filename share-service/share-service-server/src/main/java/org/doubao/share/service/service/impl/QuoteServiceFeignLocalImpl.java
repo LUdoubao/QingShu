@@ -1,5 +1,6 @@
 package org.doubao.share.service.service.impl;
 
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.quote.service.service.QuoteService;
 import org.doubao.share.service.feign.QuoteServiceFeign;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,7 +10,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class QuoteServiceFeignLocalImpl implements QuoteServiceFeign {
 
 	@Resource

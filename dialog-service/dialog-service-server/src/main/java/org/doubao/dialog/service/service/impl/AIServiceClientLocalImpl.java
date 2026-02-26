@@ -4,6 +4,7 @@ import org.doubao.dialog.service.dto.AIRequest;
 import org.doubao.dialog.service.feign.AIServiceClient;
 import org.doubao.ai.service.service.AIService;
 import org.doubao.dialog.service.dto.AIResponse;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class AIServiceClientLocalImpl implements AIServiceClient {
 
 	@Resource

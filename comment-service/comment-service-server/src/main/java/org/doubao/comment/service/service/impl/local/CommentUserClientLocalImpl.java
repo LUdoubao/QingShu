@@ -1,6 +1,7 @@
 package org.doubao.comment.service.service.impl.local;
 
 import org.doubao.comment.service.feign.UserClient;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.user.service.service.core.UserService;
@@ -19,7 +20,7 @@ import java.util.Set;
  * 避免了微服务间的网络调用，提高性能
  */
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class CommentUserClientLocalImpl implements UserClient {
 
 	@Resource

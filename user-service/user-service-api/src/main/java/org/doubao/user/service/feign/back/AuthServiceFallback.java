@@ -1,5 +1,6 @@
 package org.doubao.user.service.feign.back;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.service.feign.core.AuthServiceClient;
@@ -10,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 // Feign降级处理
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public class AuthServiceFallback implements AuthServiceClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(AuthServiceFallback.class);
 

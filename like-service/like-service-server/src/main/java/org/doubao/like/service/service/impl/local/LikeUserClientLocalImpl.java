@@ -1,6 +1,7 @@
 package org.doubao.like.service.service.impl.local;
 
 import org.doubao.like.service.feign.UserClient;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.user.service.service.core.UserService;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class LikeUserClientLocalImpl implements UserClient {
 
 	@Resource

@@ -2,6 +2,8 @@ package org.doubao.auth.service.config;
 
 import org.doubao.auth.service.filter.JwtAuthenticationFilter;
 import org.doubao.auth.service.filter.JwtAuthenticationFilterLocal;
+import org.doubao.mall.common.condition.MicroserviceMode;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,14 +37,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private Environment environment;
 
 	@Bean
-	@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+	@MicroserviceMode
 	public JwtAuthenticationFilter jwtAuthenticationFilter() {
 		LOGGER.info("✅ Microservice mode enabled.");
 		return new JwtAuthenticationFilter();
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+	@MonolithMode
 	public JwtAuthenticationFilterLocal jwtAuthenticationFilterLocal() {
 		LOGGER.info("✅ Monolith mode enabled.");
 		return new JwtAuthenticationFilterLocal();

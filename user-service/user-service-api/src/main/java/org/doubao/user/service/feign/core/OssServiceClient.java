@@ -1,5 +1,6 @@
 package org.doubao.user.service.feign.core;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.user.service.config.UserFeignErrorDecoderConfig;
@@ -15,7 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 // 在用户服务中调用OSS服务
 @FeignClient(name = "oss-service", path = "/oss", fallback = OssServiceFallback.class, configuration = UserFeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface OssServiceClient {
 
 	@PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

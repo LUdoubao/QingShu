@@ -1,5 +1,6 @@
 package org.doubao.quote.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.dto.TopicBindDTO;
 import org.doubao.mall.common.vo.TopicNameVo;
 import org.doubao.mall.common.entity.Result;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @FeignClient(name = "Topic-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface TopicClient {
 	@PostMapping("/topicQuote/deleteQuoteBind")
 	public Result<Boolean> deleteQuoteBind(@RequestBody List<Long> quoteIds);

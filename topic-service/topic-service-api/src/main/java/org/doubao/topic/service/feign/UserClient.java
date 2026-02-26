@@ -1,5 +1,6 @@
 package org.doubao.topic.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -17,7 +18,7 @@ import java.util.Set;
  * 用于与用户服务进行远程通信，仅在微服务模式下启用
  */
 @FeignClient(name = "user-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface UserClient {
 
 }

@@ -1,5 +1,6 @@
 package org.doubao.user.service.feign.core;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.service.config.UserFeignErrorDecoderConfig;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 // AuthServiceClient.java
 @FeignClient(name = "auth-service", path = "/auth", fallback = AuthServiceFallback.class, configuration = UserFeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface AuthServiceClient {
 
 	@PostMapping("/login")

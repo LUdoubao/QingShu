@@ -1,5 +1,6 @@
 package org.doubao.quote.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @FeignClient(name = "view-count-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface ViewCountClient {
 	@PostMapping("/views/count/batch")
 	Result<Map<Long, Long>> batchGetViewCounts(@RequestBody List<Long> contentIds);

@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 /**
  * AI服务Feign客户端, , fallback = AIServiceFallback.classconfiguration = UserFeignErrorDecoderConfig.class
  */
-@FeignClient(name = "ai-service")
+@FeignClient(name = "ai-service", fallback = AIServiceFallback.class)
 public interface AIServiceClient {
 
 	/**

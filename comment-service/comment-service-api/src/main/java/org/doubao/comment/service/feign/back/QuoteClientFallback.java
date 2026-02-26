@@ -2,6 +2,7 @@ package org.doubao.comment.service.feign.back;
 
 import org.doubao.comment.service.feign.QuoteClient;
 import org.doubao.comment.service.vo.QuoteVo;
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Component;
  * 提供降级处理逻辑，确保评论服务的可用性
  */
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public class QuoteClientFallback implements FallbackFactory<QuoteClient> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(QuoteClientFallback.class);
 

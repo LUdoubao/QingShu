@@ -6,6 +6,7 @@ import org.doubao.comment.service.dto.BatchLikeStatusResponse;
 import org.doubao.comment.service.dto.CommentLikeRequest;
 import org.doubao.comment.service.dto.ToggleLikeResponse;
 import org.doubao.comment.service.feign.back.LikeClientFallback;
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -22,7 +23,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  */
 @FeignClient(name = "like-service", fallbackFactory = LikeClientFallback.class,
 		configuration = FeignErrorDecoderConfig.class)
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface LikeClient {
 
 	/**

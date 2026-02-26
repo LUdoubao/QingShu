@@ -1,5 +1,6 @@
 package org.doubao.quote.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.UpdateValidDto;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @FeignClient(name = "feed-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface FeedClient {
 	@PostMapping("/update-status")
 	Result<Void> updateFeedStatus(

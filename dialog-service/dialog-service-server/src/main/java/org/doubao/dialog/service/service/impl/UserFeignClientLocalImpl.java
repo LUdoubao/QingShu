@@ -1,6 +1,7 @@
 package org.doubao.dialog.service.service.impl;
 
 import org.doubao.dialog.service.feign.UserFeignClient;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.user.service.service.core.UserService;
@@ -15,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class UserFeignClientLocalImpl implements UserFeignClient {
 
 	@Resource

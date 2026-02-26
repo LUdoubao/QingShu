@@ -4,6 +4,7 @@ package org.doubao.dialog.service.feign;
 
 import org.doubao.dialog.service.dto.AIRequest;
 import org.doubao.dialog.service.dto.AIResponse;
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
  * AI服务Feign客户端降级处理
  */
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public class AIServiceFallback implements AIServiceClient {
 
 	private static final Logger log = LoggerFactory.getLogger(AIServiceFallback.class);
