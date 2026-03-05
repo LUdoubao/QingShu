@@ -1,7 +1,7 @@
 # ============================================
 # 基础镜像选择
 # ============================================
-# openjdk:8-jdk-alpine 是一个轻量级的 Linux 镜像，只包含运行 Java 必需的最小环境
+# openjdk:8-jdk-alpine 是一个轻量级的 Linux 镜像，只包含运行 Java 必需的环境
 # alpine 版本体积很小（约 100MB），适合部署
 # 注意：alpine 使用 musl libc 而不是 glibc，某些特殊场景可能不兼容
 FROM openjdk:8-jdk-alpine
