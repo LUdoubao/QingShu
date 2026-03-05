@@ -1,6 +1,7 @@
 package org.doubao.user.service.service.impl.local;
 
 import org.doubao.comment.service.service.CommentService;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.user.service.feign.report.CommentClient;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -10,7 +11,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class CommentClientLocalImpl implements CommentClient {
 
 	@Resource

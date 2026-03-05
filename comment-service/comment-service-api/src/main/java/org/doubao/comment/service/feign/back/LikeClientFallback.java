@@ -5,6 +5,7 @@ import org.doubao.comment.service.dto.BatchLikeStatusResponse;
 import org.doubao.comment.service.dto.CommentLikeRequest;
 import org.doubao.comment.service.dto.ToggleLikeResponse;
 import org.doubao.comment.service.feign.LikeClient;
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ import java.util.Collections;
  * 提供降级处理逻辑，确保评论服务的可用性
  */
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public class LikeClientFallback implements FallbackFactory<LikeClient> {
     private static final Logger LOGGER = LoggerFactory.getLogger(LikeClientFallback.class);
 

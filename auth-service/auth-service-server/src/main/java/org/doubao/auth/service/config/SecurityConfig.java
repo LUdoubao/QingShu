@@ -2,6 +2,8 @@ package org.doubao.auth.service.config;
 
 import org.doubao.auth.service.filter.JwtAuthenticationFilter;
 import org.doubao.auth.service.filter.JwtAuthenticationFilterLocal;
+import org.doubao.mall.common.condition.MicroserviceMode;
+import org.doubao.mall.common.condition.MonolithMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,24 +17,34 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.annotation.PostConstruct;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SecurityConfig.class);
-
+	private static final String[] EXCLUDE_URLS = {
+			"/auth/**",
+			"/user/login",
+			"/user/register",
+			"/user/verify",
+			"/user/forgot-password",
+			"/public/**",
+			"/dialog/ws/**"
+	};
 	@Autowired
 	private Environment environment;
 
 	@Bean
-	@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+	@MicroserviceMode
 	public JwtAuthenticationFilter jwtAuthenticationFilter() {
 		LOGGER.info("✅ Microservice mode enabled.");
 		return new JwtAuthenticationFilter();
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+	@MonolithMode
 	public JwtAuthenticationFilterLocal jwtAuthenticationFilterLocal() {
 		LOGGER.info("✅ Monolith mode enabled.");
 		return new JwtAuthenticationFilterLocal();
@@ -44,7 +56,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 		http.csrf().disable()
 				.authorizeRequests()
-				.antMatchers("/auth/**", "/user/login", "/user/register", "/user/verify").permitAll()
+				.antMatchers(EXCLUDE_URLS).permitAll()
 				.anyRequest().authenticated()
 				.and()
 				.addFilterBefore(getJwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);

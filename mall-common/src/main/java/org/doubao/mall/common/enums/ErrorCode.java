@@ -92,7 +92,27 @@ public enum ErrorCode {
 
 	SEARCH_TYPE_NOT_SUPPORT("search_001", "不支持的搜索类型"),
 
+	// 话题
+	TOPIC_INVALID_CATEGORY("topic_001", "无效的分类"),
+	TOPIC_HAS_CHILDREN("topic_002", "该分类有子分类，请先删除子分类"),
+	TOPIC_NAME_EMPTY("topic_003", "话题名称不能为空"),
+	TOPIC_NAME_EXISTS("topic_004", "话题名称已存在"),
+	TOPIC_NOT_FOUND("topic_005", "话题不存在"),
+	TOPIC_NO_PERMISSION("topic_006", "无权操作该话题"),
+	TOPIC_NOT_FOUND_OR_NOT_PUBLISHED("topic_007", "话题不存在或未发布"),
+	QUOTE_ALREADY_BOUND_TO_TOPIC("topic_008", "该引文已绑定话题"),
+	TOPIC_STATISTICS_NOT_FOUND("topic_009", "话题统计信息不存在"),
+	TOPIC_QUOTE_COUNT_INVALID("topic_010", "话题引文数量超出限制"),
+	TOPIC_QUOTE_COUNT_ZERO("topic_011", "话题引文数量不能为0"),
+	TOPIC_FOLLOW_COUNT_ZERO("topic_012", "话题关注数量不能为0"),
+	TOPIC_OR_USER_ID_EMPTY("topic_013", "话题ID或用户ID不能为空"),
+	USER_ALREADY_FOLLOWED_TOPIC("topic_014", "该用户已关注该话题"),
+	USER_NOT_FOLLOW_TOPIC("topic_015", "该用户未关注该话题"),
+	TOPIC_ID_EMPTY("topic_016", "话题ID不能为空"),
 
+
+
+	// 对话
 	DIALOG_SESSION_SELF_CREATE("dialog_001", "不能与自己创建会话"),
 	DIALOG_SESSION_NOT_EXIST("dialog_002", "会话不存在或已删除"),
 	DIALOG_SESSION_NOT_ALLOW_DELETE("dialog_004", "AI助手会话不允许删除"),

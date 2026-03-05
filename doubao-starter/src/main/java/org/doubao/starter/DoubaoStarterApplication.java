@@ -34,6 +34,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 public class DoubaoStarterApplication {
 
     public static void main(String[] args) {
+        System.setProperty("service.run-mode", "monolith");
         SpringApplication.run(DoubaoStarterApplication.class, args);
     }
 

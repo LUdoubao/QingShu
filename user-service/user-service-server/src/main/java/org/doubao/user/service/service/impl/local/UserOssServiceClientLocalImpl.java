@@ -1,5 +1,6 @@
 package org.doubao.user.service.service.impl.local;
 
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.oss.service.service.OssService;
@@ -11,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.annotation.Resource;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class UserOssServiceClientLocalImpl implements OssServiceClient {
 	@Resource
 	private OssService ossService;

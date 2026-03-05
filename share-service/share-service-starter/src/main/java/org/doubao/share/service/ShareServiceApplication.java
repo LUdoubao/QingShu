@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = "org.doubao.share.service.feign")
 @MapperScan("org.doubao.share.service.mapper")
 public class ShareServiceApplication {
 

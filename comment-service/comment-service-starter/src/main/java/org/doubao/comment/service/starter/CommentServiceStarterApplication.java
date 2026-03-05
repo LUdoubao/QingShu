@@ -15,8 +15,8 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients
-@MapperScan("org.doubao.comment.service.mapper")
+@EnableFeignClients(basePackages = "org.doubao")
+@MapperScan("org.doubao.**.mapper")
 @ComponentScan(basePackages = "org.doubao.comment.service")
 public class CommentServiceStarterApplication {
 

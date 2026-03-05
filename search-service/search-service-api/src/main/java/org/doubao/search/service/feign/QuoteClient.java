@@ -1,5 +1,6 @@
 package org.doubao.search.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.Map;
 
 @FeignClient(name = "quote-service", path = "/quote")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface QuoteClient {
 	@GetMapping("/search/suggestion")
 	Result<Map<String, String>> getSearchSuggestions(@RequestParam("keyword") String keyword);

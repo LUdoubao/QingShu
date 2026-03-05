@@ -1,5 +1,6 @@
 package org.doubao.quote.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -11,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 
 @FeignClient(name = "favorite-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface FavoriteClient {
 	@PostMapping("/favorite/quote/count")
 	Result<Map<Long, Long>> countQuotes(@RequestBody List<Long> contentIds);

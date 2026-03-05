@@ -533,7 +533,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 	 */
 	@Override
 	public IPage<CommentVO> getCommentList(String postId, Page<Comment> page, String sortType) {
-		Long userId = UserContext.getUser().getId();
+		Long userId = 1L;
 
 		// 1: 尝试从缓存获取（热点数据）
 		// 缓存键格式：comments:post:{postId}:{sortType}:{userId}:{page}:{size}

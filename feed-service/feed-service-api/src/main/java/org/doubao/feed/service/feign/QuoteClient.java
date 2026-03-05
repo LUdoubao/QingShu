@@ -1,5 +1,6 @@
 package org.doubao.feed.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -10,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @FeignClient(name = "quote-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface QuoteClient {
 
 	/**

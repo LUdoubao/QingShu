@@ -10,11 +10,20 @@ public class QuoteDTO {
 	private String content;
 	private String author;
 	private String source;
-	private Long categoryId;
 	private List<Long> tagIds;
 	private int status;
 	private Long createdId;
 	private int original;
+
+	public List<Long> getTopicIds() {
+		return topicIds;
+	}
+
+	public void setTopicIds(List<Long> topicIds) {
+		this.topicIds = topicIds;
+	}
+
+	private List<Long> topicIds;
 
 	public int getOriginal() {
 		return original;
@@ -46,14 +55,6 @@ public class QuoteDTO {
 
 	public void setId(Long id) {
 		this.id = id;
-	}
-
-	public Long getCategoryId() {
-		return categoryId;
-	}
-
-	public void setCategoryId(Long categoryId) {
-		this.categoryId = categoryId;
 	}
 
 	public List<Long> getTagIds() {

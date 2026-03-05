@@ -4,4 +4,5 @@ org.doubao.mall.common.config.ThreadPoolAutoConfiguration,\
 org.doubao.mall.common.config.RedisConfig,\
 org.doubao.mall.common.config.RedissonConfig,\
 org.doubao.mall.common.config.RabbitMQConfig,\
-org.doubao.mall.common.handler.GlobalExceptionHandler
+org.doubao.mall.common.handler.GlobalExceptionHandler,\
+org.doubao.mall.common.config.RateLimitAutoConfiguration

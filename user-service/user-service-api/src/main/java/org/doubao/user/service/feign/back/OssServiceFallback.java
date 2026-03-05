@@ -1,5 +1,6 @@
 package org.doubao.user.service.feign.back;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.user.service.feign.core.OssServiceClient;
@@ -11,7 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 // Feign降级处理
 @Component
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public class OssServiceFallback implements OssServiceClient {
 	private static final Logger LOGGER = LoggerFactory.getLogger(OssServiceFallback.class);
 

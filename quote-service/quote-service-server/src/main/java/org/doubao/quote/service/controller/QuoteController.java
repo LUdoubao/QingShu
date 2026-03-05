@@ -1,6 +1,7 @@
 package org.doubao.quote.service.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import org.doubao.mall.common.dto.TopicContentDto;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.dto.PageDto;
 import org.doubao.quote.service.dto.QueryDataPageDto;
@@ -79,6 +80,13 @@ public class QuoteController {
 	public Result<List<Map<String, Object>>> batch(@RequestBody List<Long> ids) {
 		return quoteService.batch(ids);
 	}
+
+	@PostMapping("/topic_batch")
+	public Result<List<Map<String, Object>>> topicBatch(@RequestBody TopicContentDto topicContentDto) {
+		return quoteService.topicBatch(topicContentDto);
+	}
+
+
 
 	@GetMapping("/{quoteId}/type")
 	public String getQuoteType(@PathVariable("quoteId") String quoteId) {

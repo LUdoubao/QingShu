@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication(scanBasePackages = "org.doubao.favorite.service")
+@SpringBootApplication
 @EnableDiscoveryClient
 @MapperScan("org.doubao.favorite.service.mapper")
 @EnableFeignClients(basePackages = "org.doubao.favorite.service.feign")

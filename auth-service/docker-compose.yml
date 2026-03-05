@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  auth-service:
+    build: .
+    container_name: qingshu-auth-service
+    ports:
+      - "9000:9000"
+
+    deploy:
+      resources:
+        limits:
+          memory: 300M
+        reservations:
+          memory: 128M
+
+    # 使用键值对格式，更清晰
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      TZ: Asia/Shanghai
+      # 注意：值如果包含空格，必须用引号括起来
+      JAVA_OPTS: >-
+        -server
+        -Xms128m
+        -Xmx192m
+        -XX:MetaspaceSize=32m
+        -XX:MaxMetaspaceSize=64m
+        -Xss256k
+        -XX:+UseSerialGC
+        -XX:MaxDirectMemorySize=24m
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heapdump.hprof
+        -XX:OnOutOfMemoryError=kill -9 %p
+
+    volumes:
+      - /opt/qingshu/logs/auth-service:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+
+    networks:
+      - qingshu-network
+
+    restart: always
+
+networks:
+  qingshu-network:
+    driver: bridge

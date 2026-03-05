@@ -1,0 +1,43 @@
+server:
+  port: 9407 #启动端口号
+spring:
+  application:
+    name: feed-service #服务名
+  main:
+    allow-bean-definition-overriding: true
+    allow-circular-reference: true
+  cloud:
+    nacos:
+      discovery:
+        ip: 192.168.0.105
+        #register-enabled: false
+        server-addr: 115.191.9.196:8848
+        username: nacos
+        password: nacos
+        namespace: public
+        connect-timeout: 30000
+      config:
+        server-addr: 115.191.9.196:8848 #nacos服务地址
+        username: nacos
+        password: nacos
+        file-extension: yml #配置文件后缀
+        namespace: public
+
+        shared-configs:
+          - data-id: application-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-datasource-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-redis-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-mongodb-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+          - data-id: shared-rabbitmq-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
+  profiles:
+    active: dev #指定环境

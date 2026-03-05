@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build: .
+    container_name: qingshu-api-gateway
+    ports:
+      - "9005:9005"
+
+    deploy:
+      resources:
+        limits:
+          memory: 640M          # 启动时用 640M
+        reservations:
+          memory: 256M
+
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      TZ: Asia/Shanghai
+      # 启动时给足内存，运行后 GC 会回收
+      JAVA_OPTS: >-
+        -server
+        -Xms128m
+        -Xmx256m              # 提高到 256M 堆
+        -XX:MetaspaceSize=32m
+        -XX:MaxMetaspaceSize=64m
+        -Xss128k
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -XX:MaxDirectMemorySize=48m
+        -XX:InitialCodeCacheSize=8m
+        -XX:ReservedCodeCacheSize=16m
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heapdump.hprof
+        -XX:OnOutOfMemoryError=kill -9 %p
+        -XX:+UseStringDeduplication
+
+    # 关键：延长启动时间，给足初始化时间
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9005/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10              # 增加重试次数
+      start_period: 120s      # 给足 2 分钟启动时间
+
+    volumes:
+      - /opt/qingshu/logs/api-gateway:/app/logs
+      - /etc/localtime:/etc/localtime:ro
+
+    networks:
+      - qingshu-network
+
+    restart: unless-stopped
+networks:
+  qingshu-network:
+    driver: bridge

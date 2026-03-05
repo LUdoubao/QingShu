@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.topic.service.mapper.UserTopicFollowMapper">
+
+    <select id="isUserFollowingTopic" resultType="org.doubao.topic.service.vo.TopicFollowVo">
+        SELECT
+        #{userId} as userId,
+        t.topicId as topicId,
+        CASE
+        WHEN EXISTS (
+        SELECT 1
+        FROM user_topic_follow uf
+        WHERE uf.topic_id = t.topicId
+        AND uf.user_id = #{userId}
+        AND uf.is_valid = 1
+        ) THEN true
+        ELSE false
+        END as isFollowed
+        FROM (
+        <foreach collection="topicIds" item="item" separator=" UNION ALL ">
+            SELECT #{item} as topicId FROM DUAL
+        </foreach>
+        ) t
+    </select>
+</mapper>

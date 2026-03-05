@@ -1,5 +1,6 @@
 package org.doubao.user.service.service.impl.local;
 
+import org.doubao.mall.common.condition.MonolithMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.quote.service.service.QuoteService;
 import org.doubao.user.service.feign.report.QuoteClient;
@@ -11,7 +12,7 @@ import javax.annotation.Resource;
 import java.util.Map;
 
 @Service
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "monolith", matchIfMissing = true)
+@MonolithMode
 public class UserQuoteClientLocalImpl implements QuoteClient {
 
 	@Resource

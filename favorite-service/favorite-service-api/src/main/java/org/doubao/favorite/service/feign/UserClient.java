@@ -1,5 +1,6 @@
 package org.doubao.favorite.service.feign;
 
+import org.doubao.mall.common.condition.MicroserviceMode;
 import org.doubao.mall.common.entity.Result;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -11,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 @FeignClient(name = "user-service")
-@ConditionalOnProperty(name = "service.run-mode", havingValue = "microservice")
+@MicroserviceMode
 public interface UserClient {
 	@PostMapping("/user/listByIds")
 	Result<List<UserInfoDes>> getUsersByIds(Set<Long> userIds);
