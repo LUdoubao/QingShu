@@ -20,12 +20,7 @@ spring:
     allow-bean-definition-overriding: true
   data:
     mongodb:
-      host: 115.191.9.196
-      port: 27017
-      database: doubao_db
-      username: root
-      password: MongoDB@123456
-      authentication-database: admin
+      uri: mongodb://root:MongoDB%40123456789%40@115.191.9.196:27017/qingshu?authSource=admin&authMechanism=SCRAM-SHA-256
   rabbitmq:
     host: 115.191.9.196
     port: 5672
@@ -47,7 +42,7 @@ spring:
   application:
     name: doubao-starter
   datasource:
-    url: jdbc:mysql://115.191.9.196:3306/doubao_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://115.191.9.196:3306/qingshu?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: Lg101799.
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -70,7 +65,7 @@ share:
   aes:
     key: 2b7e151628aed2a6abf7158809cf4f3c
   base:
-    url: http://localhost/public/share/
+    url: https://gin.hk.cn/public/share/
 oss:
   encryption:
     current-key-id: k2025
@@ -89,8 +84,8 @@ oss:
     bucket-name:
   # 本地存储配置
   local:
-    storage-path: D:\workspace\doubao\QingShu\files\uploads
-    base-url: http://localhost/api/public/oss/files?fileKey=
+    storage-path: /app/files/uploads
+    base-url: https://gin.hk.cn/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
 # 动态流配置
