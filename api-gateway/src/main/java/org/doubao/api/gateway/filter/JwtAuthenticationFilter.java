@@ -36,7 +36,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 		"/user/verify",
 		"/user/forgot-password",
 		"/public/",
-		"/dialog/ws"
+		"/dialog/ws",
+		"/actuator/health"
 	);
 
 
