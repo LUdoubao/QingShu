@@ -40,7 +40,8 @@ public class JwtAuthenticationFilterLocal extends OncePerRequestFilter {
 			"/user/verify",
 			"/user/forgot-password",
 			"/public/",
-			"/dialog/ws"
+			"/dialog/ws",
+			"/actuator/health"
 	);
 	@Override
 	protected void doFilterInternal(HttpServletRequest request,
