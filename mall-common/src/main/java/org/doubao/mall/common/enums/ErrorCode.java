@@ -63,6 +63,7 @@ public enum ErrorCode {
 	USER_REPORT_STATUS_ERROR("USER_034",  "当前举报状态不允许处理"),
 	USER_INVALID_REPORT_RESULT("USER_035",  "无效的审核结果"),
 	USER_REPORT_NOT_SUPPORT_TYPE("USER_036",  "不支持的举报类型"),
+	USER_PWD_LOW("USER_036",  "密码复杂度过低，请重新注册"),
 
 
 
