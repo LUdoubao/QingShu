@@ -41,7 +41,7 @@ public class LikeController {
 	}
 	@GetMapping("/list")
 	public Result<Page<LikeQuoteVo>> likeList(
-			@RequestParam Long userId,
+			@RequestParam(required = false) Long userId,
 			@RequestParam(defaultValue = "1") int page,
 			@RequestParam(defaultValue = "20") int size) {
 		return Result.success(likeService.likeList(userId, page, size));

@@ -28,6 +28,8 @@ import org.doubao.mall.common.ratelimit.annotation.RateLimit;
 import org.doubao.mall.common.ratelimit.enums.RateLimitDimension;
 import org.doubao.mall.common.threadpool.CommonTaskExecutor;
 import org.doubao.mall.common.util.ConvertUtil;
+import org.doubao.mall.common.util.DoubaoUtils;
+import org.doubao.mall.common.util.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -529,6 +531,12 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	@Override
 	@SuppressWarnings("unchecked")
 	public Page<LikeQuoteVo> likeList(Long userId, int page, int size) {
+		if (DoubaoUtils.isEmpty(userId)) {
+			// 获取当前登录用户ID
+			userId = UserContext.getUserId();
+		} else {
+			// 鉴权TODO
+		}
 		Page<LikeRecord> pageParam = new Page<>(page, size);
 		LambdaQueryWrapper<LikeRecord> queryWrapper = new LambdaQueryWrapper<LikeRecord>();
 		queryWrapper.eq(LikeRecord::getUserId, userId)
