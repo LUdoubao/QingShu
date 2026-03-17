@@ -6,6 +6,7 @@ import org.doubao.mall.common.dto.FileUploadResult;
 import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.enums.ErrorCode;
 import org.doubao.mall.common.exception.BusinessException;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.mall.common.util.UserContext;
 import org.doubao.mall.common.vo.UserLoginVo;
 import org.doubao.user.service.dto.core.*;
@@ -29,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
@@ -46,6 +48,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 	@Resource
 	private OssServiceClient ossServiceClient;
 
+	// 密码复杂度校验正则：包含大小写字母、数字、特殊符号，且长度8-16位
+	private static final String PASSWORD_REGEX =
+			"^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>\\/?]).{8,16}$";
+
+
+	private static final Pattern PASSWORD_PATTERN = Pattern.compile(PASSWORD_REGEX);
 	private static final Logger logger = LoggerFactory.getLogger(UserServiceImpl.class);
 	@Override
 	public String uploadAvatar(MultipartFile avatarFile, Long userId) {
@@ -220,8 +228,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 		// 创建用户
 		User user = new User();
+
+		// 密码复杂度校验
+		String password = userDto.getPassword();
+		if (DoubaoUtils.isEmpty(password) || !PASSWORD_PATTERN.matcher(password).matches()) {
+			throw new BusinessException(ErrorCode.USER_PWD_LOW);
+		}
 		user.setUsername(userDto.getUsername());
-		user.setPassword(passwordEncoder.encode(userDto.getPassword()));
+		user.setPassword(passwordEncoder.encode(password));
 		user.setEmail(userDto.getEmail());
 
 		// 生成昵称
@@ -256,6 +270,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 		UserLoginVo userInfo = new UserLoginVo();
 		userInfo.setId(user.getId());
 		userInfo.setUsername(user.getUsername());
+		userInfo.setNickname(user.getNickname());
 		UserLoginVo data = authServiceClient.login(userInfo).getData();
 		// 动态生成头像URL
 		userInfo.setAvatarUrl(ossServiceClient.generateAccessUrl(
