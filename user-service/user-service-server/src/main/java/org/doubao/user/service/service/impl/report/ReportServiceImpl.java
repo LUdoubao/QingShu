@@ -89,8 +89,6 @@ public class ReportServiceImpl implements ReportService {
         // 5. 执行AI预检测（预留）
         executeAIPreCheck(reportId, request, reportMain);
 
-        // 6. 更新Redis缓存
-        updateReportStatusCache(reportId, ReportConstant.REPORT_STATUS_PENDING);
 
         // 7. 构建返回结果
         ReportSubmitResponse response = new ReportSubmitResponse();
@@ -103,11 +101,6 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public ReportStatusResponse getReportStatus(Long reportId) {
         Long userId = UserContext.getUserId();
-        // 1. 从缓存查询状态
-        ReportStatusResponse statusResponse = getReportStatusFromCache(reportId);
-        if (statusResponse != null) {
-            return statusResponse;
-        }
 
         // 2. 缓存未命中，从数据库查询
         ReportMain reportMain = reportMainMapper.selectById(reportId);
@@ -121,7 +114,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 5. 构建响应
-        statusResponse = new ReportStatusResponse();
+        ReportStatusResponse statusResponse = new ReportStatusResponse();
         statusResponse.setReportId(reportId);
         statusResponse.setStatus(reportMain.getStatus());
         statusResponse.setStatusDesc(getStatusDesc(reportMain.getStatus()));
@@ -139,8 +132,6 @@ public class ReportServiceImpl implements ReportService {
             statusResponse.setDescription(evidence.getDescription());
         }
 
-        // 6. 更新缓存
-        updateReportStatusCache(reportId, reportMain.getStatus(), statusResponse);
         return statusResponse;
     }
 
@@ -172,9 +163,6 @@ public class ReportServiceImpl implements ReportService {
         ReportReviewLog reviewLog = buildReviewLog(request);
         reportReviewLogMapper.insert(reviewLog);
         log.info("举报[{}]审核处理完成，结果：{}", request.getReportId(), request.getReviewResult());
-
-        // 5. 更新缓存
-        updateReportStatusCache(request.getReportId(), reportMain.getStatus());
 
         // 6. 发送通知（实际项目中应通过消息队列异步处理）
         sendNotification(reportMain, request);
@@ -402,39 +390,6 @@ public class ReportServiceImpl implements ReportService {
             default:
                 return "未知状态";
         }
-    }
-
-    /**
-     * 从缓存获取举报状态
-     */
-    private ReportStatusResponse getReportStatusFromCache(Long reportId) {
-        String cacheKey = ReportConstant.REDIS_REPORT_STATUS_PREFIX + reportId;
-        Object cachedObj = redisTemplate.opsForValue().get(cacheKey);
-        return cachedObj instanceof ReportStatusResponse ? (ReportStatusResponse) cachedObj : null;
-    }
-
-    /**
-     * 更新举报状态缓存
-     */
-    private void updateReportStatusCache(Long reportId, Integer status) {
-        // 如果状态是终态，缓存时间更长
-        long expireDays = (status == ReportConstant.REPORT_STATUS_APPROVED
-                || status == ReportConstant.REPORT_STATUS_REJECTED)
-                ? 30 : 7;
-
-        String cacheKey = ReportConstant.REDIS_REPORT_STATUS_PREFIX + reportId;
-        redisTemplate.expire(cacheKey, expireDays, TimeUnit.DAYS);
-    }
-
-    /**
-     * 更新举报状态缓存（带完整响应数据）
-     */
-    private void updateReportStatusCache(Long reportId, Integer status, ReportStatusResponse response) {
-        String cacheKey = ReportConstant.REDIS_REPORT_STATUS_PREFIX + reportId;
-        redisTemplate.opsForValue().set(cacheKey, response);
-
-        // 设置过期时间
-        updateReportStatusCache(reportId, status);
     }
 
     @Override
