@@ -5,6 +5,15 @@ public class UserLoginVo {
 	private String token;
 	private String username;
 	private String avatarUrl;
+	private String nickname;
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
 
 	public String getAvatarUrl() {
 		return avatarUrl;
