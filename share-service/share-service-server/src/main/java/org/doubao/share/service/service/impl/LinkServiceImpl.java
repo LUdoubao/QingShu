@@ -211,7 +211,7 @@ public class LinkServiceImpl extends ServiceImpl<ShareLinkMapper, ShareLink>
 		if ("ORIGINAL".equals(dto.getShareType())) {
 			urlBuilder.append("original/").append(dto.getQuoteId());
 		} else {
-			urlBuilder.append("non-original/").append(dto.getQuoteId());
+			urlBuilder.append("excerpt/").append(dto.getQuoteId());
 		}
 		// 生成16位UUID
 		String uuid = UUID.randomUUID().toString().replace("-", "");
