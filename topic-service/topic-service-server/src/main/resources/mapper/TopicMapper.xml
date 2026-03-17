@@ -10,9 +10,10 @@
         FROM
         topic t
         WHERE
-        t.status = 1 AND
-        t.deleted = 0
-        LIMIT #{limit}
+        t.status = 1
+        AND t.deleted = 0
+        ORDER BY t.weight DESC
+        LIMIT #{limit, jdbcType=INTEGER}
     </select>
 
 </mapper>
