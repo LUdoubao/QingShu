@@ -20,12 +20,7 @@ spring:
     allow-bean-definition-overriding: true
   data:
     mongodb:
-      host: 115.191.9.196
-      port: 27017
-      database: doubao_db
-      username: root
-      password: MongoDB@123456
-      authentication-database: admin
+      uri: mongodb://root:MongoDB%40123456789%40@115.191.9.196:27017/qingshu?authSource=admin&authMechanism=SCRAM-SHA-256
   rabbitmq:
     host: 115.191.9.196
     port: 5672
@@ -47,7 +42,7 @@ spring:
   application:
     name: doubao-starter
   datasource:
-    url: jdbc:mysql://115.191.9.196:3306/doubao_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://115.191.9.196:3306/qingshu?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: root
     password: Lg101799.
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -70,7 +65,7 @@ share:
   aes:
     key: 2b7e151628aed2a6abf7158809cf4f3c
   base:
-    url: http://localhost/public/share/
+    url: https://gin.hk.cn/public/share/
 oss:
   encryption:
     current-key-id: k2025
@@ -90,7 +85,7 @@ oss:
   # 本地存储配置
   local:
     storage-path: D:\workspace\doubao\QingShu\files\uploads
-    base-url: http://localhost/api/public/oss/files?fileKey=
+    base-url: https://gin.hk.cn/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
 # 动态流配置
@@ -116,15 +111,12 @@ fanout:
   event:
     queue: fanout.event.queue
     processed-ttl: 86400  # 已处理事件缓存时间（秒）
-
   fans:
     batch-size: 1000       # 粉丝查询批次大小
     vip-threshold: 50000   # 大V粉丝量阈值
-
   retry:
     max-times: 3           # 最大重试次数
     interval: 300000       # 重试间隔（毫秒）
-
   rules:
     - message-type: DYNAMIC_PUBLISH
       targets:
@@ -139,13 +131,11 @@ fanout:
         - type: QUEUE
           name: dynamic.statistics.queue
           routingKey: statistics.toplist.key
-
     - message-type: DYNAMIC_DELETE
       targets:
         - type: QUEUE
           name: dynamic.storage.queue
           routingKey: dynamic.delete.key
-
     - message-type: LIKE_CANCEL
       targets:
         - type: QUEUE
@@ -154,7 +144,6 @@ fanout:
         - type: QUEUE
           name: notification.queue
           routingKey: notification.like.cancel.key
-
     - message-type: USER_REGISTER
       targets:
         - type: QUEUE
@@ -180,7 +169,6 @@ fanout:
         - type: QUEUE
           name: notification.exchange
           routingKey: notification.user.message
-
   cache:
     redis:
       fans-key-prefix: "follow:fans:"        # 粉丝列表缓存前缀

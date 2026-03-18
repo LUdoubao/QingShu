@@ -9,8 +9,6 @@ public class ReportConstant {
      * Redis缓存键前缀
      */
     public static final String REDIS_REPORT_LIMIT_PREFIX = "report:limit:";
-    public static final String REDIS_REPORT_STATUS_PREFIX = "report:status:";
-    public static final String REDIS_REPORT_CATEGORY_TREE = "report:category:tree";
 
     /**
      * 举报状态

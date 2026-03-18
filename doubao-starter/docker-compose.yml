@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # Spring Boot 应用
+  doubao-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: doubao-starter:1.0.0
+    container_name: doubao-starter
+    restart: unless-stopped
+
+    ports:
+      - "1017:1017"
+
+    environment:
+      # JVM 配置
+      - JAVA_OPTS=-server -Xms512m -Xmx1024m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/app/logs/heapdump.hprof -Djava.security.egd=file:/dev/./urandom -Dfile.encoding=UTF-8
+
+      # Spring 配置
+      - SPRING_PROFILES_ACTIVE=dev
+      - SERVER_PORT=1017
+
+      # 数据库配置（通过环境变量覆盖配置文件）
+      - SPRING_DATASOURCE_URL=jdbc:mysql://115.191.9.196:3306/qingshu?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=Lg101799.
+
+      # MongoDB
+      - SPRING_DATA_MONGODB_HOST=115.191.9.196
+      - SPRING_DATA_MONGODB_PORT=27017
+      - SPRING_DATA_MONGODB_DATABASE=qingshu
+      - SPRING_DATA_MONGODB_USERNAME=root
+      - SPRING_DATA_MONGODB_PASSWORD=MongoDB@123456789@
+      - SPRING_DATA_MONGODB_AUTHENTICATION_DATABASE=admin
+
+      # Redis
+      - SPRING_REDIS_HOST=115.191.9.196
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=123456
+      - SPRING_REDIS_DATABASE=0
+
+      # RabbitMQ
+      - SPRING_RABBITMQ_HOST=115.191.9.196
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=doubao
+      - SPRING_RABBITMQ_PASSWORD=123456
+
+      # 邮件配置（建议生产环境使用更安全的配置方式）
+      - SPRING_MAIL_HOST=smtp.qq.com
+      - SPRING_MAIL_PORT=465
+      - SPRING_MAIL_USERNAME=3411426617@qq.com
+      - SPRING_MAIL_PASSWORD=bojwesxvnloecjdi
+
+      # OSS 本地存储路径（修改为容器内路径）
+      - OSS_STORAGE_LOCAL_STORAGE_PATH=/app/files/uploads
+
+    volumes:
+      # 日志挂载到宿主机
+      - ./logs:/app/logs
+      # 文件上传目录
+      - ./uploads:/app/files/uploads
+
+    networks:
+      - doubao-network
+
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+    # 日志配置
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "3"
+
+networks:
+  doubao-network:
+    driver: bridge

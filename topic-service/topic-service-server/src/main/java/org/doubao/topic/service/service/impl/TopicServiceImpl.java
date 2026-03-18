@@ -431,7 +431,7 @@ public class TopicServiceImpl extends ServiceImpl<TopicMapper, Topic> implements
         List<Long> ids = queryDTO.getIds();
         List<TopicSelectVo> topicSelectVos  = new ArrayList<>();
         if ((topicName == null || topicName.isEmpty()) && (ids == null || ids.isEmpty())) {
-            // 查询被绑定的标签最多的10条
+            // 查询被绑定的标签最多的10条-根据weight排序
             topicSelectVos = topicMapper.selectTopTopics(10);
         } else {
             if (topicName != null && !topicName.isEmpty()) {

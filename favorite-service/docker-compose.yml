@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  auth-service:
+  favorite-service:
     build: .
-    container_name: qingshu-auth-service
+    container_name: qingshu-favorite-service
     ports:
-      - "9000:9000"
+      - "9200:9200"
 
     deploy:
       resources:
@@ -37,14 +37,14 @@ services:
 
     # 关键：延长启动时间，给足初始化时间
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9000/actuator/health || exit 1"]
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:9200/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 10              # 增加重试次数
       start_period: 120s      # 给足 2 分钟启动时间
 
     volumes:
-      - /opt/qingshu/logs/auth-service:/app/logs
+      - /opt/qingshu/logs/favorite-service:/app/logs
       - /etc/localtime:/etc/localtime:ro
 
     networks:

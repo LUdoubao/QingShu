@@ -31,7 +31,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 			"/user/verify",
 			"/user/forgot-password",
 			"/public/**",
-			"/dialog/ws/**"
+			"/dialog/ws/**",
+			"/actuator/health"
 	};
 	@Autowired
 	private Environment environment;

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 存储文案与话题之间的多对多关联关系
  */
 @TableName("quote_topic")
-public class QuoteTopic {
+public class QuoteTopic extends BaseDel {
     /**
      * 关联ID（主键）
      */

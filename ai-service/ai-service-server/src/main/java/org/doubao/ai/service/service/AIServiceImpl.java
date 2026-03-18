@@ -82,15 +82,10 @@ public class AIServiceImpl implements AIService{
 
 		String url = "";
 		String key = "";
-		if (isPoetry.equals("true")) {
-			url = deepseekApiUrl;
-			key = deepseekApiKey;
-			model = DoubaoUtils.isEmpty(model) ? deepseekModel : model;
-		} else {
-			url = baiduApiUrl;
-			key = baiduApiKey;
-			model = DoubaoUtils.isEmpty(model) ? baiduModel : model;
-		}
+
+		url = deepseekApiUrl;
+		key = deepseekApiKey;
+		model = DoubaoUtils.isEmpty(model) ? deepseekModel : model;
 
 		// 第一次获取或二次刷新
 		ChatRequest request = buildRequest(content, author, source, isPoetry);

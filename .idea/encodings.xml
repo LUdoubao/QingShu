@@ -1,29 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/ai-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/ai-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/api-gateway/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/api-gateway/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/auth-service/auth-service-starter/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/auth-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/auth-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/comment-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/comment-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/config-repo/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/config-repo/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/config-server/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/config-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/dialog-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/dialog-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/doubao-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/doubao-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/fanout-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/fanout-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/favorite-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/favorite-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/feed-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/feed-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/like-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/like-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/mall-common/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/mall-common/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/my-eureka-server/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/my-eureka-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-service/notification-service-starter/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/notification-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/notification-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/order-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/order-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/oss-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/oss-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/payment-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/payment-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/product-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/product-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/quote-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/quote-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/search-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/search-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/share-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/share-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/topic-service/topic-service-starter/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/user-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/user-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/user-service/user-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-api/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/view-count-service/view-count-service-starter/src/main/resources" charset="UTF-8" />
   </component>
 </project>
