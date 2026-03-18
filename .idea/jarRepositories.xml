@@ -7,19 +7,49 @@
       <option name="url" value="https://maven.aliyun.com/nexus/content/groups/public" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="hussar-releases" />
-      <option name="name" value="hussar-releases" />
-      <option name="url" value="http://123.232.10.234:8212/nexus/content/groups/public/" />
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="http://maven.aliyun.com/nexus/content/groups/public/" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="hussar-snapshots" />
-      <option name="name" value="hussar-snapshots" />
-      <option name="url" value="http://192.168.2.178:8081/nexus/content/repositories/snapshots" />
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://repo.maven.apache.org/maven2" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="central" />
       <option name="name" value="Maven Central repository" />
       <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://maven.aliyun.com/repository/public" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="https://repo1.maven.org/maven2/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="nexus" />
+      <option name="name" value="nexus" />
+      <option name="url" value="http://nexus.hepengju.cn:8081/nexus/content/groups/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="hussar-releases" />
+      <option name="name" value="hussar-releases" />
+      <option name="url" value="http://123.232.10.234:8212/nexus/content/groups/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Central Repository" />
+      <option name="url" value="http://192.168.2.178:8081/nexus/content/groups/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="hussar-snapshots" />
+      <option name="name" value="hussar-snapshots" />
+      <option name="url" value="http://192.168.2.178:8081/nexus/content/repositories/snapshots" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="jboss.community" />
@@ -32,9 +62,9 @@
       <option name="url" value="http://192.168.2.178:8081/nexus/content/groups/public/" />
     </remote-repository>
     <remote-repository>
-      <option name="id" value="central" />
-      <option name="name" value="Central Repository" />
-      <option name="url" value="https://repo1.maven.org/maven2/" />
+      <option name="id" value="alimaven" />
+      <option name="name" value="aliyun maven" />
+      <option name="url" value="http://maven.aliyun.com/nexus/content/groups/public/" />
     </remote-repository>
     <remote-repository>
       <option name="id" value="snapshots" />
