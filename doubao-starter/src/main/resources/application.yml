@@ -84,7 +84,7 @@ oss:
     bucket-name:
   # 本地存储配置
   local:
-    storage-path: /app/files/uploads
+    storage-path: D:\workspace\doubao\QingShu\files\uploads
     base-url: https://gin.hk.cn/api/public/oss/files?fileKey=
     default-avatar: defaultAvatar.png
     aes-key: doubao2b7e151628aed2a6abf7158809
@@ -111,15 +111,12 @@ fanout:
   event:
     queue: fanout.event.queue
     processed-ttl: 86400  # 已处理事件缓存时间（秒）
-
   fans:
     batch-size: 1000       # 粉丝查询批次大小
     vip-threshold: 50000   # 大V粉丝量阈值
-
   retry:
     max-times: 3           # 最大重试次数
     interval: 300000       # 重试间隔（毫秒）
-
   rules:
     - message-type: DYNAMIC_PUBLISH
       targets:
@@ -134,13 +131,11 @@ fanout:
         - type: QUEUE
           name: dynamic.statistics.queue
           routingKey: statistics.toplist.key
-
     - message-type: DYNAMIC_DELETE
       targets:
         - type: QUEUE
           name: dynamic.storage.queue
           routingKey: dynamic.delete.key
-
     - message-type: LIKE_CANCEL
       targets:
         - type: QUEUE
@@ -149,7 +144,6 @@ fanout:
         - type: QUEUE
           name: notification.queue
           routingKey: notification.like.cancel.key
-
     - message-type: USER_REGISTER
       targets:
         - type: QUEUE
@@ -175,7 +169,6 @@ fanout:
         - type: QUEUE
           name: notification.exchange
           routingKey: notification.user.message
-
   cache:
     redis:
       fans-key-prefix: "follow:fans:"        # 粉丝列表缓存前缀
