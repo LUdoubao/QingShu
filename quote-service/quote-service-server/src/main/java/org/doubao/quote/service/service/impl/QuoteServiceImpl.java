@@ -319,19 +319,17 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		Long currentUserId = UserContext.getUser() == null ? pageDto.getCurrentUserId() : UserContext.getUser().getId();
 		int page = pageDto.getPage();
 		int size = pageDto.getSize();
-		Long categoryId = pageDto.getCategoryId();
 		List<Long> tagIds = pageDto.getTagIds();
 		Long userId = pageDto.getUserId();
 		Integer original = pageDto.getOriginal();
 		String quoteKeyword = pageDto.getQuoteKeyword();
 
 		// 1. 查询总数
-		long total = quoteMapper.countByTagIdsAndCategory(categoryId, tagIds, tagIds == null ? 0 : tagIds.size(),
+		long total = quoteMapper.countByTagIdsAndCategory(tagIds, tagIds == null ? 0 : tagIds.size(),
 				userId, original, 1, quoteKeyword);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
-				categoryId,
 				tagIds,
 				tagIds == null ? 0 : tagIds.size(),
 				size,
@@ -438,7 +436,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			quote.setSource(quoteVerify.getSource());
 			quote.setAuthor(quoteVerify.getAuthor());
-			quote.setCategoryId(quoteVerify.getCategoryId());
 			quote.setContent(quoteVerify.getContent());
 			this.updateById(quote);
 
@@ -735,12 +732,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		Integer status = queryDataPageDto.getStatus();
 		Long userId = UserContext.getUserId();
 		// 1. 查询总数
-		long total = quoteMapper.countByTagIdsAndCategory(null, null, 0,
+		long total = quoteMapper.countByTagIdsAndCategory( null, 0,
 				userId, original, status, quoteKeyword);
 
 		// 2. 查询分页数据
 		List<Quote> records = quoteMapper.selectByTagIdsAndCategory(
-				null,
 				null,
 				0,
 				size,
@@ -1126,12 +1122,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 	}
 
-	public List<CategoryCountVO> getTopCategoriesByKeyword(String keyword) {
-		if (StringUtils.isBlank(keyword)) {
-			return Collections.emptyList();
-		}
-		return quoteMapper.selectTopCategoriesByKeyword(keyword);
-	}
 	@SuppressWarnings("unchecked")
 	private Result<Page<QuoteVo>> queryVerify(PageDto pageDto) {
 		LambdaQueryWrapper<QuoteVerify> queryWrapper = new LambdaQueryWrapper<QuoteVerify>()

@@ -14,7 +14,6 @@ import java.util.Map;
 public interface QuoteMapper extends BaseMapper<Quote> {
 	// 返回总条数用于分页
 	long countByTagIdsAndCategory(
-			@Param("categoryId") Long categoryId,
 			@Param("tagIds") List<Long> tagIds,
 			@Param("tagIdsSize") Integer tagIdsSize,
 			@Param("userId") Long userId,
@@ -23,7 +22,7 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 			@Param("quoteKeyword") String quoteKeyword
 	);
 
-	List<Quote> selectByTagIdsAndCategory (@Param("categoryId") Long categoryId,
+	List<Quote> selectByTagIdsAndCategory (
 										   @Param("tagIds")  List<Long> tagIds,
 										   @Param("tagIdsSize") Integer tagIdsSize,
 										   @Param("pageSize") int pageSize,
@@ -37,8 +36,6 @@ public interface QuoteMapper extends BaseMapper<Quote> {
 	int getQuoteType(@Param("quoteId") String quoteId);
 
 	boolean checkQuoteExists(@Param("quoteId") String quoteId);
-
-	List<CategoryCountVO> selectTopCategoriesByKeyword(@Param("keyword")  String keyword);
 
 	List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount);
 

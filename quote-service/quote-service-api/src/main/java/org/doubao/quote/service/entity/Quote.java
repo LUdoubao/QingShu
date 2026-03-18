@@ -8,25 +8,93 @@ import org.doubao.mall.common.entity.BaseDel;
 
 @TableName("quote")
 public class Quote extends BaseDel {
+	/**
+	 * id
+	 */
 	@TableId(type = IdType.AUTO)
 	private Long id;
+	/**
+	 * 内容
+	 */
 	@TableField(value = "content")
 	private String content;
+	/**
+	 * 标题
+	 */
 	@TableField(value = "title")
 	private String title;
+	/**
+	 * 作者
+	 */
 	@TableField(value = "author")
 	private String author;
+	/**
+	 * 来源
+	 */
 	@TableField(value = "source")
 	private String source;
-	@TableField("category_id")
-	private Long categoryId;
 	/**
 	 * 状态，0:审核中1:已发布 2:屏蔽 3:草稿 4:未通过 5:下架
 	 */
 	@TableField("status")
 	private int status;
+	/**
+	 * 是否原创，0:否 1:是
+	 */
 	@TableField("original")
 	private int original;
+	/**
+	 * 诗词原创id
+	 */
+	@TableField("poetry_original_id")
+	private String poetryOriginalId;
+	/**
+	 * 朝代
+	 */
+	@TableField("dynasty")
+	private String dynasty;
+	/**
+	 * 诗词类别
+	 */
+	@TableField("poetry_category")
+	private String poetryCategory;
+	/**
+	 * 作者id
+	 */
+	@TableField("author_id")
+	private String authorId;
+
+	public String getDynasty() {
+		return dynasty;
+	}
+
+	public void setDynasty(String dynasty) {
+		this.dynasty = dynasty;
+	}
+
+	public String getPoetryCategory() {
+		return poetryCategory;
+	}
+
+	public void setPoetryCategory(String poetryCategory) {
+		this.poetryCategory = poetryCategory;
+	}
+
+	public String getAuthorId() {
+		return authorId;
+	}
+
+	public void setAuthorId(String authorId) {
+		this.authorId = authorId;
+	}
+
+	public String getPoetryOriginalId() {
+		return poetryOriginalId;
+	}
+
+	public void setPoetryOriginalId(String poetryOriginalId) {
+		this.poetryOriginalId = poetryOriginalId;
+	}
 
 	public String getTitle() {
 		return title;
@@ -42,14 +110,6 @@ public class Quote extends BaseDel {
 
 	public void setStatus(int status) {
 		this.status = status;
-	}
-
-	public Long getCategoryId() {
-		return categoryId;
-	}
-
-	public void setCategoryId(Long categoryId) {
-		this.categoryId = categoryId;
 	}
 
 	public Long getId() {

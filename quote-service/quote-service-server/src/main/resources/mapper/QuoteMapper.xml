@@ -12,9 +12,6 @@
         SELECT COUNT(DISTINCT q.id)
         FROM quote q
         WHERE q.deleted = 0
-        <if test="categoryId != null">
-            AND q.category_id = #{categoryId}
-        </if>
         <if test="status != null">
             AND q.status = #{status}
         </if>
@@ -44,9 +41,6 @@
         SELECT q.*
         FROM quote q
         WHERE q.deleted = 0
-        <if test="categoryId != null">
-            AND q.category_id = #{categoryId}
-        </if>
         <if test="status != null">
             AND q.status = #{status}
         </if>
@@ -90,21 +84,6 @@
         AND q.deleted = 0
         AND q.status = 1
         )
-    </select>
-
-
-    <select id="selectTopCategoriesByKeyword" resultMap="categoryCountResultMap">
-        SELECT
-        c.id AS categoryId,
-        c.name AS categoryName,
-        COUNT(q.id) AS quoteCount
-        FROM quote q
-        INNER JOIN category c ON q.category_id = c.id
-        WHERE
-        AND c.name LIKE CONCAT('%', #{keyword}, '%')
-        GROUP BY q.category_id, c.id, c.name
-        ORDER BY quoteCount DESC
-        LIMIT 3
     </select>
 
     <!-- List<Quote> selectRandomQuotes(@Param("keyword")  String keyword, @Param("quoteCount") int quoteCount); -->
