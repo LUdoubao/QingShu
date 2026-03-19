@@ -3,7 +3,7 @@ package org.doubao.recommend.service.service;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.ContentFeature;
 import org.doubao.recommend.service.mapper.ContentFeatureSnapshotMapper;
-import org.doubao.recommend.service.mapper.QuoteMapper;
+import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +21,7 @@ public class ContentFeatureService {
      * 用于查询内容的基本信息
      */
     @Resource
-    private QuoteMapper quoteMapper;
+    private RecommendQuoteMapper recommendQuoteMapper;
     
     /**
      * 内容特征快照 Mapper
@@ -55,7 +55,7 @@ public class ContentFeatureService {
         // 缓存未命中，从数据库查询
         ContentFeature feature = snapshotMapper.selectById(contentId);
         if (feature == null) {
-            feature = quoteMapper.selectFeatureById(contentId);
+            feature = recommendQuoteMapper.selectFeatureById(contentId);
         }
         
         // 如果查询到数据，进行丰富处理并写入缓存
@@ -78,7 +78,7 @@ public class ContentFeatureService {
             return new ArrayList<>();
         }
         // 批量查询并逐个丰富处理
-        return quoteMapper.selectFeaturesByIds(ids).stream().peek(this::enrich).collect(Collectors.toList());
+        return recommendQuoteMapper.selectFeaturesByIds(ids).stream().peek(this::enrich).collect(Collectors.toList());
     }
 
     /**

@@ -26,6 +26,8 @@ mybatis:
 logging:
   level:
     com.example.recommend: info
+    org.doubao.recommend.service.job: debug
+    org.springframework.scheduling: debug
 
 recommend:
   hot:

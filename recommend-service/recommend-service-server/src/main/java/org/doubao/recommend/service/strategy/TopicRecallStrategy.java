@@ -4,7 +4,7 @@ import org.doubao.recommend.service.domain.CandidateItem;
 import org.doubao.recommend.service.domain.ContentFeature;
 import org.doubao.recommend.service.domain.RecommendRequest;
 import org.doubao.recommend.service.domain.UserProfile;
-import org.doubao.recommend.service.mapper.QuoteMapper;
+import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
 import org.doubao.recommend.service.service.UserProfileService;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +28,7 @@ public class TopicRecallStrategy implements RecallStrategy {
      * 用于根据话题 ID 查询相关内容
      */
     @Resource
-    private QuoteMapper quoteMapper;
+    private RecommendQuoteMapper recommendQuoteMapper;
 
     /**
      * 判断是否支持话题召回策略
@@ -65,7 +65,7 @@ public class TopicRecallStrategy implements RecallStrategy {
         if (topicIds.isEmpty()) return new ArrayList<>();
 
         // 根据话题 ID 查询内容，每个话题最多查询 50 条
-        List<ContentFeature> features = quoteMapper.selectByTopicIds(topicIds, 50);
+        List<ContentFeature> features = recommendQuoteMapper.selectByTopicIds(topicIds, 50);
         
         // 构建候选物品列表
         List<CandidateItem> list = new ArrayList<>();

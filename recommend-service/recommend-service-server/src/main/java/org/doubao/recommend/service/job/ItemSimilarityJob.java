@@ -2,7 +2,7 @@ package org.doubao.recommend.service.job;
 
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.ContentFeature;
-import org.doubao.recommend.service.mapper.QuoteMapper;
+import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -19,7 +19,7 @@ public class ItemSimilarityJob {
      * 用于查询内容特征数据，获取候选物品列表
      */
     @Resource
-    private QuoteMapper quoteMapper;
+    private RecommendQuoteMapper recommendQuoteMapper;
 
     /**
      * Redis 模板
@@ -38,7 +38,7 @@ public class ItemSimilarityJob {
     public void rebuildSimilarCache() {
     
         // 1. 取候选（最近 300 条）
-        List<ContentFeature> candidates = quoteMapper.selectRecentPublished(null, 300);
+        List<ContentFeature> candidates = recommendQuoteMapper.selectRecentPublished(null, 300);
     
         if (candidates == null || candidates.isEmpty()) {
             return;

@@ -7,7 +7,7 @@ import org.doubao.recommend.service.domain.ContentFeature;
 import java.util.List;
 
 @Mapper
-public interface QuoteMapper {
+public interface RecommendQuoteMapper {
 
     List<ContentFeature> selectFeaturesByIds(@Param("ids") List<Long> ids);
 

@@ -1,5 +1,7 @@
 package org.doubao.recommend.service.job;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.HotStat;
 import org.doubao.recommend.service.mapper.UserBehaviorMapper;
@@ -18,6 +20,8 @@ import java.util.List;
  */
 @Component
 public class HotRankJob {
+
+    private static final Logger logger = LoggerFactory.getLogger(HotRankJob.class);
 
     /**
      * 用户行为 Mapper
@@ -40,15 +44,44 @@ public class HotRankJob {
      */
     @Scheduled(cron = "0 10 * * * ?")
     public void rebuildHotHome() {
-        // 查询最近 7 天内的热门内容统计，最多返回 500 条
-        List<HotStat> stats = behaviorMapper.selectHotStats(LocalDateTime.now().minusDays(7), 500);
+        long startTime = System.currentTimeMillis();
+        logger.info("开始执行首页热门内容排行榜定时任务...");
         
-        // 删除旧的排行榜数据
-        stringRedisTemplate.delete(RedisKeys.HOT_HOME_ZSET);
-        
-        // 将新的热度数据逐个添加到 Redis 有序集合中
-        for (HotStat stat : stats) {
-            stringRedisTemplate.opsForZSet().add(RedisKeys.HOT_HOME_ZSET, String.valueOf(stat.getContentId()), stat.getScore());
+        try {
+            // 查询最近 7 天内的热门内容统计，最多返回 500 条
+            LocalDateTime sinceTime = LocalDateTime.now().minusDays(7);
+            logger.debug("查询时间范围：{} 至今", sinceTime);
+            
+            List<HotStat> stats = behaviorMapper.selectHotStats(sinceTime, 500);
+            logger.info("查询到 {} 条热门内容数据", stats.size());
+            
+            if (stats.isEmpty()) {
+                logger.warn("未查询到任何热门内容数据，请检查数据库是否有足够的用户行为数据");
+                return;
+            }
+            
+            // 删除旧的排行榜数据
+            stringRedisTemplate.delete(RedisKeys.HOT_HOME_ZSET);
+            logger.debug("已删除旧的排行榜数据");
+            
+            // 将新的热度数据逐个添加到 Redis 有序集合中
+            int successCount = 0;
+            for (HotStat stat : stats) {
+                stringRedisTemplate.opsForZSet().add(
+                    RedisKeys.HOT_HOME_ZSET, 
+                    String.valueOf(stat.getContentId()), 
+                    stat.getScore()
+                );
+                successCount++;
+            }
+            
+            long endTime = System.currentTimeMillis();
+            logger.info("首页热门内容排行榜更新完成，成功添加 {} 条记录，耗时 {}ms", 
+                       successCount, (endTime - startTime));
+            
+        } catch (Exception e) {
+            logger.error("执行首页热门内容排行榜定时任务时发生错误", e);
+            throw e; // 重新抛出异常，便于 Spring 重试机制处理
         }
     }
 }

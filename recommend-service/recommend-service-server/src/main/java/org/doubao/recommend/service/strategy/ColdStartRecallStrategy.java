@@ -2,7 +2,7 @@ package org.doubao.recommend.service.strategy;
 
 import org.doubao.recommend.service.domain.CandidateItem;
 import org.doubao.recommend.service.domain.RecommendRequest;
-import org.doubao.recommend.service.mapper.QuoteMapper;
+import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -17,7 +17,7 @@ public class ColdStartRecallStrategy implements RecallStrategy {
      * 用于查询最新发布的热门内容
      */
     @Resource
-    private QuoteMapper quoteMapper;
+    private RecommendQuoteMapper recommendQuoteMapper;
 
     /**
      * 判断是否支持冷启动召回策略
@@ -45,7 +45,7 @@ public class ColdStartRecallStrategy implements RecallStrategy {
     public List<CandidateItem> recall(RecommendRequest request) {
         List<CandidateItem> list = new ArrayList<>();
         // 查询最近发布的 50 条内容
-        quoteMapper.selectRecentPublished(null, 50).forEach(feature -> {
+        recommendQuoteMapper.selectRecentPublished(null, 50).forEach(feature -> {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("new");  // 标记来源为新品召回
