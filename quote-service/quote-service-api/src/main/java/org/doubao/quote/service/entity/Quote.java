@@ -19,6 +19,11 @@ public class Quote extends BaseDel {
 	@TableField(value = "content")
 	private String content;
 	/**
+	 * 内容繁体
+	 */
+	@TableField(value = "content_traditional")
+	private String contentTraditional;
+	/**
 	 * 标题
 	 */
 	@TableField(value = "title")
@@ -63,6 +68,14 @@ public class Quote extends BaseDel {
 	 */
 	@TableField("author_id")
 	private String authorId;
+
+	public String getContentTraditional() {
+		return contentTraditional;
+	}
+
+	public void setContentTraditional(String contentTraditional) {
+		this.contentTraditional = contentTraditional;
+	}
 
 	public String getDynasty() {
 		return dynasty;
