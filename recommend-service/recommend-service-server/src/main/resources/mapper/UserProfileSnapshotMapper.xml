@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.recommend.service.mapper.UserProfileSnapshotMapper">
+
+    <resultMap id="BaseResultMap" type="org.doubao.recommend.service.domain.UserProfileSnapshotRow">
+        <id column="user_identity" property="userIdentity"/>
+        <result column="user_id" property="userId"/>
+        <result column="tag_profile" property="tagWeights"/>
+        <result column="topic_profile" property="topicWeights"/>
+        <result column="author_profile" property="authorWeights"/>
+        <result column="dynasty_profile" property="dynastyWeights"/>
+        <result column="category_profile" property="categoryWeights"/>
+        <result column="recent_content_ids" property="recentContentIds"/>
+        <result column="last_active_time" property="lastActiveTime"/>
+        <result column="updated_time" property="updatedTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_identity,
+        user_id,
+        tag_profile,
+        topic_profile,
+        author_profile,
+        dynasty_profile,
+        category_profile,
+        recent_content_ids,
+        last_active_time,
+        updated_time
+    </sql>
+
+    <select id="selectByUserIdentity" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM user_profile_snapshot
+        WHERE user_identity = #{userIdentity}
+        LIMIT 1
+    </select>
+
+    <insert id="upsert">
+        INSERT INTO user_profile_snapshot
+        (user_identity, user_id, tag_profile, topic_profile, author_profile, 
+         dynasty_profile, category_profile, recent_content_ids, last_active_time, updated_time)
+        VALUES
+        (#{userIdentity}, #{userId}, #{tagProfile}, #{topicProfile}, #{authorProfile}, 
+         #{dynastyProfile}, #{categoryProfile}, #{recentContentIds}, #{lastActiveTime}, NOW())
+        ON DUPLICATE KEY UPDATE
+        user_id = VALUES(user_id),
+        tag_profile = VALUES(tag_profile),
+        topic_profile = VALUES(topic_profile),
+        author_profile = VALUES(author_profile),
+        dynasty_profile = VALUES(dynasty_profile),
+        category_profile = VALUES(category_profile),
+        recent_content_ids = VALUES(recent_content_ids),
+        last_active_time = VALUES(last_active_time),
+        updated_time = NOW()
+    </insert>
+
+</mapper>

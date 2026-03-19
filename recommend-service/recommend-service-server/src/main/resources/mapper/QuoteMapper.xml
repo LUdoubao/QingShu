@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.recommend.service.mapper.QuoteMapper">
+
+    <resultMap id="ContentFeatureResultMap" type="org.doubao.recommend.service.domain.ContentFeature">
+        <id column="contentId" property="contentId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="author" property="author"/>
+        <result column="source" property="source"/>
+        <result column="dynasty" property="dynasty"/>
+        <result column="poetryCategory" property="poetryCategory"/>
+        <result column="authorId" property="authorId"/>
+        <result column="createdTime" property="createdTime"/>
+        <result column="hotScore" property="hotScore"/>
+        <result column="qualityScore" property="qualityScore"/>
+        <result column="freshnessScore" property="freshnessScore"/>
+        <result column="tagNames" property="tagNames"/>
+        <result column="topicIds" property="topicIds"/>
+    </resultMap>
+
+    <sql id="Base_Quote_Fields">
+        q.id AS contentId,
+        q.title,
+        q.content,
+        q.author,
+        q.source,
+        q.dynasty,
+        q.poetry_category AS poetryCategory,
+        q.author_id AS authorId,
+        q.created_time AS createdTime,
+        COALESCE(fs.hot_score, 0) AS hotScore,
+        COALESCE(fs.quality_score, 0) AS qualityScore,
+        COALESCE(fs.freshness_score, 0) AS freshnessScore,
+        (
+        SELECT GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ',')
+        FROM quote_tag qt
+        JOIN tag t ON qt.tag_id = t.id
+        WHERE qt.quote_id = q.id
+        ) AS tagNames,
+        (
+        SELECT GROUP_CONCAT(DISTINCT qt2.topic_id ORDER BY qt2.topic_id SEPARATOR ',')
+        FROM quote_topic qt2
+        WHERE qt2.quote_id = q.id AND qt2.deleted = 0 AND qt2.status = 1
+        ) AS topicIds
+    </sql>
+
+    <sql id="Base_Join_Conditions">
+        FROM quote q
+        LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
+        WHERE q.deleted = 0 AND q.status = 1
+    </sql>
+
+    <select id="selectFeaturesByIds" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        FROM quote q
+        LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
+        WHERE q.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND q.deleted = 0
+        AND q.status = 1
+    </select>
+
+    <select id="selectFeatureById" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        AND q.id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectRecentPublished" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        <if test="author != null and author != ''">
+            AND q.author = #{author}
+        </if>
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByAuthorId" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        AND q.author_id = #{authorId}
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByDynasty" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        AND q.dynasty = #{dynasty}
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByTags" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        FROM quote q
+        LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
+        JOIN quote_tag qt ON qt.quote_id = q.id
+        JOIN tag t ON t.id = qt.tag_id
+        WHERE q.deleted = 0 AND q.status = 1
+        AND t.name IN
+        <foreach collection="tags" item="tag" open="(" separator="," close=")">
+            #{tag}
+        </foreach>
+        GROUP BY q.id
+        ORDER BY COUNT(DISTINCT t.name) DESC, q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByTopicIds" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        FROM quote q
+        LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
+        JOIN quote_topic qt ON qt.quote_id = q.id AND qt.deleted = 0 AND qt.status = 1
+        WHERE q.deleted = 0 AND q.status = 1
+        AND qt.topic_id IN
+        <foreach collection="topicIds" item="topicId" open="(" separator="," close=")">
+            #{topicId}
+        </foreach>
+        GROUP BY q.id
+        ORDER BY COUNT(DISTINCT qt.topic_id) DESC, q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByAuthors" resultMap="ContentFeatureResultMap">
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        AND q.author IN
+        <foreach collection="authors" item="author" open="(" separator="," close=")">
+            #{author}
+        </foreach>
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectValidIds" resultType="java.lang.Long">
+        SELECT q.id
+        FROM quote q
+        WHERE q.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND q.deleted = 0
+        AND q.status = 1
+    </select>
+
+</mapper>

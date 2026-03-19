@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.recommend.service.mapper.ContentFeatureSnapshotMapper">
+
+    <resultMap id="BaseResultMap" type="org.doubao.recommend.service.domain.ContentFeature">
+        <id column="content_id" property="contentId"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="author" property="author"/>
+        <result column="source" property="source"/>
+        <result column="dynasty" property="dynasty"/>
+        <result column="poetry_category" property="poetryCategory"/>
+        <result column="author_id" property="authorId"/>
+        <result column="tag_names" property="tagNames"/>
+        <result column="topic_ids" property="topicIds"/>
+        <result column="hot_score" property="hotScore"/>
+        <result column="quality_score" property="qualityScore"/>
+        <result column="freshness_score" property="freshnessScore"/>
+        <result column="updated_time" property="createdTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        content_id AS content_id,
+        title,
+        content,
+        author,
+        source,
+        dynasty,
+        poetry_category,
+        author_id,
+        tag_names,
+        topic_ids,
+        hot_score,
+        quality_score,
+        freshness_score,
+        updated_time
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM content_feature_snapshot
+        WHERE content_id = #{contentId}
+        LIMIT 1
+    </select>
+
+    <insert id="upsert" parameterType="org.doubao.recommend.service.domain.ContentFeature">
+        INSERT INTO content_feature_snapshot
+        (content_id, title, content, author, source, dynasty, poetry_category, author_id, 
+         tag_names, topic_ids, hot_score, quality_score, freshness_score, updated_time)
+        VALUES
+        (#{contentId}, #{title}, #{content}, #{author}, #{source}, #{dynasty}, #{poetryCategory}, 
+         #{authorId}, #{tagNames}, #{topicIds}, #{hotScore}, #{qualityScore}, #{freshnessScore}, NOW())
+        ON DUPLICATE KEY UPDATE
+        title = VALUES(title),
+        content = VALUES(content),
+        author = VALUES(author),
+        source = VALUES(source),
+        dynasty = VALUES(dynasty),
+        poetry_category = VALUES(poetry_category),
+        author_id = VALUES(author_id),
+        tag_names = VALUES(tag_names),
+        topic_ids = VALUES(topic_ids),
+        hot_score = VALUES(hot_score),
+        quality_score = VALUES(quality_score),
+        freshness_score = VALUES(freshness_score),
+        updated_time = NOW()
+    </insert>
+
+</mapper>
