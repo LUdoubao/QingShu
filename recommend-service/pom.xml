@@ -12,8 +12,7 @@
     <packaging>pom</packaging>
 
     <modules>
-<!--        <module>recommend-service-api</module>-->
         <module>recommend-service-server</module>
-<!--        <module>recommend-service-starter</module>-->
+        <module>recommend-service-starter</module>
     </modules>
 </project>

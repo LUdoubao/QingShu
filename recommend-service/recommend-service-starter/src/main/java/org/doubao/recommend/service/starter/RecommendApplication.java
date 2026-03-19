@@ -1,4 +1,4 @@
-package org.doubao.recommend.service;
+package org.doubao.recommend.service.starter;
 
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
