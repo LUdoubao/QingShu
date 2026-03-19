@@ -70,7 +70,7 @@ public class AIServiceImpl implements AIService{
 				.build();
 	}
 
-	public ChatResponse sendChatRequest(String userId, String content, String author, String source, String model, String id, String twice, String isPoetry) throws IOException {
+	public ChatResponse sendChatRequest(String userId, String content, String author, String title, String model, String id, String twice, String isPoetry) throws IOException {
 		if(twice == null || !twice.equals("true")) {
 			// 从redis获取
 			if (Boolean.TRUE.equals(redisTemplate.hasKey(AI_KEY + id))) {
@@ -88,7 +88,7 @@ public class AIServiceImpl implements AIService{
 		model = DoubaoUtils.isEmpty(model) ? deepseekModel : model;
 
 		// 第一次获取或二次刷新
-		ChatRequest request = buildRequest(content, author, source, isPoetry);
+		ChatRequest request = buildRequest(content, author, title, isPoetry);
 		request.setModel(model);
 
 		String finalUrl = url;
@@ -121,8 +121,8 @@ public class AIServiceImpl implements AIService{
 		});
 	}
 
-	public ChatRequest buildRequest(String content, String author, String source, String isPoetry) {
-		String formattedPrompt = createStandardPrompt(content, author, source, isPoetry);
+	public ChatRequest buildRequest(String content, String author, String title, String isPoetry) {
+		String formattedPrompt = createStandardPrompt(content, author, title, isPoetry);
 		ChatRequest request = new ChatRequest();
 		request.setStream(false);
 		request.setMessages(Arrays.asList(
@@ -140,13 +140,13 @@ public class AIServiceImpl implements AIService{
 	}
 
 
-	private String createStandardPrompt(String content, String author, String source, String isPoetry) {
+	private String createStandardPrompt(String content, String author, String title, String isPoetry) {
 		if (isPoetry.equals("true")) {
 			return "## 引文拓展要求\n\n" +
 					"### 引文信息\n" +
 					"- **引文内容**: " + content + "\n" +
 					"- **引文作者**: " + author + "\n" +
-					"- **引文来源**: " + source + "\n\n" +
+					"- **引文来源**: " + title + "\n\n" +
 					"### 分析要求\n" +
 					"请按照以下Markdown格式规范给出拓展内容：\n\n" +
 					"#### 1. 全文\n" +
@@ -166,7 +166,7 @@ public class AIServiceImpl implements AIService{
 				"### 引文信息\n" +
 				"- **引文内容**: " + content + "\n" +
 				"- **引文作者**: " + author + "\n" +
-				"- **引文来源**: " + source + "\n\n" +
+				"- **引文来源**: " + title + "\n\n" +
 				"### 分析要求\n" +
 				"请按照以下Markdown格式规范进行专业分析,并直接给出分析内容：\n\n" +
 				"#### 1. 引文赏析\n" +
@@ -256,12 +256,12 @@ public class AIServiceImpl implements AIService{
 
 		String id = request.get("id");
 		String content = request.get("content");
-		String source = request.get("source");
+		String title = request.get("title");
 		String author = request.get("author");
 		String model = request.get("model");
 		String twice = request.get("twice");
 		String isPoetry = request.get("isPoetry");
-		ChatResponse response = sendChatRequest(userId, content, author, source,model, id, twice, isPoetry);
+		ChatResponse response = sendChatRequest(userId, content, author, title,model, id, twice, isPoetry);
 
 		// 提取AI回复内容
 		return response.getChoices().get(0).getMessage().getContent();
