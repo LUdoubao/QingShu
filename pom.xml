@@ -29,6 +29,7 @@
 		<module>search-service</module>
 		<module>topic-service</module>
         <module>doubao-starter</module>
+        <module>recommend-service</module>
     </modules>
 
 	<properties>
