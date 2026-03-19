@@ -123,6 +123,13 @@
             <artifactId>topic-service-server</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+
+        <!-- 推荐服务 -->
+        <dependency>
+            <groupId>com.doubao</groupId>
+            <artifactId>recommend-service-server</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
