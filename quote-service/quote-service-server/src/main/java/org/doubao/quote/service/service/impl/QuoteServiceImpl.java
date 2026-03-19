@@ -88,7 +88,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	@Override
 	public Result<Void> addQuote(QuoteDTO dto) {
 		// 检查引文是否重复
-		DecisionEngine.DuplicationResult duplicationResult = citationCheckService.checkCitation(dto.getContent(), dto.getAuthor(), dto.getSource(), dto.getOriginal() == 1);
+		DecisionEngine.DuplicationResult duplicationResult = citationCheckService.checkCitation(dto.getContent(), dto.getAuthor(), dto.getTitle(), dto.getOriginal() == 1);
 		if (duplicationResult.getStatus() == DecisionEngine.DuplicationStatus.DUPLICATE) {
 			throw new BusinessException(ErrorCode.CONTENT_EXISTS);
 		}
@@ -101,6 +101,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
+		q.setTitle(dto.getTitle());
 		q.setOriginal(dto.getOriginal());
 		// 默认引文状态为待审核
 		q.setStatus(QuoteStatus.AUDITING.getCode());
@@ -544,6 +545,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				map.put("content", quoteVo.getContent());
 				map.put("author", quoteVo.getAuthor());
 				map.put("source", quoteVo.getSource());
+				map.put("title", quoteVo.getTitle());
 				map.put("categoryName", quoteVo.getCategoryName());
 				map.put("tags", quoteVo.getTags());
 				map.put("createdId", quoteVo.getCreatedId());
@@ -983,6 +985,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quote.setContent(dto.getContent());
 			quote.setAuthor(dto.getAuthor());
 			quote.setSource(dto.getSource());
+			quote.setTitle(dto.getTitle());
 			quote.setOriginal(dto.getOriginal());
 			this.updateById(quote);
 
@@ -1009,6 +1012,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setContent(dto.getContent());
 		q.setAuthor(dto.getAuthor());
 		q.setSource(dto.getSource());
+		q.setTitle(dto.getTitle());
 		q.setOriginal(dto.getOriginal());
 		q.setStatus(QuoteStatus.DRAFT.getCode());
 		this.save(q);

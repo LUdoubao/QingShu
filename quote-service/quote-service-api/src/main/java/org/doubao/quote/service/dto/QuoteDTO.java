@@ -10,10 +10,19 @@ public class QuoteDTO {
 	private String content;
 	private String author;
 	private String source;
+	private String title;
 	private List<Long> tagIds;
 	private int status;
 	private Long createdId;
 	private int original;
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
 	public List<Long> getTopicIds() {
 		return topicIds;

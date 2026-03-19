@@ -16,10 +16,20 @@ public class QuoteVerify extends BaseEntity {
 	private String author;
 	@TableField(value = "source")
 	private String source;
+	@TableField("title")
+	private String title;
 	@TableField("category_id")
 	private Long categoryId;
 	@TableField("tag")
 	private String tag;
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
 
 	public String getTag() {
 		return tag;

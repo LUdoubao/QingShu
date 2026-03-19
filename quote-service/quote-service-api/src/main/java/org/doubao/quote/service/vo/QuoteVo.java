@@ -17,6 +17,10 @@ public class QuoteVo extends BaseEntity {
 	 */
 	private String content;
 	/**
+	 * 引文内容繁体
+	 */
+	private String contentTraditional;
+	/**
 	 * 引文作者
 	 */
 	private String author;
@@ -55,8 +59,41 @@ public class QuoteVo extends BaseEntity {
 	 * 状态
 	 */
 	private Integer status;
+	/**
+	 * 朝代
+	 */
+	private String dynasty;
+
+	/**
+	 * 标题
+	 */
+	private String title;
 
 	private TopicNameVo topic;
+
+	public String getTitle() {
+		return title;
+	}
+
+	public void setTitle(String title) {
+		this.title = title;
+	}
+
+	public String getContentTraditional() {
+		return contentTraditional;
+	}
+
+	public void setContentTraditional(String contentTraditional) {
+		this.contentTraditional = contentTraditional;
+	}
+
+	public String getDynasty() {
+		return dynasty;
+	}
+
+	public void setDynasty(String dynasty) {
+		this.dynasty = dynasty;
+	}
 
 	public TopicNameVo getTopic() {
 		return topic;
