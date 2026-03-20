@@ -1,6 +1,11 @@
 package org.doubao.recommend.service.domain;
 
 
+import org.doubao.mall.common.vo.TagVo;
+import org.doubao.mall.common.vo.TopicNameVo;
+
+import java.util.List;
+
 /**
  * 推荐物品对象
  * 用于表示推荐系统最终返回给用户的推荐结果
@@ -51,18 +56,16 @@ public class RecommendItem {
      * 关联到作者的 unique identifier
      */
     private Long authorId;
+
+    /**
+     * 标签名称列表
+     */
+    private List<TagVo> tagVos;
     
     /**
-     * 标签名称列表（逗号分隔）
-     * 存储与内容相关的标签，多个标签用逗号分隔
+     * 话题名称列表
      */
-    private String tagNames;
-    
-    /**
-     * 话题 ID 列表（逗号分隔）
-     * 存储内容关联的话题 ID，多个话题用逗号分隔
-     */
-    private String topicIds;
+    private List<TopicNameVo> topicNameVos;
     
     /**
      * 综合评分
@@ -222,36 +225,20 @@ public class RecommendItem {
         this.authorId = authorId;
     }
 
-    /**
-     * 获取标签名称列表
-     * @return 标签名称列表（逗号分隔）
-     */
-    public String getTagNames() {
-        return tagNames;
+    public List<TagVo> getTagVos() {
+        return tagVos;
     }
 
-    /**
-     * 设置标签名称列表
-     * @param tagNames 标签名称列表（逗号分隔）
-     */
-    public void setTagNames(String tagNames) {
-        this.tagNames = tagNames;
+    public void setTagVos(List<TagVo> tagVos) {
+        this.tagVos = tagVos;
     }
 
-    /**
-     * 获取话题 ID 列表
-     * @return 话题 ID 列表（逗号分隔）
-     */
-    public String getTopicIds() {
-        return topicIds;
+    public List<TopicNameVo> getTopicNameVos() {
+        return topicNameVos;
     }
 
-    /**
-     * 设置话题 ID 列表
-     * @param topicIds 话题 ID 列表（逗号分隔）
-     */
-    public void setTopicIds(String topicIds) {
-        this.topicIds = topicIds;
+    public void setTopicNameVos(List<TopicNameVo> topicNameVos) {
+        this.topicNameVos = topicNameVos;
     }
 
     /**

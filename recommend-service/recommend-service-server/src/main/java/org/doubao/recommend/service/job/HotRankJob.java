@@ -67,6 +67,7 @@ public class HotRankJob {
             // 将新的热度数据逐个添加到 Redis 有序集合中
             int successCount = 0;
             for (HotStat stat : stats) {
+                logger.info("添加内容 {} 到排行榜，分数为 {}", stat.getContentId(), stat.getScore());
                 stringRedisTemplate.opsForZSet().add(
                     RedisKeys.HOT_HOME_ZSET, 
                     String.valueOf(stat.getContentId()), 

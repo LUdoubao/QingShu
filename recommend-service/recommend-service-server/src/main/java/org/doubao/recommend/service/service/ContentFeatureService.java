@@ -1,5 +1,12 @@
 package org.doubao.recommend.service.service;
 
+import com.alibaba.fastjson.JSON;
+import org.doubao.mall.common.util.DoubaoUtils;
+import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.TagVo;
+import org.doubao.mall.common.vo.UserLoginVo;
+import org.doubao.quote.service.service.QuoteService;
+import org.doubao.quote.service.vo.QuoteVo;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.ContentFeature;
 import org.doubao.recommend.service.mapper.ContentFeatureSnapshotMapper;
@@ -10,7 +17,9 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,6 +46,8 @@ public class ContentFeatureService {
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Resource
+    private QuoteService quoteService;
     /**
      * 根据内容 ID 获取内容特征
      * 采用缓存优先策略：先查 Redis，未命中则查数据库并回写缓存
@@ -61,6 +72,14 @@ public class ContentFeatureService {
         // 如果查询到数据，进行丰富处理并写入缓存
         if (feature != null) {
             enrich(feature);
+            UserLoginVo user = UserContext.getUser();
+            List<QuoteVo> quoteVos = quoteService.recommendList(Collections.singletonList(contentId), DoubaoUtils.isNotEmpty(user) ? user.getId() : null);
+            if (DoubaoUtils.isNotEmpty(quoteVos)) {
+                QuoteVo quoteVo = quoteVos.get(0);
+                if (quoteVo != null) {
+                    convert(feature, quoteVo);
+                }
+            }
             redisTemplate.opsForValue().set(key, feature);
         }
         return feature;
@@ -78,9 +97,32 @@ public class ContentFeatureService {
             return new ArrayList<>();
         }
         // 批量查询并逐个丰富处理
-        return recommendQuoteMapper.selectFeaturesByIds(ids).stream().peek(this::enrich).collect(Collectors.toList());
+        List<ContentFeature> collect = recommendQuoteMapper.selectFeaturesByIds(ids).stream().peek(this::enrich).collect(Collectors.toList());
+        // 批量查询引文信息
+        UserLoginVo user = UserContext.getUser();
+        List<QuoteVo> quoteVos = quoteService.recommendList(ids, DoubaoUtils.isNotEmpty(user) ? user.getId() : null);
+        collect.forEach(feature -> {
+            if (DoubaoUtils.isNotEmpty(quoteVos)) {
+                QuoteVo quoteVo = quoteVos.stream().filter(quote -> quote.getId().equals(feature.getContentId())).findFirst().orElse(null);
+                if (quoteVo != null) {
+                    convert(feature, quoteVo);
+                }
+            }
+        });
+        return collect;
     }
 
+    private void convert(ContentFeature feature, QuoteVo quoteVo) {
+        feature.setContentId(quoteVo.getId());
+        feature.setContent(quoteVo.getContent());
+        feature.setTitle(quoteVo.getTitle());
+        feature.setAuthor(quoteVo.getAuthor());
+        feature.setDynasty(quoteVo.getDynasty());
+        feature.setSource(quoteVo.getSource());
+        feature.setTagVos(JSON.parseArray(JSON.toJSONString(quoteVo.getTags()), TagVo.class));
+        feature.setTopicNameVos(Collections.singletonList(quoteVo.getTopic()));
+        feature.setCreatedTime(quoteVo.getCreatedTime());
+    }
     /**
      * 保存内容特征快照
      * 将内容特征持久化到数据库并更新 Redis 缓存
@@ -124,8 +166,8 @@ public class ContentFeatureService {
             double quality = 0.0;
             if (feature.getTitle() != null && !feature.getTitle().isEmpty()) quality += 0.2;  // 标题完整 +0.2
             if (feature.getAuthor() != null && !feature.getAuthor().isEmpty()) quality += 0.15;  // 作者完整 +0.15
-            if (feature.getTagNames() != null && !feature.getTagNames().isEmpty()) quality += 0.25;  // 标签完整 +0.25
-            if (feature.getTopicIds() != null && !feature.getTopicIds().isEmpty()) quality += 0.2;  // 话题完整 +0.2
+            if (DoubaoUtils.isNotEmpty(feature.getTagVos())) quality += 0.25;  // 标签完整 +0.25
+            if (DoubaoUtils.isNotEmpty(feature.getTopicNameVos())) quality += 0.2;  // 话题完整 +0.2
             if (feature.getContent() != null && feature.getContent().length() >= 10) quality += 0.2;  // 内容长度足够 +0.2
             if (feature.getDynasty() != null && !feature.getDynasty().isEmpty()) quality += 0.05;  // 朝代完整 +0.05
             feature.setQualityScore(Math.min(1.0, quality));  // 限制最大值为 1.0

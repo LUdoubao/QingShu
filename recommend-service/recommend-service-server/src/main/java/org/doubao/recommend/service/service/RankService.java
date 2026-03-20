@@ -127,8 +127,8 @@ public class RankService {
             item.setDynasty(feature.getDynasty());
             item.setPoetryCategory(feature.getPoetryCategory());
             item.setAuthorId(feature.getAuthorId());
-            item.setTagNames(feature.getTagNames());
-            item.setTopicIds(feature.getTopicIds());
+            item.setTagVos(feature.getTagVos());
+            item.setTopicNameVos(feature.getTopicNameVos());
             item.setScore(finalScore);  // 综合分数
             item.setHotScore(hot);  // 热度分数
             item.setQualityScore(quality);  // 质量分数

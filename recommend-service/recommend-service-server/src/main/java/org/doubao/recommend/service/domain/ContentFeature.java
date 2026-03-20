@@ -1,8 +1,13 @@
 package org.doubao.recommend.service.domain;
 
+import org.doubao.mall.common.util.DoubaoUtils;
+import org.doubao.mall.common.vo.TagVo;
+import org.doubao.mall.common.vo.TopicNameVo;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,18 +61,16 @@ public class ContentFeature {
      * 关联到作者的 unique identifier
      */
     private Long authorId;
-    
+
     /**
-     * 标签名称列表（逗号分隔）
-     * 存储与内容相关的标签，多个标签用逗号分隔
+     * 标签名称列表
      */
-    private String tagNames;
-    
+    private List<TagVo> tagVos;
+
     /**
-     * 话题 ID 列表（逗号分隔）
-     * 存储内容关联的话题 ID，多个话题用逗号分隔
+     * 话题名称列表
      */
-    private String topicIds;
+    private List<TopicNameVo> topicNameVos;
     
     /**
      * 创建时间
@@ -99,38 +102,6 @@ public class ContentFeature {
      */
     private Double matchScore = 0.0;
 
-    /**
-     * 获取标签列表
-     * 将逗号分隔的标签字符串转换为 List 格式
-     *
-     * @return 标签列表
-     */
-    public List<String> tagList() {
-        if (tagNames == null || tagNames.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return Arrays.stream(tagNames.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * 获取话题 ID 列表
-     * 将逗号分隔的话题 ID 字符串转换为 Long 类型的 List 格式
-     *
-     * @return 话题 ID 列表
-     */
-    public List<Long> topicIdList() {
-        if (topicIds == null || topicIds.isEmpty()) {
-            return new ArrayList<>();
-        }
-        return Arrays.stream(topicIds.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Long::valueOf)
-                .collect(Collectors.toList());
-    }
 
     /**
      * 获取内容正文
@@ -260,36 +231,20 @@ public class ContentFeature {
         this.authorId = authorId;
     }
 
-    /**
-     * 获取标签名称列表（逗号分隔）
-     * @return 标签名称列表
-     */
-    public String getTagNames() {
-        return tagNames;
+    public List<TagVo> getTagVos() {
+        return tagVos;
     }
 
-    /**
-     * 设置标签名称列表
-     * @param tagNames 标签名称列表（逗号分隔）
-     */
-    public void setTagNames(String tagNames) {
-        this.tagNames = tagNames;
+    public void setTagVos(List<TagVo> tagVos) {
+        this.tagVos = tagVos;
     }
 
-    /**
-     * 获取话题 ID 列表（逗号分隔）
-     * @return 话题 ID 列表
-     */
-    public String getTopicIds() {
-        return topicIds;
+    public List<TopicNameVo> getTopicNameVos() {
+        return topicNameVos;
     }
 
-    /**
-     * 设置话题 ID 列表
-     * @param topicIds 话题 ID 列表（逗号分隔）
-     */
-    public void setTopicIds(String topicIds) {
-        this.topicIds = topicIds;
+    public void setTopicNameVos(List<TopicNameVo> topicNameVos) {
+        this.topicNameVos = topicNameVos;
     }
 
     /**
@@ -370,5 +325,20 @@ public class ContentFeature {
      */
     public void setMatchScore(Double matchScore) {
         this.matchScore = matchScore;
+    }
+
+
+    public List<String> tagList() {
+        if (DoubaoUtils.isEmpty(tagVos)) {
+            return Collections.emptyList();
+        }
+        return tagVos.stream().map(TagVo::getName).collect(Collectors.toList());
+    }
+
+    public List<Long> topicIdList() {
+        if (DoubaoUtils.isEmpty(topicNameVos)) {
+            return Collections.emptyList();
+        }
+        return topicNameVos.stream().map(TopicNameVo::getId).collect(Collectors.toList());
     }
 }

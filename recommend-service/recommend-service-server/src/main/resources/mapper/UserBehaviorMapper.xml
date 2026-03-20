@@ -24,7 +24,7 @@
     </select>
 
     <select id="selectHotStats" resultMap="HotStatResultMap">
-        SELECT content_id AS contentId,
+        SELECT content_id,
         SUM(
         CASE action_type
         WHEN 'view' THEN 1
