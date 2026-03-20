@@ -152,6 +152,13 @@
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjweaver</artifactId>
         </dependency>
+
+        <!-- 繁简转换库 opencc4j -->
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>opencc4j</artifactId>
+            <version>1.8.0</version>
+        </dependency>
     </dependencies>
 
     <build>
