@@ -119,9 +119,16 @@ public class ContentFeatureService {
         feature.setAuthor(quoteVo.getAuthor());
         feature.setDynasty(quoteVo.getDynasty());
         feature.setSource(quoteVo.getSource());
-        feature.setTagVos(JSON.parseArray(JSON.toJSONString(quoteVo.getTags()), TagVo.class));
-        feature.setTopicNameVos(Collections.singletonList(quoteVo.getTopic()));
+        feature.setTagVos(DoubaoUtils.isNotEmpty(quoteVo.getTags())
+                ? JSON.parseArray(JSON.toJSONString(quoteVo.getTags()), TagVo.class)
+                : null);
+        feature.setTopicNameVos(DoubaoUtils.isNotEmpty(quoteVo.getTopic())
+                ? Collections.singletonList(quoteVo.getTopic())
+                : null);
         feature.setCreatedTime(quoteVo.getCreatedTime());
+        feature.setOriginal(quoteVo.getOriginal());
+        feature.setUserInfo(quoteVo.getUserInfo());
+        feature.setFollow(quoteVo.isFollow());
     }
     /**
      * 保存内容特征快照

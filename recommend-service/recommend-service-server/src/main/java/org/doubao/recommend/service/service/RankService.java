@@ -134,6 +134,10 @@ public class RankService {
             item.setQualityScore(quality);  // 质量分数
             item.setFreshnessScore(freshness);  // 新鲜度分数
             item.setRecallSource(candidate.getRecallSource());  // 召回来源
+            item.setCreatedTime(feature.getCreatedTime());
+            item.setOriginal(feature.getOriginal());
+            item.setUserInfo(feature.getUserInfo());
+            item.setFollow(feature.isFollow());
             result.add(item);
         }
 

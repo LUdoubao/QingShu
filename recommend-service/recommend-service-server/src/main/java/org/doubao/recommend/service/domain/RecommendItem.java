@@ -1,9 +1,11 @@
 package org.doubao.recommend.service.domain;
 
 
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.vo.TagVo;
 import org.doubao.mall.common.vo.TopicNameVo;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -66,7 +68,20 @@ public class RecommendItem {
      * 话题名称列表
      */
     private List<TopicNameVo> topicNameVos;
-    
+    /**
+     * 原创
+     */
+    private int original;
+
+    /**
+     * 用户信息
+     */
+    private UserInfoDes userInfo;
+
+    /**
+     * 是否关注
+     */
+    private boolean follow;
     /**
      * 综合评分
      * 基于兴趣度、质量、热度、新鲜度等多维度计算的最终推荐分数
@@ -96,6 +111,43 @@ public class RecommendItem {
      * 标识该内容来自哪个召回通道（如：hot/tag/author/similar 等）
      */
     private String recallSource;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createdTime;
+
+    public int getOriginal() {
+        return original;
+    }
+
+    public void setOriginal(int original) {
+        this.original = original;
+    }
+
+    public UserInfoDes getUserInfo() {
+        return userInfo;
+    }
+
+    public void setUserInfo(UserInfoDes userInfo) {
+        this.userInfo = userInfo;
+    }
+
+    public boolean isFollow() {
+        return follow;
+    }
+
+    public void setFollow(boolean follow) {
+        this.follow = follow;
+    }
+
+    public LocalDateTime getCreatedTime() {
+        return createdTime;
+    }
+
+    public void setCreatedTime(LocalDateTime createdTime) {
+        this.createdTime = createdTime;
+    }
 
     /**
      * 获取内容 ID

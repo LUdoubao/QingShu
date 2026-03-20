@@ -1,5 +1,6 @@
 package org.doubao.recommend.service.domain;
 
+import org.doubao.mall.common.entity.UserInfoDes;
 import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.mall.common.vo.TagVo;
 import org.doubao.mall.common.vo.TopicNameVo;
@@ -77,7 +78,21 @@ public class ContentFeature {
      * 内容发布的时间戳
      */
     private LocalDateTime createdTime;
-    
+    /**
+     * 原创
+     */
+    private int original;
+
+    /**
+     * 用户信息
+     */
+    private UserInfoDes userInfo;
+
+    /**
+     * 是否关注
+     */
+    private boolean follow;
+
     /**
      * 热度分数，默认值为 0.0
      * 基于内容的浏览量、互动量等计算的实时热度
@@ -102,6 +117,29 @@ public class ContentFeature {
      */
     private Double matchScore = 0.0;
 
+    public UserInfoDes getUserInfo() {
+        return userInfo;
+    }
+
+    public void setUserInfo(UserInfoDes userInfo) {
+        this.userInfo = userInfo;
+    }
+
+    public boolean isFollow() {
+        return follow;
+    }
+
+    public void setFollow(boolean follow) {
+        this.follow = follow;
+    }
+
+    public int getOriginal() {
+        return original;
+    }
+
+    public void setOriginal(int original) {
+        this.original = original;
+    }
 
     /**
      * 获取内容正文
