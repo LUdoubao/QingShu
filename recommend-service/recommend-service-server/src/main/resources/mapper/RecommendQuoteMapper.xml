@@ -78,7 +78,7 @@
         FROM quote q
         LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
         LEFT JOIN quote_tag qt ON qt.quote_id = q.id
-        LEFT JOIN tag t ON t.id = qt.tag_id AND t.deleted = 0
+        LEFT JOIN tag t ON t.id = qt.tag_id
         WHERE q.deleted = 0 AND q.status = 1
         AND t.name IN
         <foreach collection="tags" item="tag" open="(" separator="," close=")">
