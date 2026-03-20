@@ -24,6 +24,8 @@ public interface QuoteService extends IService<Quote> {
 	 */
 	Result<Page<QuoteVo>> page(PageDto pageDto);
 
+	List<QuoteVo> recommendList(List<Long> ids, Long currentUserId);
+
 	/**
 	 * 新增引文
 	 * @param dto 引文数据传输对象

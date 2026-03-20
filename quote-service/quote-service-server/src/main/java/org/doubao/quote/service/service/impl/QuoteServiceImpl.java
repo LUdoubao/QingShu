@@ -86,6 +86,11 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 	}
 
 	@Override
+	public List<QuoteVo> recommendList(List<Long> ids, Long currentUserId) {
+		return queryByIds(ids, currentUserId);
+	}
+
+	@Override
 	public Result<Void> addQuote(QuoteDTO dto) {
 		// 检查引文是否重复
 		DecisionEngine.DuplicationResult duplicationResult = citationCheckService.checkCitation(dto.getContent(), dto.getAuthor(), dto.getTitle(), dto.getOriginal() == 1);
@@ -392,6 +397,62 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			pageVo.setRecords(quoteVoList);
 		}
 		return Result.success(pageVo);
+	}
+
+	private List<QuoteVo> queryByIds(List<Long> ids, Long currentUserId) {
+		List<Quote> records = this.listByIds(ids);
+		if (!records.isEmpty()) {
+			List<QuoteVo> quoteVoList = records.stream().map(quote -> {
+				QuoteVo quoteVo = new QuoteVo();
+				BeanUtils.copyProperties(quote, quoteVo);
+				return quoteVo;
+			}).collect(Collectors.toList());
+
+			List<Long> quoteIds = quoteVoList.stream().map(QuoteVo::getId).collect(Collectors.toList());
+
+			Map<Long, TopicNameVo> topicNameVoMap = topicClient.getNameByIds(quoteIds).getData();
+
+			// 获取创建者信息
+			Set<Long> createdIds = quoteVoList.stream().map(QuoteVo::getCreatedId).collect(Collectors.toSet());
+			List<UserInfoDes> userInfos = userClient.getUsersByIds(createdIds).getData();
+			// 获取关注信息
+			Map<Long, Boolean> followMap = new HashMap<>();
+			if (DoubaoUtils.isNotEmpty(currentUserId)) {
+				followMap = userClient.isFollow(currentUserId, createdIds).getData();
+			}
+
+			List<Map<String, Object>> tagMappings = quoteTagMapper.selectQuoteTagsWithDetails(quoteIds);
+
+
+			// 构建 quoteId -> List<Tag>
+			Map<Long, List<Tag>> quoteTagMap = new HashMap<>();
+			for (Map<String, Object> map : tagMappings) {
+				Long quoteId = ((Number) map.get("quote_id")).longValue();
+				Long tagId = ((Number) map.get("tag_id")).longValue();
+				String tagName = (String) map.get("tag_name");
+
+				Tag tag = new Tag();
+				tag.setId(tagId);
+				tag.setName(tagName);
+
+				quoteTagMap.computeIfAbsent(quoteId, k -> new ArrayList<>()).add(tag);
+			}
+
+			// 移除quoteVoList，removeQuoteIds中的
+			// 设置 tags 字段
+			for (QuoteVo quoteVo : quoteVoList) {
+				quoteVo.setTopic(DoubaoUtils.isNotEmpty(topicNameVoMap) ?
+						topicNameVoMap.getOrDefault(quoteVo.getId(), null) : null);
+				quoteVo.setTags(quoteTagMap.getOrDefault(quoteVo.getId(), new ArrayList<>()));
+				// 设置用户信息
+				Optional<UserInfoDes> first = userInfos.stream().filter(userInfo -> String.valueOf(userInfo.getId()).equals(String.valueOf(quoteVo.getCreatedId()))).findFirst();
+				first.ifPresent(quoteVo::setUserInfo);
+				// 设置是否关注
+				quoteVo.setFollow(followMap.getOrDefault(quoteVo.getCreatedId(), false));
+			}
+			return quoteVoList;
+		}
+		return new ArrayList<>();
 	}
 
 	@Override
