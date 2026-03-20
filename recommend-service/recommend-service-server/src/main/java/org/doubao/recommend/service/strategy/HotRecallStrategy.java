@@ -53,7 +53,8 @@ public class HotRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(Long.valueOf(id));
             item.setRecallSource("hot");  // 标记来源为热门召回
-            item.setBaseScore(0.8);  // 设置基础分数为 0.8，较高优先级
+            item.setBaseScore(0.8);
+            item.setReason("hot_rank");  // 设置基础分数为 0.8，较高优先级
             list.add(item);
         }
         return list;

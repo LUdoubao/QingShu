@@ -26,6 +26,8 @@ public class CandidateItem {
      */
     private Double baseScore = 0.0;
 
+    private String reason;
+
     public Long getContentId() {
         return contentId;
     }
@@ -48,5 +50,13 @@ public class CandidateItem {
 
     public void setBaseScore(Double baseScore) {
         this.baseScore = baseScore;
+    }
+
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
     }
 }

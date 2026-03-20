@@ -58,7 +58,7 @@ public class UserProfileService {
      * @param userIdentity 用户身份标识
      * @return 用户画像对象，如果不存在则返回 null
      */
-    public UserProfile getProfile(String userIdentity) {
+    public UserProfile loadProfile(String userIdentity) {
         if (userIdentity == null || userIdentity.isEmpty()) {
             return null;
         }
@@ -183,8 +183,19 @@ public class UserProfileService {
      * @param limit 最大返回数量
      * @return 最近的内容 ID 列表
      */
+    public UserProfile getProfile(String userIdentity) {
+        return loadProfile(userIdentity);
+    }
+
+    public void persistProfile(UserProfile profile) {
+        if (profile == null) {
+            return;
+        }
+        persist(profile);
+    }
+
     public List<Long> getRecentContentIds(String userIdentity, int limit) {
-        UserProfile profile = getProfile(userIdentity);
+        UserProfile profile = loadProfile(userIdentity);
         if (profile == null || profile.getRecentContentIds() == null) {
             return new ArrayList<>();
         }
@@ -200,7 +211,7 @@ public class UserProfileService {
      * @return 用户画像对象
      */
     private UserProfile getOrCreate(String userIdentity, Long userId) {
-        UserProfile profile = getProfile(userIdentity);
+        UserProfile profile = loadProfile(userIdentity);
         if (profile == null) {
             profile = new UserProfile();
             profile.setUserIdentity(userIdentity);

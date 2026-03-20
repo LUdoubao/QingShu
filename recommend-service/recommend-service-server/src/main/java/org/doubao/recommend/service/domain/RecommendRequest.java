@@ -49,6 +49,8 @@ public class RecommendRequest {
      * 用于分页查询，从第 1 页开始
      */
     private Integer page = 1;
+
+    private String cursor;
     
     /**
      * 每页大小，默认值为 20
@@ -117,6 +119,14 @@ public class RecommendRequest {
 
     public void setPage(Integer page) {
         this.page = page;
+    }
+
+    public String getCursor() {
+        return cursor;
+    }
+
+    public void setCursor(String cursor) {
+        this.cursor = cursor;
     }
 
     public Integer getPageSize() {

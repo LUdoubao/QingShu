@@ -48,8 +48,9 @@ public class ColdStartRecallStrategy implements RecallStrategy {
         recommendQuoteMapper.selectRecentPublished(null, 50).forEach(feature -> {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
-            item.setRecallSource("new");  // 标记来源为新品召回
-            item.setBaseScore(0.5);  // 设置基础分数为 0.5
+            item.setRecallSource("cold_start,new");  // 标记来源为新品召回
+            item.setBaseScore(0.5);
+            item.setReason("cold_start_fallback");  // 设置基础分数为 0.5
             list.add(item);
         });
         return list;

@@ -73,7 +73,8 @@ public class TopicRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("topic");  // 标记来源为话题召回
-            item.setBaseScore(0.75);  // 设置基础分数为 0.75
+            item.setBaseScore(0.75);
+            item.setReason("preferred_topic");  // 设置基础分数为 0.75
             list.add(item);
         }
         return list;

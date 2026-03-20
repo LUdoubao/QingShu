@@ -9,7 +9,7 @@ import javax.annotation.Resource;
 import java.time.LocalDateTime;
 
 @RestController
-@RequestMapping("/behavior")
+@RequestMapping({"/behavior", "/api/behavior"})
 public class BehaviorController {
 
     @Resource

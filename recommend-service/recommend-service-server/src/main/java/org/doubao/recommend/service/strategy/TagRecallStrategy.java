@@ -75,7 +75,8 @@ public class TagRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("tag");  // 标记来源为标签召回
-            item.setBaseScore(0.7);  // 设置基础分数为 0.7
+            item.setBaseScore(0.7);
+            item.setReason("preferred_tag");  // 设置基础分数为 0.7
             list.add(item);
         }
         return list;

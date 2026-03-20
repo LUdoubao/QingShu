@@ -73,7 +73,8 @@ public class AuthorRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("author");  // 标记来源为作者召回
-            item.setBaseScore(0.7);  // 设置基础分数为 0.7
+            item.setBaseScore(0.7);
+            item.setReason("preferred_author");  // 设置基础分数为 0.7
             list.add(item);
         }
         return list;

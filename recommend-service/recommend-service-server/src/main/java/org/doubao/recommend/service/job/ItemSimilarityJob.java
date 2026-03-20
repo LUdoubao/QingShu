@@ -3,7 +3,7 @@ package org.doubao.recommend.service.job;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.ContentFeature;
 import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -26,7 +26,7 @@ public class ItemSimilarityJob {
      * 用于将计算好的相似内容列表写入 Redis 缓存
      */
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private StringRedisTemplate stringRedisTemplate;
 
     /**
      * 重建相似内容缓存定时任务
@@ -48,15 +48,13 @@ public class ItemSimilarityJob {
         for (ContentFeature seed : candidates) {
             List<ScoredId> similarList = findSimilar(seed, candidates, 20);
     
-            // 3. 转成 ID 列表
-            List<Long> ids = new ArrayList<>();
-            for (ScoredId s : similarList) {
-                ids.add(s.getId());
-            }
-    
-            // 4. 写入 Redis（带过期时间）
+            // 3. 写入 Redis ZSET（member=contentId, score=similarity）
             String key = RedisKeys.SIMILAR_PREFIX + seed.getContentId();
-            redisTemplate.opsForValue().set(key, ids, 6, TimeUnit.HOURS);
+            stringRedisTemplate.delete(key);
+            for (ScoredId s : similarList) {
+                stringRedisTemplate.opsForZSet().add(key, String.valueOf(s.getId()), s.getScore());
+            }
+            stringRedisTemplate.expire(key, 6, TimeUnit.HOURS);
         }
     }
 
