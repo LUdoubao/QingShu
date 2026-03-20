@@ -881,6 +881,13 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		// 2. 计算总文章数
 		long totalArticles = quoteIds.size();
 
+		ContentOverviewVo overviewVo = new ContentOverviewVo();
+		overviewVo.setTotalArticles(totalArticles);
+
+		if(totalArticles > 1000) {
+			return overviewVo;
+		}
+
 		// 3. 计算总浏览量（通过ViewCountClient获取）
 		long totalViews = 0;
 		if (!quoteIds.isEmpty()) {
@@ -918,8 +925,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 
 		// 组装结果VO
-		ContentOverviewVo overviewVo = new ContentOverviewVo();
-		overviewVo.setTotalArticles(totalArticles);
+
 		overviewVo.setTotalViews(totalViews);
 		overviewVo.setTotalLikes(totalLikes);
 		overviewVo.setTotalComments(totalComments);
