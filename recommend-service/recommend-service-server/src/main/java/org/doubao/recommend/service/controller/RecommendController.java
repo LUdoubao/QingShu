@@ -19,7 +19,27 @@ public class RecommendController {
     private RecommendService recommendService;
     @Resource
     private FeedService feedService;
-
+    @GetMapping("/feed")
+    public Result<FeedResponse> feed(@RequestParam String userIdentity,
+                                     @RequestParam(required = false) String cursor,
+                                     @RequestParam(defaultValue = "20") Integer size,
+                                     @RequestParam(defaultValue = "home") String scene,
+                                     @RequestParam(required = false) Long contentId,
+                                     @RequestParam(required = false) Long topicId,
+                                     @RequestParam(required = false) String author,
+                                     @RequestParam(required = false) Long userId) {
+        RecommendRequest request = new RecommendRequest();
+        request.setUserId(userId);
+        request.setUserIdentity(userIdentity);
+        request.setCursor(cursor);
+        request.setPageSize(size);
+        request.setScene(scene);
+        request.setContentId(contentId);
+        request.setTopicId(topicId);
+        request.setAuthor(author);
+        request.setLimit(Math.max(size == null ? 20 : size * 5, 100));
+        return Result.success(feedService.getFeed(request));
+    }
     @GetMapping("/home")
     public Result<FeedResponse> home(@RequestParam(required = false) Long userId,
                                      @RequestParam(required = false) String userIdentity,
