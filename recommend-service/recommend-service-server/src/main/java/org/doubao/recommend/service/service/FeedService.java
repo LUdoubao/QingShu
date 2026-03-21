@@ -1,6 +1,13 @@
 package org.doubao.recommend.service.service;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.doubao.mall.common.util.DoubaoUtils;
+import org.doubao.mall.common.util.UserContext;
+import org.doubao.mall.common.vo.TagVo;
+import org.doubao.mall.common.vo.UserLoginVo;
+import org.doubao.quote.service.service.QuoteService;
+import org.doubao.quote.service.vo.QuoteVo;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.*;
 import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
@@ -36,7 +43,8 @@ public class FeedService {
     private UserProfileService userProfileService;
     @Resource
     private RecommendQuoteMapper recommendQuoteMapper;
-
+    @Resource
+    private QuoteService quoteService;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private static final int FALLBACK_SCAN_BATCH_SIZE = 200;
     private static final int FALLBACK_SCAN_MAX_ROUNDS = 6;
@@ -69,7 +77,7 @@ public class FeedService {
         if (page.size() < request.getPageSize()) {
             List<RecommendItem> fallbackItems = loadFallbackItems(request, seen, previousSession, page);
             mergePageItems(page, fallbackItems, request.getPageSize());
-            hasMore = hasMore || fallbackItems.size() > Math.max(0, request.getPageSize() - filtered.size());
+            hasMore = hasMore || fallbackItems.size() >= Math.max(0, request.getPageSize() - filtered.size());
         }
 
         FeedResponse response = new FeedResponse();
@@ -219,7 +227,7 @@ public class FeedService {
         int batchSize = Math.max(FALLBACK_SCAN_BATCH_SIZE, missing * 4);
         for (int round = 0; round < FALLBACK_SCAN_MAX_ROUNDS && collected.size() < request.getPageSize(); round++) {
             List<ContentFeature> features = recommendQuoteMapper.selectRecentPublishedBeforeId(request.getAuthor(), anchorId, batchSize);
-            if (features == null || features.isEmpty()) {
+            if (DoubaoUtils.isEmpty(features)) {
                 break;
             }
             anchorId = features.stream()
@@ -260,11 +268,39 @@ public class FeedService {
         if (currentPage == null || currentPage.isEmpty()) {
             return new ArrayList<>(collected.values());
         }
-        return collected.values().stream()
+        List<RecommendItem> collect = collected.values().stream()
                 .filter(item -> currentPage.stream().noneMatch(existing -> existing != null && Objects.equals(existing.getContentId(), item.getContentId())))
                 .collect(Collectors.toList());
+        List<Long> ids = collect.stream().map(RecommendItem::getContentId).collect(Collectors.toList());
+        // 批量查询引文信息
+        UserLoginVo user = UserContext.getUser();
+        List<QuoteVo> quoteVos = quoteService.recommendList(ids, DoubaoUtils.isNotEmpty(user) ? user.getId() : null);
+        collect.forEach(feature -> {
+            if (DoubaoUtils.isNotEmpty(quoteVos)) {
+                quoteVos.stream().filter(quote -> quote.getId().equals(feature.getContentId())).findFirst().ifPresent(
+                        quoteVo -> convert(feature, quoteVo));
+            }
+        });
+        return collect;
     }
-
+    private void convert(RecommendItem feature, QuoteVo quoteVo) {
+        feature.setContentId(quoteVo.getId());
+        feature.setContent(quoteVo.getContent());
+        feature.setTitle(quoteVo.getTitle());
+        feature.setAuthor(quoteVo.getAuthor());
+        feature.setDynasty(quoteVo.getDynasty());
+        feature.setSource(quoteVo.getSource());
+        feature.setTagVos(DoubaoUtils.isNotEmpty(quoteVo.getTags())
+                ? JSON.parseArray(JSON.toJSONString(quoteVo.getTags()), TagVo.class)
+                : null);
+        feature.setTopicNameVos(DoubaoUtils.isNotEmpty(quoteVo.getTopic())
+                ? Collections.singletonList(quoteVo.getTopic())
+                : null);
+        feature.setCreatedTime(quoteVo.getCreatedTime());
+        feature.setOriginal(quoteVo.getOriginal());
+        feature.setUserInfo(quoteVo.getUserInfo());
+        feature.setFollow(quoteVo.isFollow());
+    }
     private void mergePageItems(List<RecommendItem> page, List<RecommendItem> fallbackItems, int pageSize) {
         if (fallbackItems == null || fallbackItems.isEmpty()) {
             return;
