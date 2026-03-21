@@ -7,13 +7,15 @@
         <result column="hotScore" property="hotScore"/>
         <result column="qualityScore" property="qualityScore"/>
         <result column="freshnessScore" property="freshnessScore"/>
+        <result column="createdTime" property="createdTime"/>
     </resultMap>
 
     <sql id="Base_Quote_Fields">
         q.id AS contentId,
         COALESCE(fs.hot_score, 0) AS hotScore,
         COALESCE(fs.quality_score, 0) AS qualityScore,
-        COALESCE(fs.freshness_score, 0) AS freshnessScore
+        COALESCE(fs.freshness_score, 0) AS freshnessScore,
+        q.created_time AS createdTime
     </sql>
 
     <sql id="Base_Join_Conditions">
@@ -51,6 +53,20 @@
             AND q.author = #{author}
         </if>
         ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectRecentPublishedBeforeId" resultMap="ContentFeatureResultMap">
+        SELECT
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        <if test="author != null and author != ''">
+            AND q.author = #{author}
+        </if>
+        <if test="maxContentId != null">
+            AND q.id &lt; #{maxContentId}
+        </if>
+        ORDER BY q.id DESC
         LIMIT #{limit}
     </select>
 

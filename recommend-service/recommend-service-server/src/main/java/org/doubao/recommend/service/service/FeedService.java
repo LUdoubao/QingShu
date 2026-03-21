@@ -3,6 +3,7 @@ package org.doubao.recommend.service.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.*;
+import org.doubao.recommend.service.mapper.RecommendQuoteMapper;
 import org.doubao.recommend.service.strategy.RecallStrategy;
 import org.doubao.recommend.service.util.CursorUtil;
 import org.doubao.recommend.service.util.SeenFilterUtil;
@@ -15,6 +16,7 @@ import javax.annotation.Resource;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,8 +34,12 @@ public class FeedService {
     private RedisTemplate<String, Object> redisTemplate;
     @Resource
     private UserProfileService userProfileService;
+    @Resource
+    private RecommendQuoteMapper recommendQuoteMapper;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private static final int FALLBACK_SCAN_BATCH_SIZE = 200;
+    private static final int FALLBACK_SCAN_MAX_ROUNDS = 6;
 
     @Value("${feed.default-size:20}")
     private int defaultSize;
@@ -49,6 +55,7 @@ public class FeedService {
     public FeedResponse getFeed(RecommendRequest request) {
         normalizeRequest(request);
         CursorInfo cursor = loadCursor(request);
+        FeedSession previousSession = loadSession(request);
         Set<String> seen = loadSeen(request.getUserIdentity());
         userProfileService.loadProfile(request.getUserIdentity());
         Set<CandidateItem> recalled = ensureEnoughCandidates(request, seen);
@@ -56,16 +63,23 @@ public class FeedService {
         List<CandidateItem> validCandidates = filterInvalidCandidates(recalled, featureMap);
         List<RecommendItem> ranked = rankService.rank(request, validCandidates, featureMap);
         List<RecommendItem> filtered = filterByCursor(ranked, cursor);
-        List<RecommendItem> paged = filtered.stream().limit(request.getPageSize()).collect(Collectors.toList());
+        List<RecommendItem> page = new ArrayList<>(filtered.stream().limit(request.getPageSize()).collect(Collectors.toList()));
+        boolean hasMore = filtered.size() > page.size();
+
+        if (page.size() < request.getPageSize()) {
+            List<RecommendItem> fallbackItems = loadFallbackItems(request, seen, previousSession, page);
+            mergePageItems(page, fallbackItems, request.getPageSize());
+            hasMore = hasMore || fallbackItems.size() > Math.max(0, request.getPageSize() - filtered.size());
+        }
 
         FeedResponse response = new FeedResponse();
-        response.setItems(paged);
-        response.setHasMore(filtered.size() > paged.size());
-        String nextCursor = paged.isEmpty() ? null : CursorUtil.buildCursor(paged.get(paged.size() - 1).getScore(), paged.get(paged.size() - 1).getContentId());
+        response.setItems(page);
+        response.setHasMore(hasMore);
+        String nextCursor = page.isEmpty() ? null : CursorUtil.buildCursor(page.get(page.size() - 1).getScore(), page.get(page.size() - 1).getContentId());
         response.setNextCursor(nextCursor);
-        FeedSession session = saveSession(request, nextCursor, paged.size());
+        FeedSession session = saveSession(request, nextCursor, page, previousSession);
         response.setSessionId(session.getSessionId());
-        markSeen(request.getUserIdentity(), paged);
+        markSeen(request.getUserIdentity(), page);
         saveCursor(request, nextCursor);
         return response;
     }
@@ -166,8 +180,7 @@ public class FeedService {
         stringRedisTemplate.opsForValue().set(key, nextCursor, Duration.ofHours(cursorTtlHours));
     }
 
-    private FeedSession saveSession(RecommendRequest request, String nextCursor, int returned) {
-        FeedSession session = loadSession(request);
+    private FeedSession saveSession(RecommendRequest request, String nextCursor, List<RecommendItem> returnedItems, FeedSession session) {
         LocalDateTime now = LocalDateTime.now();
         if (session == null) {
             session = new FeedSession();
@@ -177,7 +190,9 @@ public class FeedService {
         }
         session.setLastRequestTime(now);
         session.setLastCursor(nextCursor);
+        int returned = returnedItems == null ? 0 : returnedItems.size();
         session.setReturnedCount((session.getReturnedCount() == null ? 0 : session.getReturnedCount()) + returned);
+        session.setFallbackAnchorId(resolveFallbackAnchor(returnedItems, session));
         if (request.getUserIdentity() != null && !request.getUserIdentity().trim().isEmpty()) {
             try {
                 redisTemplate.opsForValue().set(RedisKeys.sessionKey(request.getUserIdentity(), request.getScene()), session, Duration.ofHours(cursorTtlHours));
@@ -185,6 +200,102 @@ public class FeedService {
             }
         }
         return session;
+    }
+
+    private List<RecommendItem> loadFallbackItems(RecommendRequest request, Set<String> seen, FeedSession session, List<RecommendItem> currentPage) {
+        int missing = request.getPageSize() - (currentPage == null ? 0 : currentPage.size());
+        if (missing <= 0) {
+            return Collections.emptyList();
+        }
+        LinkedHashMap<Long, RecommendItem> collected = new LinkedHashMap<>();
+        if (currentPage != null) {
+            currentPage.forEach(item -> {
+                if (item != null && item.getContentId() != null) {
+                    collected.put(item.getContentId(), item);
+                }
+            });
+        }
+        Long anchorId = session == null ? null : session.getFallbackAnchorId();
+        int batchSize = Math.max(FALLBACK_SCAN_BATCH_SIZE, missing * 4);
+        for (int round = 0; round < FALLBACK_SCAN_MAX_ROUNDS && collected.size() < request.getPageSize(); round++) {
+            List<ContentFeature> features = recommendQuoteMapper.selectRecentPublishedBeforeId(request.getAuthor(), anchorId, batchSize);
+            if (features == null || features.isEmpty()) {
+                break;
+            }
+            anchorId = features.stream()
+                    .map(ContentFeature::getContentId)
+                    .filter(Objects::nonNull)
+                    .min(Long::compareTo)
+                    .orElse(anchorId);
+            List<ContentFeature> freshFeatures = features.stream()
+                    .filter(Objects::nonNull)
+                    .filter(feature -> feature.getContentId() != null)
+                    .filter(feature -> !collected.containsKey(feature.getContentId()))
+                    .filter(feature -> seen == null || !seen.contains(String.valueOf(feature.getContentId())))
+                    .collect(Collectors.toList());
+            if (freshFeatures.isEmpty()) {
+                continue;
+            }
+            Map<Long, ContentFeature> fallbackFeatureMap = freshFeatures.stream()
+                    .collect(Collectors.toMap(ContentFeature::getContentId, Function.identity(), (left, right) -> left, LinkedHashMap::new));
+            List<CandidateItem> fallbackCandidates = freshFeatures.stream().map(feature -> {
+                CandidateItem item = new CandidateItem();
+                item.setContentId(feature.getContentId());
+                item.setRecallSource("fallback:deep_scan");
+                item.setBaseScore(0.35);
+                item.setReason("deep_scan_fill");
+                return item;
+            }).collect(Collectors.toList());
+            List<RecommendItem> rankedFallback = rankService.rank(request, fallbackCandidates, fallbackFeatureMap);
+            for (RecommendItem item : rankedFallback) {
+                if (item == null || item.getContentId() == null || collected.containsKey(item.getContentId())) {
+                    continue;
+                }
+                collected.put(item.getContentId(), item);
+                if (collected.size() >= request.getPageSize()) {
+                    break;
+                }
+            }
+        }
+        if (currentPage == null || currentPage.isEmpty()) {
+            return new ArrayList<>(collected.values());
+        }
+        return collected.values().stream()
+                .filter(item -> currentPage.stream().noneMatch(existing -> existing != null && Objects.equals(existing.getContentId(), item.getContentId())))
+                .collect(Collectors.toList());
+    }
+
+    private void mergePageItems(List<RecommendItem> page, List<RecommendItem> fallbackItems, int pageSize) {
+        if (fallbackItems == null || fallbackItems.isEmpty()) {
+            return;
+        }
+        Set<Long> existingIds = page.stream()
+                .filter(Objects::nonNull)
+                .map(RecommendItem::getContentId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        for (RecommendItem item : fallbackItems) {
+            if (item == null || item.getContentId() == null || existingIds.contains(item.getContentId())) {
+                continue;
+            }
+            page.add(item);
+            existingIds.add(item.getContentId());
+            if (page.size() >= pageSize) {
+                break;
+            }
+        }
+    }
+
+    private Long resolveFallbackAnchor(List<RecommendItem> returnedItems, FeedSession session) {
+        Long anchor = returnedItems == null ? null : returnedItems.stream()
+                .map(RecommendItem::getContentId)
+                .filter(Objects::nonNull)
+                .min(Long::compareTo)
+                .orElse(null);
+        if (anchor != null) {
+            return anchor;
+        }
+        return session == null ? null : session.getFallbackAnchorId();
     }
 
     private FeedSession loadSession(RecommendRequest request) {
