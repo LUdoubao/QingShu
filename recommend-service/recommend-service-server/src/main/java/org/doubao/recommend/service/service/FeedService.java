@@ -266,7 +266,18 @@ public class FeedService {
             }
         }
         if (currentPage == null || currentPage.isEmpty()) {
-            return new ArrayList<>(collected.values());
+            ArrayList<RecommendItem> recommendItems = new ArrayList<>(collected.values());
+            List<Long> ids = recommendItems.stream().map(RecommendItem::getContentId).collect(Collectors.toList());
+            // 批量查询引文信息
+            UserLoginVo user = UserContext.getUser();
+            List<QuoteVo> quoteVos = quoteService.recommendList(ids, DoubaoUtils.isNotEmpty(user) ? user.getId() : null);
+            recommendItems.forEach(feature -> {
+                if (DoubaoUtils.isNotEmpty(quoteVos)) {
+                    quoteVos.stream().filter(quote -> quote.getId().equals(feature.getContentId())).findFirst().ifPresent(
+                            quoteVo -> convert(feature, quoteVo));
+                }
+            });
+            return recommendItems;
         }
         List<RecommendItem> collect = collected.values().stream()
                 .filter(item -> currentPage.stream().noneMatch(existing -> existing != null && Objects.equals(existing.getContentId(), item.getContentId())))
