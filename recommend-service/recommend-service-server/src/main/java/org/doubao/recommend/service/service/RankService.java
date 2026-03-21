@@ -11,6 +11,16 @@ import java.util.stream.Collectors;
 @Service
 public class RankService {
 
+    private static final double INTEREST_WEIGHT = 0.40;
+    private static final double QUALITY_WEIGHT = 0.22;
+    private static final double HOT_WEIGHT = 0.18;
+    private static final double FRESHNESS_WEIGHT = 0.12;
+    private static final double RECALL_WEIGHT = 0.08;
+    private static final double TEXT_LENGTH_WEIGHT = 0.02;
+    private static final double EXPLORE_BONUS = 0.02;
+    private static final double AUTHOR_PENALTY_STEP = 0.02;
+    private static final double AUTHOR_PENALTY_MAX = 0.08;
+
     @Resource
     private UserProfileService userProfileService;
 
@@ -41,15 +51,21 @@ public class RankService {
             if (feature == null) {
                 continue;
             }
-            double interest = userProfileService.interestScore(profile, feature);
-            double hot = feature.getHotScore() == null ? 0.0 : feature.getHotScore();
-            double quality = feature.getQualityScore() == null ? 0.0 : feature.getQualityScore();
-            double freshness = feature.getFreshnessScore() == null ? 0.0 : feature.getFreshnessScore();
-            double explore = shouldExplore(candidate) ? 0.03 : 0.0;
+            double interest = normalize(userProfileService.interestScore(profile, feature));
+            double hot = normalize(feature.getHotScore());
+            double quality = normalize(feature.getQualityScore());
+            double freshness = normalize(feature.getFreshnessScore());
+            double baseScore = normalize(candidate.getBaseScore());
+            double explore = shouldExplore(candidate) ? EXPLORE_BONUS : 0.0;
             double diversityPenalty = authorPenalty(feature.getAuthor(), authorFrequency);
-            double finalScore = 0.35 * interest + 0.25 * quality + 0.20 * hot + 0.10 * freshness
-                    + 0.07 * defaultScore(candidate.getBaseScore()) + explore - diversityPenalty;
-            finalScore += 0.02 * ScoreUtils.safeLog1p(feature.getContent() == null ? 0 : feature.getContent().length());
+            double finalScore = INTEREST_WEIGHT * interest
+                    + QUALITY_WEIGHT * quality
+                    + HOT_WEIGHT * hot
+                    + FRESHNESS_WEIGHT * freshness
+                    + RECALL_WEIGHT * baseScore
+                    + explore
+                    - diversityPenalty;
+            finalScore += TEXT_LENGTH_WEIGHT * ScoreUtils.safeLog1p(feature.getContent() == null ? 0 : feature.getContent().length());
             RecommendItem item = buildItem(candidate, feature, hot, quality, freshness, finalScore);
             result.add(item);
             if (feature.getAuthor() != null) {
@@ -90,7 +106,10 @@ public class RankService {
             return 0.0;
         }
         int count = authorFrequency.getOrDefault(author, 0);
-        return count >= 2 ? 0.05 * (count - 1) : 0.0;
+        if (count < 2) {
+            return 0.0;
+        }
+        return Math.min(AUTHOR_PENALTY_MAX, AUTHOR_PENALTY_STEP * (count - 1));
     }
 
     private boolean shouldExplore(CandidateItem candidate) {
@@ -99,6 +118,10 @@ public class RankService {
 
     private double defaultScore(Double score) {
         return score == null ? 0.0 : score;
+    }
+
+    private double normalize(Double score) {
+        return Math.max(0.0, defaultScore(score));
     }
 
     private String mergeText(String left, String right) {

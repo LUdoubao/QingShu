@@ -39,9 +39,9 @@ recommend:
 
 feed:
   default-size: 20
-  max-candidates: 300
+  max-candidates: 1000
   seen-ttl-days: 7
   cursor-ttl-hours: 24
   hot-limit: 200
   similar-limit: 20
-  recall-limit-per-strategy: 50
+  recall-limit-per-strategy: 120

@@ -14,6 +14,8 @@ import java.util.Set;
 @Component
 public class HotRecallStrategy implements RecallStrategy {
 
+    private static final int DEFAULT_LIMIT = 200;
+
     /**
      * Redis String 模板
      * 用于从 Redis 有序集合中获取热门内容 ID 列表
@@ -44,7 +46,8 @@ public class HotRecallStrategy implements RecallStrategy {
     @Override
     public List<CandidateItem> recall(RecommendRequest request) {
         // 从 Redis 有序集合中按热度倒序获取前 200 个热门内容 ID
-        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange(RedisKeys.HOT_HOME_ZSET, 0, 199);
+        int limit = request.getLimit() == null || request.getLimit() <= 0 ? DEFAULT_LIMIT : Math.max(DEFAULT_LIMIT, request.getLimit());
+        Set<String> ids = stringRedisTemplate.opsForZSet().reverseRange(RedisKeys.HOT_HOME_ZSET, 0, limit - 1L);
         List<CandidateItem> list = new ArrayList<>();
         if (ids == null) return list;
         
