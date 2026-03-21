@@ -10,13 +10,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
 public class AuthorRecallStrategy implements RecallStrategy {
 
     private static final int DEFAULT_LIMIT = 50;
+    private static final int CORE_AUTHOR_COUNT = 2;
+    private static final int EXPLORE_AUTHOR_COUNT = 1;
 
     /**
      * 用户画像服务
@@ -60,10 +66,8 @@ public class AuthorRecallStrategy implements RecallStrategy {
             return new ArrayList<>();
         }
         
-        // 从用户画像中提取权重最高的前 3 个作者
-        List<String> authors = UserProfile.topEntries(profile.getAuthorWeights(), 3).stream()
-                .map(java.util.Map.Entry::getKey)
-                .collect(Collectors.toList());
+        // 作者召回降低集中度，保留主偏好作者的同时加入弱偏好作者做探索
+        List<String> authors = selectRecallAuthors(profile);
         if (authors.isEmpty()) return new ArrayList<>();
 
         // 根据作者查询内容，每个作者最多查询 50 条
@@ -75,11 +79,39 @@ public class AuthorRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("author");  // 标记来源为作者召回
-            item.setBaseScore(0.7);
-            item.setReason("preferred_author");  // 设置基础分数为 0.7
+            boolean explore = isExploreAuthor(profile, feature);
+            item.setBaseScore(explore ? 0.52 : 0.62);
+            item.setReason(explore ? "explore_author" : "preferred_author");
             list.add(item);
         }
         return list;
+    }
+
+    private List<String> selectRecallAuthors(UserProfile profile) {
+        List<Map.Entry<String, Double>> sorted = UserProfile.topEntries(profile.getAuthorWeights(), profile.getAuthorWeights().size());
+        if (sorted.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> selected = new LinkedHashSet<>();
+        sorted.stream()
+                .limit(CORE_AUTHOR_COUNT)
+                .map(Map.Entry::getKey)
+                .forEach(selected::add);
+        if (sorted.size() > CORE_AUTHOR_COUNT) {
+            int exploreIndex = CORE_AUTHOR_COUNT + Math.max(0, (sorted.size() - CORE_AUTHOR_COUNT) / 2);
+            sorted.subList(Math.min(exploreIndex, sorted.size() - 1), sorted.size()).stream()
+                    .limit(EXPLORE_AUTHOR_COUNT)
+                    .map(Map.Entry::getKey)
+                    .forEach(selected::add);
+        }
+        return new ArrayList<>(selected);
+    }
+
+    private boolean isExploreAuthor(UserProfile profile, ContentFeature feature) {
+        List<String> topAuthors = UserProfile.topEntries(profile.getAuthorWeights(), CORE_AUTHOR_COUNT).stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        return feature.getAuthor() != null && !topAuthors.contains(feature.getAuthor());
     }
 
     private int resolveLimit(RecommendRequest request, int groupCount) {

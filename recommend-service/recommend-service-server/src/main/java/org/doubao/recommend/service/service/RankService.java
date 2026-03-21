@@ -17,7 +17,8 @@ public class RankService {
     private static final double FRESHNESS_WEIGHT = 0.12;
     private static final double RECALL_WEIGHT = 0.08;
     private static final double TEXT_LENGTH_WEIGHT = 0.02;
-    private static final double EXPLORE_BONUS = 0.02;
+    private static final double EXPLORE_BONUS = 0.05;
+    private static final double TAG_DIVERSITY_BONUS = 0.015;
     private static final double AUTHOR_PENALTY_STEP = 0.02;
     private static final double AUTHOR_PENALTY_MAX = 0.08;
 
@@ -57,6 +58,7 @@ public class RankService {
             double freshness = normalize(feature.getFreshnessScore());
             double baseScore = normalize(candidate.getBaseScore());
             double explore = shouldExplore(candidate) ? EXPLORE_BONUS : 0.0;
+            double tagDiversityBonus = tagDiversityBonus(profile, feature, candidate);
             double diversityPenalty = authorPenalty(feature.getAuthor(), authorFrequency);
             double finalScore = INTEREST_WEIGHT * interest
                     + QUALITY_WEIGHT * quality
@@ -64,6 +66,7 @@ public class RankService {
                     + FRESHNESS_WEIGHT * freshness
                     + RECALL_WEIGHT * baseScore
                     + explore
+                    + tagDiversityBonus
                     - diversityPenalty;
             finalScore += TEXT_LENGTH_WEIGHT * ScoreUtils.safeLog1p(feature.getContent() == null ? 0 : feature.getContent().length());
             RecommendItem item = buildItem(candidate, feature, hot, quality, freshness, finalScore);
@@ -113,7 +116,21 @@ public class RankService {
     }
 
     private boolean shouldExplore(CandidateItem candidate) {
+        if (candidate.getReason() != null && candidate.getReason().contains("explore")) {
+            return true;
+        }
         return candidate.getRecallSource() != null && (candidate.getRecallSource().contains("cold") || candidate.getRecallSource().contains("new"));
+    }
+
+    private double tagDiversityBonus(UserProfile profile, ContentFeature feature, CandidateItem candidate) {
+        if (profile == null || feature == null || candidate == null || candidate.getReason() == null || !candidate.getReason().contains("explore")) {
+            return 0.0;
+        }
+        List<String> topTags = UserProfile.topEntries(profile.getTagWeights(), 3).stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        boolean unfamiliar = feature.tagList().stream().anyMatch(tag -> !topTags.contains(tag));
+        return unfamiliar ? TAG_DIVERSITY_BONUS : 0.0;
     }
 
     private double defaultScore(Double score) {

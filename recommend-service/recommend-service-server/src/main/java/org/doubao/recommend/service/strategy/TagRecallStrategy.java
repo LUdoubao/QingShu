@@ -10,13 +10,19 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
 public class TagRecallStrategy implements RecallStrategy {
 
     private static final int DEFAULT_LIMIT = 50;
+    private static final int CORE_TAG_COUNT = 3;
+    private static final int EXPLORE_TAG_COUNT = 2;
 
     /**
      * 用户画像服务
@@ -60,10 +66,8 @@ public class TagRecallStrategy implements RecallStrategy {
             return new ArrayList<>();
         }
         
-        // 从用户画像中提取权重最高的前 3 个标签
-        List<String> tags = UserProfile.topEntries(profile.getTagWeights(), 3).stream()
-                .map(java.util.Map.Entry::getKey)
-                .collect(Collectors.toList());
+        // 采用“主偏好 + 探索池”召回，避免结果持续收敛到少数熟悉标签
+        List<String> tags = selectRecallTags(profile);
         if (tags.isEmpty()) {
             return new ArrayList<>();
         }
@@ -77,11 +81,39 @@ public class TagRecallStrategy implements RecallStrategy {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("tag");  // 标记来源为标签召回
-            item.setBaseScore(0.7);
-            item.setReason("preferred_tag");  // 设置基础分数为 0.7
+            boolean explore = isExploreTag(profile, feature);
+            item.setBaseScore(explore ? 0.64 : 0.78);
+            item.setReason(explore ? "explore_tag" : "preferred_tag");
             list.add(item);
         }
         return list;
+    }
+
+    private List<String> selectRecallTags(UserProfile profile) {
+        List<Map.Entry<String, Double>> sorted = UserProfile.topEntries(profile.getTagWeights(), profile.getTagWeights().size());
+        if (sorted.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Set<String> selected = new LinkedHashSet<>();
+        sorted.stream()
+                .limit(CORE_TAG_COUNT)
+                .map(Map.Entry::getKey)
+                .forEach(selected::add);
+        int tailStart = Math.min(CORE_TAG_COUNT, sorted.size());
+        int tailEnd = sorted.size();
+        int exploreStart = tailStart + Math.max(0, (tailEnd - tailStart) / 2 - 1);
+        sorted.subList(Math.min(exploreStart, tailEnd), tailEnd).stream()
+                .limit(EXPLORE_TAG_COUNT)
+                .map(Map.Entry::getKey)
+                .forEach(selected::add);
+        return new ArrayList<>(selected);
+    }
+
+    private boolean isExploreTag(UserProfile profile, ContentFeature feature) {
+        List<String> topTags = UserProfile.topEntries(profile.getTagWeights(), CORE_TAG_COUNT).stream()
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toList());
+        return feature.tagList().stream().noneMatch(topTags::contains);
     }
 
     private int resolveLimit(RecommendRequest request, int groupCount) {

@@ -146,9 +146,9 @@ public class UserProfileService {
             profile.addTopic(String.valueOf(topicId), weight);
         }
         
-        // 更新作者权重   佚名作者不需更新
-        if (feature.getAuthor() != null && !feature.getAuthor().isEmpty() && Objects.equals(feature.getAuthor(), "佚名")) {
-            profile.addAuthor(feature.getAuthor(), weight);
+        // 更新作者权重：降低作者维度的放大效应，同时跳过“佚名”这类弱标识作者
+        if (feature.getAuthor() != null && !feature.getAuthor().isEmpty() && !Objects.equals(feature.getAuthor(), "佚名")) {
+            profile.addAuthor(feature.getAuthor(), weight * 0.7);
         }
         
         // 更新朝代权重
@@ -296,7 +296,7 @@ public class UserProfileService {
     /**
      * 计算用户对内容的兴趣分数
      * 基于用户画像中的各维度权重与内容特征的匹配程度进行评分
-     * 评分权重：标签 35% + 话题 25% + 作者 20% + 朝代 15% + 分类 15%
+     * 评分权重：标签 45% + 话题 20% + 作者 10% + 朝代 12% + 分类 13%
      * 最终使用 tanh 函数将分数压缩到 [0, 1] 区间
      *
      * @param profile 用户画像
@@ -311,22 +311,22 @@ public class UserProfileService {
         
         // 标签匹配得分
         for (String tag : feature.tagList()) {
-            score += profile.getTagWeights().getOrDefault(tag, 0.0) * 0.35;
+            score += profile.getTagWeights().getOrDefault(tag, 0.0) * 0.45;
         }
         
         // 话题匹配得分
         for (Long topicId : feature.topicIdList()) {
-            score += profile.getTopicWeights().getOrDefault(String.valueOf(topicId), 0.0) * 0.25;
+            score += profile.getTopicWeights().getOrDefault(String.valueOf(topicId), 0.0) * 0.20;
         }
         
         // 作者匹配得分
-        score += profile.getAuthorWeights().getOrDefault(feature.getAuthor(), 0.0) * 0.2;
+        score += profile.getAuthorWeights().getOrDefault(feature.getAuthor(), 0.0) * 0.10;
         
         // 朝代匹配得分
-        score += profile.getDynastyWeights().getOrDefault(feature.getDynasty(), 0.0) * 0.15;
+        score += profile.getDynastyWeights().getOrDefault(feature.getDynasty(), 0.0) * 0.12;
         
         // 分类匹配得分
-        score += profile.getCategoryWeights().getOrDefault(feature.getPoetryCategory(), 0.0) * 0.15;
+        score += profile.getCategoryWeights().getOrDefault(feature.getPoetryCategory(), 0.0) * 0.13;
         
         // 使用 tanh 函数归一化到 [0, 1]
         return Math.tanh(score / 50.0);
