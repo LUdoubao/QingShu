@@ -42,7 +42,7 @@ public class HotRankJob {
      * 每小时的第 10 分钟执行一次（cron: 0 10 * * * ?）
      * 从数据库中统计最近 7 天内热度最高的 500 个内容，并写入 Redis 有序集合
      */
-    @Scheduled(cron = "0 10 * * * ?")
+    // @Scheduled(cron = "0 10 * * * ?")
     public void rebuildHotHome() {
         long startTime = System.currentTimeMillis();
         logger.info("开始执行首页热门内容排行榜定时任务...");
