@@ -43,7 +43,7 @@ public class RecommendPrecomputeJob {
      * 获取最近 7 天内最活跃的 1000 个用户，为他们预先计算首页推荐结果并缓存
      * 这样当用户访问时可以直接从缓存中快速获取推荐结果，提升响应速度
      */
-    // @Scheduled(cron = "0 40 * * * ?")
+    @Scheduled(cron = "0 40 * * * ?")
     public void precomputeHomeForActiveUsers() {
         // 查询最近 7 天内最活跃的 1000 个用户
         List<String> activeUsers = behaviorMapper.selectActiveUsers(LocalDateTime.now().minusDays(7), 1000);

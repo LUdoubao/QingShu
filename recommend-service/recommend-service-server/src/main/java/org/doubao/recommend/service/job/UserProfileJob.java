@@ -26,7 +26,7 @@ public class UserProfileJob {
      * 从 Redis 活跃用户有序集合中获取 Top 1000 的活跃用户
      * 更新他们的最后活跃时间到当前时间，并持久化到 Redis
      */
-    // @Scheduled(cron = "0 20 * * * ?")
+    @Scheduled(cron = "0 20 * * * ?")
     public void flushActiveProfiles() {
         // 从 Redis 有序集合中按活跃度倒序获取前 1000 个活跃用户
         Set<Object> active = redisTemplate.opsForZSet().reverseRangeByScore(RedisKeys.USER_ACTIVE_ZSET, Double.MAX_VALUE, 0, 0, 1000);
