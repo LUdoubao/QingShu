@@ -17,6 +17,8 @@ import java.util.stream.Collectors;
 @Component
 public class SimilarRecallStrategy implements RecallStrategy {
 
+    private static final int DEFAULT_LIMIT_PER_SEED = 20;
+
     /**
      * 用户画像服务
      * 用于获取用户的兴趣画像，包含最近浏览的内容 ID 等信息
@@ -74,9 +76,11 @@ public class SimilarRecallStrategy implements RecallStrategy {
 
         // 从 Redis 缓存中获取每个种子内容的相似内容
         List<CandidateItem> result = new ArrayList<>();
+        int perSeedLimit = resolveLimitPerSeed(request, seeds.size());
         for (Long seed : seeds) {
             // 从 Redis 获取预计算的相似内容列表
-            Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet().reverseRangeWithScores(RedisKeys.SIMILAR_PREFIX + seed, 0, 19);
+            Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<String>> tuples = stringRedisTemplate.opsForZSet()
+                    .reverseRangeWithScores(RedisKeys.SIMILAR_PREFIX + seed, 0, perSeedLimit - 1L);
             if (tuples != null) {
                 for (org.springframework.data.redis.core.ZSetOperations.TypedTuple<String> tuple : tuples) {
                     if (tuple == null || tuple.getValue() == null) {
@@ -92,5 +96,10 @@ public class SimilarRecallStrategy implements RecallStrategy {
             }
         }
         return result;
+    }
+
+    private int resolveLimitPerSeed(RecommendRequest request, int seedCount) {
+        int requested = request.getLimit() == null || request.getLimit() <= 0 ? DEFAULT_LIMIT_PER_SEED : request.getLimit();
+        return Math.max(DEFAULT_LIMIT_PER_SEED, requested / Math.max(1, seedCount));
     }
 }

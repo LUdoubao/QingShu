@@ -3,7 +3,6 @@ package org.doubao.recommend.service.util;
 import org.doubao.recommend.service.domain.CursorInfo;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 public final class CursorUtil {
 
@@ -18,7 +17,7 @@ public final class CursorUtil {
         if (idx <= 0 || idx >= cursor.length() - 1) {
             throw new IllegalArgumentException("invalid cursor format");
         }
-        Double score = Double.valueOf(cursor.substring(0, idx));
+        Double score = new BigDecimal(cursor.substring(0, idx)).doubleValue();
         Long contentId = Long.valueOf(cursor.substring(idx + 1));
         return new CursorInfo(score, contentId);
     }
@@ -27,6 +26,6 @@ public final class CursorUtil {
         if (score == null || contentId == null) {
             return null;
         }
-        return BigDecimal.valueOf(score).setScale(6, RoundingMode.HALF_UP).toPlainString() + "_" + contentId;
+        return BigDecimal.valueOf(score).stripTrailingZeros().toPlainString() + "_" + contentId;
     }
 }

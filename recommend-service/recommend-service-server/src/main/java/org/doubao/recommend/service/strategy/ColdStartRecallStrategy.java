@@ -12,6 +12,8 @@ import java.util.List;
 @Component
 public class ColdStartRecallStrategy implements RecallStrategy {
 
+    private static final int DEFAULT_LIMIT = 50;
+
     /**
      * 引用 Mapper
      * 用于查询最新发布的热门内容
@@ -45,7 +47,7 @@ public class ColdStartRecallStrategy implements RecallStrategy {
     public List<CandidateItem> recall(RecommendRequest request) {
         List<CandidateItem> list = new ArrayList<>();
         // 查询最近发布的 50 条内容
-        recommendQuoteMapper.selectRecentPublished(null, 50).forEach(feature -> {
+        recommendQuoteMapper.selectRecentPublished(null, resolveLimit(request)).forEach(feature -> {
             CandidateItem item = new CandidateItem();
             item.setContentId(feature.getContentId());
             item.setRecallSource("cold_start,new");  // 标记来源为新品召回
@@ -54,5 +56,10 @@ public class ColdStartRecallStrategy implements RecallStrategy {
             list.add(item);
         });
         return list;
+    }
+
+    private int resolveLimit(RecommendRequest request) {
+        int requested = request.getLimit() == null || request.getLimit() <= 0 ? DEFAULT_LIMIT : request.getLimit();
+        return Math.max(DEFAULT_LIMIT, requested);
     }
 }

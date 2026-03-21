@@ -16,6 +16,8 @@ import java.util.stream.Collectors;
 @Component
 public class TopicRecallStrategy implements RecallStrategy {
 
+    private static final int DEFAULT_LIMIT = 50;
+
     /**
      * 用户画像服务
      * 用于获取用户的兴趣画像，包含话题偏好权重
@@ -65,7 +67,7 @@ public class TopicRecallStrategy implements RecallStrategy {
         if (topicIds.isEmpty()) return new ArrayList<>();
 
         // 根据话题 ID 查询内容，每个话题最多查询 50 条
-        List<ContentFeature> features = recommendQuoteMapper.selectByTopicIds(topicIds, 50);
+        List<ContentFeature> features = recommendQuoteMapper.selectByTopicIds(topicIds, resolveLimit(request, topicIds.size()));
         
         // 构建候选物品列表
         List<CandidateItem> list = new ArrayList<>();
@@ -78,5 +80,10 @@ public class TopicRecallStrategy implements RecallStrategy {
             list.add(item);
         }
         return list;
+    }
+
+    private int resolveLimit(RecommendRequest request, int groupCount) {
+        int requested = request.getLimit() == null || request.getLimit() <= 0 ? DEFAULT_LIMIT : request.getLimit();
+        return Math.max(DEFAULT_LIMIT, requested / Math.max(1, groupCount));
     }
 }
