@@ -133,6 +133,41 @@
         LIMIT #{limit}
     </select>
 
+    <select id="selectExploreByExcludedTags" resultMap="ContentFeatureResultMap">
+        SELECT
+        <include refid="Base_Quote_Fields"/>
+        FROM quote q
+        LEFT JOIN content_feature_snapshot fs ON fs.content_id = q.id
+        LEFT JOIN quote_tag qt ON qt.quote_id = q.id
+        LEFT JOIN tag t ON t.id = qt.tag_id
+        WHERE q.deleted = 0 AND q.status = 1
+        AND t.name IS NOT NULL AND t.name != ''
+        <if test="excludedTags != null and excludedTags.size() > 0">
+            AND t.name NOT IN
+            <foreach collection="excludedTags" item="tag" open="(" separator="," close=")">
+                #{tag}
+            </foreach>
+        </if>
+        GROUP BY q.id
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectExploreByExcludedAuthors" resultMap="ContentFeatureResultMap">
+        SELECT
+        <include refid="Base_Quote_Fields"/>
+        <include refid="Base_Join_Conditions"/>
+        AND q.author IS NOT NULL AND q.author != '' AND q.author != '佚名'
+        <if test="excludedAuthors != null and excludedAuthors.size() > 0">
+            AND q.author NOT IN
+            <foreach collection="excludedAuthors" item="author" open="(" separator="," close=")">
+                #{author}
+            </foreach>
+        </if>
+        ORDER BY q.created_time DESC
+        LIMIT #{limit}
+    </select>
+
     <select id="selectValidIds" resultType="java.lang.Long">
         SELECT q.id
         FROM quote q

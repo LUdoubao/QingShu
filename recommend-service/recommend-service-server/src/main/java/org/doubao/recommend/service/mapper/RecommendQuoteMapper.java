@@ -27,5 +27,9 @@ public interface RecommendQuoteMapper {
 
     List<ContentFeature> selectByAuthors(@Param("authors") List<String> authors, @Param("limit") int limit);
 
+    List<ContentFeature> selectExploreByExcludedTags(@Param("excludedTags") List<String> excludedTags, @Param("limit") int limit);
+
+    List<ContentFeature> selectExploreByExcludedAuthors(@Param("excludedAuthors") List<String> excludedAuthors, @Param("limit") int limit);
+
     List<Long> selectValidIds(@Param("ids") List<Long> ids);
 }
