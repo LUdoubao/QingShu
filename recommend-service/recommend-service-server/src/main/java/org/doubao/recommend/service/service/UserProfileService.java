@@ -15,10 +15,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -149,8 +146,8 @@ public class UserProfileService {
             profile.addTopic(String.valueOf(topicId), weight);
         }
         
-        // 更新作者权重
-        if (feature.getAuthor() != null && !feature.getAuthor().isEmpty()) {
+        // 更新作者权重   佚名作者不需更新
+        if (feature.getAuthor() != null && !feature.getAuthor().isEmpty() && Objects.equals(feature.getAuthor(), "佚名")) {
             profile.addAuthor(feature.getAuthor(), weight);
         }
         
