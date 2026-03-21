@@ -15,6 +15,8 @@ public interface RecommendQuoteMapper {
 
     List<ContentFeature> selectRecentPublished(@Param("author") String author, @Param("limit") int limit);
 
+    List<ContentFeature> selectRecentPublishedBeforeId(@Param("author") String author, @Param("maxContentId") Long maxContentId, @Param("limit") int limit);
+
     List<ContentFeature> selectByAuthorId(@Param("authorId") Long authorId, @Param("limit") int limit);
 
     List<ContentFeature> selectByDynasty(@Param("dynasty") String dynasty, @Param("limit") int limit);

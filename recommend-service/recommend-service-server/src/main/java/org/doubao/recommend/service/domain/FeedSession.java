@@ -8,6 +8,7 @@ public class FeedSession {
     private LocalDateTime lastRequestTime;
     private Integer returnedCount;
     private String lastCursor;
+    private Long fallbackAnchorId;
 
     public String getSessionId() {
         return sessionId;
@@ -47,5 +48,13 @@ public class FeedSession {
 
     public void setLastCursor(String lastCursor) {
         this.lastCursor = lastCursor;
+    }
+
+    public Long getFallbackAnchorId() {
+        return fallbackAnchorId;
+    }
+
+    public void setFallbackAnchorId(Long fallbackAnchorId) {
+        this.fallbackAnchorId = fallbackAnchorId;
     }
 }
