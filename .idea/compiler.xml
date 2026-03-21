@@ -14,6 +14,7 @@
         <module name="view-count-service-server" />
         <module name="comment-service-api" />
         <module name="oss-service-api" />
+        <module name="recommend-service-server" />
         <module name="dialog-service-starter" />
         <module name="favorite-service-api" />
         <module name="notification-service-server" />
@@ -31,7 +32,6 @@
         <module name="view-count-service-starter" />
         <module name="api-gateway" />
         <module name="quote-service-starter" />
-        <module name="order-service" />
         <module name="share-service-server" />
         <module name="comment-service-starter" />
         <module name="like-service-server" />
@@ -42,8 +42,8 @@
         <module name="notification-service-api" />
         <module name="fanout-service-api" />
         <module name="favorite-service-starter" />
-        <module name="payment-service" />
         <module name="topic-service-server" />
+        <module name="recommend-service-starter" />
         <module name="search-service-api" />
         <module name="dialog-service-server" />
         <module name="oss-service-starter" />
@@ -51,7 +51,6 @@
         <module name="auth-service-server" />
         <module name="like-service-api" />
         <module name="notification-service-starter" />
-        <module name="product-service" />
         <module name="topic-service-starter" />
         <module name="dialog-service-api" />
         <module name="fanout-service-starter" />

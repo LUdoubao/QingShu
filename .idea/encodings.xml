@@ -107,6 +107,12 @@
     <file url="file://$PROJECT_DIR$/quote-service/quote-service-starter/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/quote-service/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/quote-service/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/recommend-service-server/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/recommend-service-server/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/recommend-service-starter/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/recommend-service-starter/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/recommend-service/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/search-service/search-service-api/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/search-service/search-service-api/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/search-service/search-service-server/src/main/java" charset="UTF-8" />
