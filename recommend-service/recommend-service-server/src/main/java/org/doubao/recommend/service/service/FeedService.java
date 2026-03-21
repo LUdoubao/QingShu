@@ -44,6 +44,8 @@ public class FeedService {
     @Resource
     private RecommendQuoteMapper recommendQuoteMapper;
     @Resource
+    private ExploreInjectService exploreInjectService;
+    @Resource
     private QuoteService quoteService;
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private static final int FALLBACK_SCAN_BATCH_SIZE = 200;
@@ -79,6 +81,9 @@ public class FeedService {
             mergePageItems(page, fallbackItems, request.getPageSize());
             hasMore = hasMore || fallbackItems.size() >= Math.max(0, request.getPageSize() - filtered.size());
         }
+
+        List<RecommendItem> exploreItems = exploreInjectService.buildExploreItems(request, seen, page);
+        exploreInjectService.injectExploreItems(page, exploreItems, request.getPageSize());
 
         FeedResponse response = new FeedResponse();
         response.setItems(page);
