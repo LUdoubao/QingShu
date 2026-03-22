@@ -101,9 +101,6 @@ public class QuoteTopicServiceImpl extends ServiceImpl<QuoteTopicMapper, QuoteTo
 		quoteTopic.setBindTime(LocalDateTime.now());
 		quoteTopic.setStatus(dto.getStatus());
 		this.save(quoteTopic);
-
-		// 增加话题引用计数
-		topicStatisticsService.incrementQuoteCount(dto.getTopicId());
 	}
 
 	@Override

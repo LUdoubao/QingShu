@@ -40,7 +40,10 @@ public class TopicStatisticsServiceImpl extends ServiceImpl<TopicStatisticsMappe
     public void incrementQuoteCount(Long topicId) {
         TopicStatistics statistics = this.getById(topicId);
         if (statistics == null) {
-            throw new BusinessException(ErrorCode.TOPIC_STATISTICS_NOT_FOUND);
+            // 创建新的统计信息
+            statistics = new TopicStatistics();
+            statistics.setTopicId(topicId);
+            this.save(statistics);
         }
 
         topicStatisticsMapper.incrementQuoteCount(topicId);
