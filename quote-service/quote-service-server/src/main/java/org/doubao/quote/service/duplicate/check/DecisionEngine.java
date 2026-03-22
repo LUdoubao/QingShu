@@ -72,7 +72,7 @@ public class DecisionEngine {
 
 		LOGGER.info("--------------Metadata similarity between citation: {} and citation: {} is: {}", citation1, citation2, metadataSim);
 		// 加权综合相似度
-		return (contentSim * (1 - METADATA_WEIGHT)) + (metadataSim * METADATA_WEIGHT);
+		return (contentSim * 0.1 * (1 - METADATA_WEIGHT)) + (metadataSim * METADATA_WEIGHT);
 	}
 
 	public enum DuplicationStatus {
