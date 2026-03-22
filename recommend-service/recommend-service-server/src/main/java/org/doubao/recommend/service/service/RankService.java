@@ -75,8 +75,7 @@ public class RankService {
                 authorFrequency.merge(feature.getAuthor(), 1, Integer::sum);
             }
         }
-        result.sort(Comparator.comparing(RecommendItem::getScore, Comparator.nullsLast(Double::compareTo)).reversed()
-                .thenComparing(RecommendItem::getContentId, Comparator.nullsLast(Long::compareTo)).reversed());
+        result.sort(Comparator.comparing(RecommendItem::getScore, Comparator.nullsLast(Double::compareTo)).reversed());
         return result;
     }
 

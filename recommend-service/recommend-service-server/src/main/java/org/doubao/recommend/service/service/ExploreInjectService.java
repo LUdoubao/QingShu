@@ -42,8 +42,18 @@ public class ExploreInjectService {
         }
 
         LinkedHashMap<Long, ContentFeature> featureMap = new LinkedHashMap<>();
-        appendCandidates(featureMap, recommendQuoteMapper.selectExploreByExcludedTags(new ArrayList<>(profile.getTagWeights().keySet()), EXPLORE_SCAN_LIMIT), seen, excludedIds);
-        appendCandidates(featureMap, recommendQuoteMapper.selectExploreByExcludedAuthors(new ArrayList<>(profile.getAuthorWeights().keySet()), EXPLORE_SCAN_LIMIT), seen, excludedIds);
+        appendCandidates(featureMap,
+                recommendQuoteMapper.selectExploreByExcludedTags(
+                        new ArrayList<>(profile.getTagWeights().keySet()),
+                        EXPLORE_SCAN_LIMIT),
+                seen,
+                excludedIds);
+        appendCandidates(featureMap,
+                recommendQuoteMapper.selectExploreByExcludedAuthors(
+                        new ArrayList<>(profile.getAuthorWeights().keySet()),
+                        EXPLORE_SCAN_LIMIT),
+                seen,
+                excludedIds);
         if (featureMap.isEmpty()) {
             return Collections.emptyList();
         }

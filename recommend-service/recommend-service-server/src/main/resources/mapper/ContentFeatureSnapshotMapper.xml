@@ -11,8 +11,6 @@
         <result column="dynasty" property="dynasty"/>
         <result column="poetry_category" property="poetryCategory"/>
         <result column="author_id" property="authorId"/>
-        <result column="tag_names" property="tagNames"/>
-        <result column="topic_ids" property="topicIds"/>
         <result column="hot_score" property="hotScore"/>
         <result column="quality_score" property="qualityScore"/>
         <result column="freshness_score" property="freshnessScore"/>

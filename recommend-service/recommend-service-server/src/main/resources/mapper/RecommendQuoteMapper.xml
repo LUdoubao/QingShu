@@ -75,7 +75,7 @@
         <include refid="Base_Quote_Fields"/>
         <include refid="Base_Join_Conditions"/>
         AND q.author_id = #{authorId}
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -84,7 +84,7 @@
         <include refid="Base_Quote_Fields"/>
         <include refid="Base_Join_Conditions"/>
         AND q.dynasty = #{dynasty}
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -101,7 +101,7 @@
             #{tag}
         </foreach>
         GROUP BY q.id
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -117,7 +117,7 @@
             #{topicId}
         </foreach>
         GROUP BY q.id
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -129,7 +129,7 @@
         <foreach collection="authors" item="author" open="(" separator="," close=")">
             #{author}
         </foreach>
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -149,7 +149,7 @@
             </foreach>
         </if>
         GROUP BY q.id
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
@@ -164,7 +164,7 @@
                 #{author}
             </foreach>
         </if>
-        ORDER BY q.created_time DESC
+<!--        ORDER BY q.created_time DESC-->
         LIMIT #{limit}
     </select>
 
