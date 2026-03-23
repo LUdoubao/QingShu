@@ -78,14 +78,14 @@ public class UserProfileJob {
                 UserProfile profile = (UserProfile) profileObj;
                 
                 // 更新最后活跃时间为当前时间
-                profile.setLastActiveTime(LocalDateTime.now());
-                
+
                 // 根据用户行为记录重新计算用户偏好
                 calculateUserPreferences(profile);
                 
                 // 更新画像更新时间
                 profile.setUpdatedTime(LocalDateTime.now());
-                
+                profile.setLastActiveTime(LocalDateTime.now());
+
                 // 将更新后的画像写回 Redis 和数据库
                 userProfileService.persistProfile(profile);
             }
@@ -101,9 +101,13 @@ public class UserProfileJob {
     private void calculateUserPreferences(UserProfile profile) {
         String userIdentity = profile.getUserIdentity();
         
-        // 查询用户最近一周的行为记录
-        LocalDateTime oneWeekAgo = LocalDateTime.now().minusWeeks(1);
-        List<BehaviorEvent> recentBehaviors = userBehaviorMapper.selectRecentBehaviors(userIdentity, oneWeekAgo);
+        // 查询用户画像活跃时间到现在的时间段内的行为记录
+        LocalDateTime sinceTime = profile.getLastActiveTime();
+        // 如果最后活跃时间为空，则查询最近一周的行为记录
+        if (sinceTime == null) {
+            sinceTime = LocalDateTime.now().minusWeeks(1);
+        }
+        List<BehaviorEvent> recentBehaviors = userBehaviorMapper.selectRecentBehaviors(userIdentity, sinceTime);
         
         if (recentBehaviors == null || recentBehaviors.isEmpty()) {
             return;
