@@ -1,5 +1,7 @@
 package org.doubao.like.service.utils;
 
+import org.doubao.like.service.enums.HotListType;
+
 // RedisKeyUtil.java
 public class RedisKeyUtil {
 	// 用户点赞状态：like:{userId}:{entityType}:{entityId}
@@ -18,10 +20,18 @@ public class RedisKeyUtil {
 	}
 
 	public static String getHotContentsKey() {
-		return "hot:contents:current";
+		return getHotContentsKey(HotListType.ALL);
 	}
 
 	public static String getLastHotContentsKey() {
-		return "hot:contents:last";
+		return getLastHotContentsKey(HotListType.ALL);
+	}
+
+	public static String getHotContentsKey(HotListType type) {
+		return "hot:contents:" + type.getCode() + ":current";
+	}
+
+	public static String getLastHotContentsKey(HotListType type) {
+		return "hot:contents:" + type.getCode() + ":last";
 	}
 }

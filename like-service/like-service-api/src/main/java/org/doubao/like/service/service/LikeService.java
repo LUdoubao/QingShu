@@ -20,7 +20,7 @@ public interface LikeService extends IService<LikeRecord> {
 
 	BatchLikeStatusResponse batchGetLikeStatus(BatchLikeStatusRequest request);
 
-	List<HotContentResponse> getHotContents(int limit);
+	HotContentResponse getHotContents(String type, int page, int limit, Integer windowHours);
 
 	Page<LikeQuoteVo> likeList(Long userId, int page, int size);
 

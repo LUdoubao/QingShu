@@ -10,12 +10,14 @@ import org.doubao.like.service.dto.response.*;
 import org.doubao.like.service.entity.LikeCount;
 import org.doubao.like.service.entity.LikeRecord;
 import org.doubao.like.service.enums.EntityTypeEnum;
+import org.doubao.like.service.enums.HotListType;
 import org.doubao.like.service.enums.LikeAction;
 import org.doubao.like.service.feign.QuoteClient;
 import org.doubao.like.service.feign.UserClient;
 import org.doubao.like.service.mapper.LikeCountMapper;
 import org.doubao.like.service.mapper.LikeRecordMapper;
 import org.doubao.like.service.messaging.LikeEventPublisher;
+import org.doubao.like.service.service.HotContentRankManager;
 import org.doubao.like.service.service.LikeService;
 import org.doubao.like.service.utils.RedisKeyUtil;
 import org.doubao.mall.common.constant.Constants;
@@ -72,10 +74,16 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	@Autowired
 	private CommonTaskExecutor taskExecutor;
 
+	@Autowired
+	private HotContentRankManager hotContentRankManager;
+
 	/**
 	 * 点赞热度权重
 	 */
-	private static final Integer LIKE_HEAT_VALUE_WEIGHT = 100;
+	private static final long LIKE_HEAT_VALUE_WEIGHT = 100L;
+	private static final int HOT_LIST_MAX_LIMIT = 100;
+	private static final int HOT_LIST_MAX_WINDOW_HOURS = 720;
+	private static final int HOT_LIST_CANDIDATE_MULTIPLIER = 5;
 	@Override
 	@Transactional
 	@RateLimit(
@@ -473,59 +481,63 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	}
 
 	@Override
-	public List<HotContentResponse> getHotContents(int limit) {
-		// 参数校验
-		if (limit <= 0 || limit > 1000) {
-			throw new IllegalArgumentException("limit参数必须在1-1000之间");
+	public HotContentResponse getHotContents(String type, int page, int limit, Integer windowHours) {
+		if (page <= 0) {
+			throw new IllegalArgumentException("page must be greater than 0");
 		}
-
-		// 1. 从Redis获取热门文案ID列表（ZSET按分数降序）
-		Set<ZSetOperations.TypedTuple<Object>> hotContentTuples = redisTemplate.opsForZSet()
-				.reverseRangeWithScores(RedisKeyUtil.getHotContentsKey(), 0, limit - 1);
-
-		if (CollectionUtils.isEmpty(hotContentTuples)) {
-			return Collections.emptyList();
+		if (limit <= 0 || limit > HOT_LIST_MAX_LIMIT) {
+			throw new IllegalArgumentException("limit must be between 1 and " + HOT_LIST_MAX_LIMIT);
 		}
+		HotListType hotListType = HotListType.fromCode(type);
+		int resolvedWindowHours = resolveWindowHours(hotListType, windowHours);
 
-		// 2. 提取ID和分数（点赞数）
-		List<Long> contentIds = new ArrayList<>(hotContentTuples.size());
-		Map<Long, Integer> contentScoreMap = new HashMap<>();
+		int candidateSize = Math.min(limit * HOT_LIST_CANDIDATE_MULTIPLIER, HOT_LIST_MAX_LIMIT);
+		List<Long> candidateIds = hotContentRankManager.loadCandidateIds(hotListType, candidateSize);
 
-		hotContentTuples.forEach(tuple -> {
-			Long contentId = Long.parseLong(String.valueOf(tuple.getValue()));
-			int score = Objects.requireNonNull(tuple.getScore()).intValue();
-			contentIds.add(contentId);
-			contentScoreMap.put(contentId, score);
-		});
-
-		// 3. Feign批量查询文案基础信息
-		Result<List<Map<String, Object>>> quoteResult = quoteServiceClient.getQuotesByIds(contentIds);
-		if (quoteResult == null || !Objects.equals(quoteResult.getCode(), ResultCode.SUCCESS.getCode()) || CollectionUtils.isEmpty(quoteResult.getData())) {
-			LOGGER.error("获取文案信息失败: {}", quoteResult);
-			return Collections.emptyList();
-		}
-
-		List<Map<String, Object>> quotes = quoteResult.getData();
-
-		// 4. 获取排名变化数据
-		Map<Long, Integer> rankChangeMap = getRankChanges(contentIds);
-
-		// 5. 组装响应数据
-		List<Map<String, Object>> hotContents = quotes.stream()
-				.map(quote -> {
-					Long quoteId = Long.parseLong(quote.get("id").toString());
-					Map<String, Object> item = new HashMap<>(quote);
-					item.put("likeCount", contentScoreMap.getOrDefault(quoteId, 0));
-					item.put("heatValue", contentScoreMap.getOrDefault(quoteId, 0) * LIKE_HEAT_VALUE_WEIGHT);
-					item.put("rankChange", rankChangeMap.getOrDefault(quoteId, null));
-					return item;
-				})
-				.collect(Collectors.toList());
-
-		// 6. 返回标准化响应
 		HotContentResponse response = new HotContentResponse();
-		response.setHotContents(hotContents);
-		return Collections.singletonList(response);
+		response.setPage(page);
+		response.setLimit(limit);
+		response.setType(hotListType.getCode());
+		response.setWindowHours(resolvedWindowHours);
+		response.setScoreSource(hotContentRankManager.getScoreSource(hotListType));
+		response.setGeneratedAt(LocalDateTime.now());
+		response.setRankMeta(buildRankMeta(hotListType, resolvedWindowHours));
+		if (CollectionUtils.isEmpty(candidateIds)) {
+			response.setTotal(0L);
+			response.setHotContents(Collections.emptyList());
+			return response;
+		}
+
+		Map<Long, Long> totalLikeMap = loadTotalLikeMap(candidateIds);
+		Map<Long, Long> recentLikeMap = loadRecentLikeMap(candidateIds, resolvedWindowHours);
+
+		List<Long> rankedIds = candidateIds.stream()
+				.sorted(Comparator
+						.comparingLong((Long contentId) -> calculateHeatValue(
+								totalLikeMap.getOrDefault(contentId, 0L),
+								recentLikeMap.getOrDefault(contentId, 0L)))
+						.reversed()
+						.thenComparing(Comparator.comparingLong((Long contentId) -> totalLikeMap.getOrDefault(contentId, 0L)).reversed())
+						.thenComparingLong(Long::longValue))
+				.collect(Collectors.toList());
+		Map<Long, Integer> rankChangeMap = getRankChanges(hotListType, rankedIds);
+
+		response.setTotal((long) rankedIds.size());
+		int fromIndex = Math.min((page - 1) * limit, rankedIds.size());
+		int toIndex = Math.min(fromIndex + limit, rankedIds.size());
+		List<Long> pageIds = rankedIds.subList(fromIndex, toIndex);
+		Map<Long, Map<String, Object>> quoteMap = fetchQuoteMap(pageIds);
+		Map<Long, Integer> rankMap = new HashMap<>(rankedIds.size());
+		for (int i = 0; i < rankedIds.size(); i++) {
+			rankMap.put(rankedIds.get(i), i + 1);
+		}
+
+		List<HotContentResponse.HotContentItem> items = pageIds.stream()
+				.map(contentId -> buildHotContentItem(contentId, totalLikeMap, recentLikeMap, rankChangeMap, rankMap, quoteMap))
+				.filter(Objects::nonNull)
+				.collect(Collectors.toList());
+		response.setHotContents(items);
+		return response;
 	}
 
 	@Override
@@ -647,17 +659,18 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 	 * @param contentIds 当前热门文案ID列表
 	 * @return Map<文案ID, 排名变化>
 	 */
-	private Map<Long, Integer> getRankChanges(List<Long> contentIds) {
-		// 从Redis获取上次排名（使用ZREVRANK）
+	private Map<Long, Integer> getRankChanges(HotListType type, List<Long> contentIds) {
 		Map<Long, Integer> changeMap = new HashMap<>();
+		Map<Long, Integer> currentRankMap = new HashMap<>(contentIds.size());
+		for (int i = 0; i < contentIds.size(); i++) {
+			currentRankMap.put(contentIds.get(i), i);
+		}
 
 		contentIds.forEach(contentId -> {
 			Long lastRank = redisTemplate.opsForZSet()
-					.rank(RedisKeyUtil.getLastHotContentsKey(), contentId.toString());
-
-			// 计算变化：当前排名 - 上次排名（null表示新上榜）
-			int currentRank = contentIds.indexOf(contentId);
-			if (lastRank != null) {
+					.reverseRank(RedisKeyUtil.getLastHotContentsKey(type), contentId.toString());
+			Integer currentRank = currentRankMap.get(contentId);
+			if (lastRank != null && currentRank != null) {
 				changeMap.put(contentId, lastRank.intValue() - currentRank);
 			} else {
 				changeMap.put(contentId, null);
@@ -666,4 +679,120 @@ public class LikeServiceImpl extends ServiceImpl<LikeRecordMapper, LikeRecord> i
 
 		return changeMap;
 	}
+
+	private int resolveWindowHours(HotListType type, Integer windowHours) {
+		int resolved = hotListTypeWindow(type, windowHours);
+		if (resolved <= 0 || resolved > HOT_LIST_MAX_WINDOW_HOURS) {
+			throw new IllegalArgumentException("windowHours must be between 1 and " + HOT_LIST_MAX_WINDOW_HOURS);
+		}
+		return resolved;
+	}
+
+	private int hotListTypeWindow(HotListType type, Integer windowHours) {
+		if (type == HotListType.ALL) {
+			return windowHours == null ? hotContentRankManager.getConfiguredWindowHours(type) : windowHours;
+		}
+		return hotContentRankManager.getConfiguredWindowHours(type);
+	}
+
+	private Map<Long, Long> loadTotalLikeMap(List<Long> contentIds) {
+		if (CollectionUtils.isEmpty(contentIds)) {
+			return Collections.emptyMap();
+		}
+		Map<Long, Long> result = new HashMap<>(contentIds.size());
+		List<LikeCountDTO> totalCounts = likeRecordMapper.countByEntities(EntityTypeEnum.CONTENT.getType(), contentIds);
+		for (LikeCountDTO dto : totalCounts) {
+			result.put(dto.getEntityId(), dto.getCount());
+		}
+		return result;
+	}
+
+	private Map<Long, Long> loadRecentLikeMap(List<Long> contentIds, int windowHours) {
+		if (CollectionUtils.isEmpty(contentIds)) {
+			return Collections.emptyMap();
+		}
+		LocalDateTime startTime = LocalDateTime.now().minusHours(windowHours);
+		Map<Long, Long> result = new HashMap<>(contentIds.size());
+		List<LikeCountDTO> recentCounts = likeRecordMapper.countRecentLikesByEntities(
+				EntityTypeEnum.CONTENT.getType(), contentIds, startTime);
+		for (LikeCountDTO dto : recentCounts) {
+			result.put(dto.getEntityId(), dto.getCount());
+		}
+		return result;
+	}
+
+	private Map<Long, Map<String, Object>> fetchQuoteMap(List<Long> contentIds) {
+		if (CollectionUtils.isEmpty(contentIds)) {
+			return Collections.emptyMap();
+		}
+		Result<List<Map<String, Object>>> quoteResult = quoteServiceClient.getQuotesByIds(contentIds);
+		if (quoteResult == null || !Objects.equals(quoteResult.getCode(), ResultCode.SUCCESS.getCode())
+				|| CollectionUtils.isEmpty(quoteResult.getData())) {
+			LOGGER.error("failed to load hot quote details: {}", quoteResult);
+			return Collections.emptyMap();
+		}
+		return quoteResult.getData().stream()
+				.filter(Objects::nonNull)
+				.filter(item -> item.get("id") != null)
+				.collect(Collectors.toMap(item -> Long.parseLong(String.valueOf(item.get("id"))), item -> item));
+	}
+
+	private HotContentResponse.HotContentItem buildHotContentItem(Long contentId,
+										 Map<Long, Long> totalLikeMap,
+										 Map<Long, Long> recentLikeMap,
+										 Map<Long, Integer> rankChangeMap,
+										 Map<Long, Integer> rankMap,
+										 Map<Long, Map<String, Object>> quoteMap) {
+		Map<String, Object> quote = quoteMap.get(contentId);
+		if (quote == null) {
+			return null;
+		}
+		long totalLikes = totalLikeMap.getOrDefault(contentId, 0L);
+		long recentLikes = recentLikeMap.getOrDefault(contentId, 0L);
+		Integer rankChange = rankChangeMap.get(contentId);
+
+		HotContentResponse.HotContentItem item = new HotContentResponse.HotContentItem();
+		item.setContentId(contentId);
+		item.setRank(rankMap.get(contentId));
+		item.setLikeCount(totalLikes);
+		item.setRecentLikeCount(recentLikes);
+		item.setHeatValue(calculateHeatValue(totalLikes, recentLikes));
+		item.setRankChange(rankChange);
+		item.setTrend(resolveTrend(rankChange, recentLikes, totalLikes));
+		item.setQuote(quote);
+		return item;
+	}
+
+	private long calculateHeatValue(long totalLikes, long recentLikes) {
+		double stableScore = Math.log1p(Math.max(totalLikes, 0L)) * 0.35D;
+		double trendScore = Math.log1p(Math.max(recentLikes, 0L)) * 0.65D;
+		return Math.round((stableScore + trendScore) * LIKE_HEAT_VALUE_WEIGHT * 100);
+	}
+
+	private String resolveTrend(Integer rankChange, long recentLikes, long totalLikes) {
+		if (rankChange == null) {
+			return "NEW";
+		}
+		if (rankChange > 0) {
+			return "UP";
+		}
+		if (rankChange < 0) {
+			return "DOWN";
+		}
+		if (recentLikes > 0 && recentLikes * 2 >= Math.max(totalLikes, 1L)) {
+			return "HOT";
+		}
+		return "STABLE";
+	}
+
+	private HotContentResponse.RankMeta buildRankMeta(HotListType type, int windowHours) {
+		HotContentResponse.RankMeta rankMeta = new HotContentResponse.RankMeta();
+		rankMeta.setType(type.getCode());
+		rankMeta.setWindowHours(windowHours);
+		rankMeta.setScoreSource(hotContentRankManager.getScoreSource(type));
+		rankMeta.setRefreshIntervalMinutes(hotContentRankManager.getRefreshIntervalMinutes());
+		rankMeta.setRisingMinCurrentLikes(type == HotListType.RISING ? hotContentRankManager.getRisingMinCurrentLikes() : null);
+		return rankMeta;
+	}
+
 }

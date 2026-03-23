@@ -8,6 +8,7 @@ import org.doubao.like.service.dto.response.LikeCountVo;
 import org.doubao.like.service.entity.LikeRecord;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -42,6 +43,32 @@ public interface LikeRecordMapper extends BaseMapper<LikeRecord> {
 			@Param("entityIds") List<String> entityIds,
 			@Param("entityType") int entityType,
 			@Param("dates") List<LocalDate> dates);
+
+	List<LikeCountDTO> countRecentLikesByEntities(
+			@Param("entityType") Integer entityType,
+			@Param("entityIds") List<Long> entityIds,
+			@Param("startTime") LocalDateTime startTime);
+
+	List<LikeCountDTO> selectTopLikedContentsSince(
+			@Param("entityType") Integer entityType,
+			@Param("startTime") LocalDateTime startTime,
+			@Param("limit") Integer limit);
+
+	List<LikeCountDTO> selectTopLikedContents(
+			@Param("entityType") Integer entityType,
+			@Param("limit") Integer limit);
+
+	List<LikeCountDTO> countLikesByEntitiesBetween(
+			@Param("entityType") Integer entityType,
+			@Param("entityIds") List<Long> entityIds,
+			@Param("startTime") LocalDateTime startTime,
+			@Param("endTime") LocalDateTime endTime);
+
+	List<LikeCountDTO> selectTopLikedContentsBetween(
+			@Param("entityType") Integer entityType,
+			@Param("startTime") LocalDateTime startTime,
+			@Param("endTime") LocalDateTime endTime,
+			@Param("limit") Integer limit);
 
 
 }

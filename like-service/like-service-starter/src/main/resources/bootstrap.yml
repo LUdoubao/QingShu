@@ -38,3 +38,16 @@ spring:
             refresh: true
   profiles:
     active: dev #指定环境
+like:
+  hot-list:
+    enabled: true
+    preload-on-startup: true
+    refresh-interval-minutes: 10
+    refresh-limit: 200
+    all-default-window-hours: 72
+    daily-window-hours: 24
+    weekly-window-hours: 168
+    monthly-window-hours: 720
+    rising-window-hours: 24
+    rising-previous-window-hours: 24
+    rising-min-current-likes: 10

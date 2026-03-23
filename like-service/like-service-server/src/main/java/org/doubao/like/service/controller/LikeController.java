@@ -35,9 +35,12 @@ public class LikeController {
 	}
 
 	@GetMapping("/hot")
-	public Result<List<HotContentResponse>> getHotContents(
-			@RequestParam(value = "limit", defaultValue = "30") int limit) {
-		return Result.success(likeService.getHotContents(limit));
+	public Result<HotContentResponse> getHotContents(
+			@RequestParam(value = "type", defaultValue = "all") String type,
+			@RequestParam(value = "page", defaultValue = "1") int page,
+			@RequestParam(value = "limit", defaultValue = "20") int limit,
+			@RequestParam(value = "windowHours", required = false) Integer windowHours) {
+		return Result.success(likeService.getHotContents(type, page, limit, windowHours));
 	}
 	@GetMapping("/list")
 	public Result<Page<LikeQuoteVo>> likeList(

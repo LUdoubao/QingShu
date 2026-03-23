@@ -35,6 +35,7 @@
         SELECT entity_id, COUNT(like_id) AS count
         FROM like_records
         WHERE entity_type = #{entityType}
+        AND liked = 1
         <if test="entityIds != null and entityIds.size > 0">
             AND entity_id IN
             <foreach item="entityId" collection="entityIds" open="(" separator="," close=")">
@@ -86,5 +87,69 @@
             #{date}
         </foreach>
         GROUP BY DATE(created_time)
+    </select>
+
+    <select id="countRecentLikesByEntities" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        AND liked = 1
+        AND updated_time >= #{startTime}
+        <if test="entityIds != null and entityIds.size > 0">
+            AND entity_id IN
+            <foreach item="entityId" collection="entityIds" open="(" separator="," close=")">
+                #{entityId}
+            </foreach>
+        </if>
+        GROUP BY entity_id
+    </select>
+
+    <select id="selectTopLikedContentsSince" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        AND liked = 1
+        AND updated_time >= #{startTime}
+        GROUP BY entity_id
+        ORDER BY count DESC, entity_id ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectTopLikedContents" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        AND liked = 1
+        GROUP BY entity_id
+        ORDER BY count DESC, entity_id ASC
+        LIMIT #{limit}
+    </select>
+
+    <select id="countLikesByEntitiesBetween" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        AND liked = 1
+        AND updated_time >= #{startTime}
+        AND updated_time &lt; #{endTime}
+        <if test="entityIds != null and entityIds.size > 0">
+            AND entity_id IN
+            <foreach item="entityId" collection="entityIds" open="(" separator="," close=")">
+                #{entityId}
+            </foreach>
+        </if>
+        GROUP BY entity_id
+    </select>
+
+    <select id="selectTopLikedContentsBetween" resultType="org.doubao.like.service.dto.LikeCountDTO">
+        SELECT entity_id, COUNT(like_id) AS count
+        FROM like_records
+        WHERE entity_type = #{entityType}
+        AND liked = 1
+        AND updated_time >= #{startTime}
+        AND updated_time &lt; #{endTime}
+        GROUP BY entity_id
+        ORDER BY count DESC, entity_id ASC
+        LIMIT #{limit}
     </select>
 </mapper>
