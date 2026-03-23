@@ -270,6 +270,9 @@ public class FeedService {
                 }
             }
         }
+        if (DoubaoUtils.isEmpty(collected)) {
+            return new ArrayList<>();
+        }
         if (currentPage == null || currentPage.isEmpty()) {
             ArrayList<RecommendItem> recommendItems = new ArrayList<>(collected.values());
             List<Long> ids = recommendItems.stream().map(RecommendItem::getContentId).collect(Collectors.toList());
