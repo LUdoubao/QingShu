@@ -11,9 +11,6 @@
         <result column="action_type" property="actionType"/>
         <result column="action_value" property="actionValue"/>
         <result column="duration" property="duration"/>
-        <result column="ip_address" property="ipAddress"/>
-        <result column="user_agent" property="userAgent"/>
-        <result column="extra" property="extra"/>
         <result column="created_time" property="createdTime"/>
     </resultMap>
 
@@ -83,9 +80,6 @@
         action_type,
         action_value,
         duration,
-        ip_address,
-        user_agent,
-        extra,
         created_time
         FROM user_behavior_event
         WHERE user_identity = #{userIdentity}

@@ -58,7 +58,12 @@ public class UserProfileJob {
     @Scheduled(cron = "0 20 * * * ?")
     public void flushActiveProfiles() {
         // 从 Redis 有序集合中按活跃度倒序获取前 1000 个活跃用户
-        Set<Object> active = redisTemplate.opsForZSet().reverseRangeByScore(RedisKeys.USER_ACTIVE_ZSET, Double.MAX_VALUE, 0, 0, 1000);
+        Set<Object> active = redisTemplate.opsForZSet().reverseRangeByScore(
+                RedisKeys.USER_ACTIVE_ZSET,
+                0,                   // min
+                Double.MAX_VALUE,    // max
+                0, 1000
+        );
         if (active == null || active.isEmpty()) {
             return;
         }
