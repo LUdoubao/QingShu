@@ -11,6 +11,12 @@ import java.util.Map;
 public class BehaviorEvent {
     
     /**
+     * 行为事件 ID
+     * 用于唯一标识一条行为记录
+     */
+    private Long id;
+    
+    /**
      * 用户 ID
      * 标识当前行为的用户唯一标识符
      */
@@ -77,6 +83,22 @@ public class BehaviorEvent {
      * 记录行为事件发生的时间戳
      */
     private LocalDateTime createdTime;
+
+    /**
+     * 获取行为事件 ID
+     * @return 行为事件 ID
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * 设置行为事件 ID
+     * @param id 行为事件 ID
+     */
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     /**
      * 获取用户 ID

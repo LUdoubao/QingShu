@@ -2,6 +2,21 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="org.doubao.recommend.service.mapper.UserBehaviorMapper">
 
+    <resultMap id="BehaviorEventResultMap" type="org.doubao.recommend.service.domain.BehaviorEvent">
+        <id column="id" property="id"/>
+        <result column="user_identity" property="userIdentity"/>
+        <result column="user_id" property="userId"/>
+        <result column="content_id" property="contentId"/>
+        <result column="scene" property="scene"/>
+        <result column="action_type" property="actionType"/>
+        <result column="action_value" property="actionValue"/>
+        <result column="duration" property="duration"/>
+        <result column="ip_address" property="ipAddress"/>
+        <result column="user_agent" property="userAgent"/>
+        <result column="extra" property="extra"/>
+        <result column="created_time" property="createdTime"/>
+    </resultMap>
+
     <resultMap id="HotStatResultMap" type="org.doubao.recommend.service.domain.HotStat">
         <id column="content_id" property="contentId"/>
         <result column="score" property="score"/>
@@ -56,6 +71,26 @@
         GROUP BY user_identity
         ORDER BY MAX(created_time) DESC
         LIMIT #{limit}
+    </select>
+
+    <select id="selectRecentBehaviors" resultMap="BehaviorEventResultMap">
+        SELECT 
+        id,
+        user_identity,
+        user_id,
+        content_id,
+        scene,
+        action_type,
+        action_value,
+        duration,
+        ip_address,
+        user_agent,
+        extra,
+        created_time
+        FROM user_behavior_event
+        WHERE user_identity = #{userIdentity}
+        AND created_time >= #{since}
+        ORDER BY created_time DESC
     </select>
 
 </mapper>
