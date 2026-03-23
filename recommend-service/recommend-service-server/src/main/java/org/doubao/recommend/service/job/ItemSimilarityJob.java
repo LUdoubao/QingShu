@@ -34,7 +34,7 @@ public class ItemSimilarityJob {
      * 基于内容的多维度特征（作者、朝代、分类、标签、话题等）计算相似度
      * 并将结果缓存到 Redis，设置 6 小时过期时间
      */
-    @Scheduled(cron = "0 30 * * * ?")
+    // @Scheduled(cron = "0 30 * * * ?")
     public void rebuildSimilarCache() {
     
         // 1. 取候选（最近 300 条）
