@@ -110,6 +110,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setOriginal(dto.getOriginal());
 		// 默认引文状态为待审核
 		q.setStatus(QuoteStatus.AUDITING.getCode());
+		q.setDynasty(dto.getDynasty());
 		this.saveOrUpdate(q);
 
 
@@ -1054,6 +1055,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quote.setSource(dto.getSource());
 			quote.setTitle(dto.getTitle());
 			quote.setOriginal(dto.getOriginal());
+			quote.setDynasty(dto.getDynasty());
 			this.updateById(quote);
 
 
@@ -1082,6 +1084,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		q.setTitle(dto.getTitle());
 		q.setOriginal(dto.getOriginal());
 		q.setStatus(QuoteStatus.DRAFT.getCode());
+		q.setDynasty(dto.getDynasty());
 		this.save(q);
 		Long qId = q.getId();
 		List<Long> tagIds = dto.getTagIds();

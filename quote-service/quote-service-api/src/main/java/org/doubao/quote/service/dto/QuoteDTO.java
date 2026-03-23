@@ -15,6 +15,15 @@ public class QuoteDTO {
 	private int status;
 	private Long createdId;
 	private int original;
+	private String dynasty;
+
+	public String getDynasty() {
+		return dynasty;
+	}
+
+	public void setDynasty(String dynasty) {
+		this.dynasty = dynasty;
+	}
 
 	public String getTitle() {
 		return title;
