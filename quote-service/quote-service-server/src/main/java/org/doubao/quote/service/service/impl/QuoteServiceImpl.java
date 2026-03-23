@@ -871,6 +871,14 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 					.eq(Quote::getStatus, 1) // 已发布
 					.eq(Quote::getDeleted, 0) // 未删除
 					.select(Quote::getId); // 仅查询ID，优化性能
+			int count = this.count(quoteQuery);
+			// 如果文章数量大于1000，则只返回总文章数
+			if(count > 1000) {
+				ContentOverviewVo overviewVo = new ContentOverviewVo();
+				overviewVo.setTotalArticles(count);
+				return overviewVo;
+			}
+
 			List<Quote> userQuotes = this.list(quoteQuery);
 			quoteIds = userQuotes.stream()
 					.map(Quote::getId)
@@ -884,10 +892,6 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 
 		ContentOverviewVo overviewVo = new ContentOverviewVo();
 		overviewVo.setTotalArticles(totalArticles);
-
-		if(totalArticles > 1000) {
-			return overviewVo;
-		}
 
 		// 3. 计算总浏览量（通过ViewCountClient获取）
 		long totalViews = 0;
