@@ -104,14 +104,9 @@ public class UserProfileJob {
             return;
         }
 
-        // 清空当前权重以便重新计算
-        profile.getTagWeights().clear();
-        profile.getTopicWeights().clear();
-        profile.getAuthorWeights().clear();
-        profile.getDynastyWeights().clear();
-        profile.getCategoryWeights().clear();
+        // 不再清空当前权重，而是直接累加新权重到现有权重上
         
-        // 重新遍历行为记录，计算用户偏好
+        // 遍历行为记录，计算用户偏好并累加到现有权重
         for (BehaviorEvent event : recentBehaviors) {
             // 获取内容的特征信息
             ContentFeature feature = contentFeatureService.getById(event.getContentId());
