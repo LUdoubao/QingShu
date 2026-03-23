@@ -293,6 +293,9 @@ public class FeedService {
         List<Long> ids = collect.stream().map(RecommendItem::getContentId).collect(Collectors.toList());
         // 批量查询引文信息
         UserLoginVo user = UserContext.getUser();
+        if (DoubaoUtils.isEmpty(ids)) {
+            return new ArrayList<>();
+        }
         List<QuoteVo> quoteVos = quoteService.recommendList(ids, DoubaoUtils.isNotEmpty(user) ? user.getId() : null);
         collect.forEach(feature -> {
             if (DoubaoUtils.isNotEmpty(quoteVos)) {
