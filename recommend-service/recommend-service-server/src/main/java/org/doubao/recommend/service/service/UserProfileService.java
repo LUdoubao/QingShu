@@ -3,6 +3,7 @@ package org.doubao.recommend.service.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.doubao.mall.common.util.DoubaoUtils;
 import org.doubao.recommend.service.common.RedisKeys;
 import org.doubao.recommend.service.domain.BehaviorEvent;
 import org.doubao.recommend.service.domain.ContentFeature;
@@ -43,6 +44,12 @@ public class UserProfileService {
     private ContentFeatureService contentFeatureService;
     
     /**
+     * 默认用户画像缓存
+     * 用于在新用户没有画像时提供默认推荐数据
+     */
+    private volatile UserProfile defaultProfile = null;
+    
+    /**
      * JSON 对象映射器
      * 用于序列化和反序列化用户画像中的 Map 和 List 字段
      */
@@ -51,6 +58,7 @@ public class UserProfileService {
     /**
      * 获取用户画像
      * 采用缓存优先策略：先查 Redis，未命中则查数据库并回写缓存
+     * 如果用户画像的某些字段为空，则使用默认用户画像的数据填充
      *
      * @param userIdentity 用户身份标识
      * @return 用户画像对象，如果不存在则返回 null
@@ -62,16 +70,38 @@ public class UserProfileService {
         // 从 Redis 缓存中查询
         Object cached = redisTemplate.opsForValue().get(RedisKeys.PROFILE_PREFIX + userIdentity);
         if (cached instanceof UserProfile) {
-            return (UserProfile) cached;
+            UserProfile profile = (UserProfile) cached;
+            // 检查是否需要补充默认值
+            applyDefaultValuesIfNeeded(profile);
+            return profile;
         }
 
         // 缓存未命中，从数据库查询快照
         UserProfileSnapshotRow row = snapshotMapper.selectByUserIdentity(userIdentity);
-        if (row == null) {
-            return null;
+        UserProfile profile;
+        if (DoubaoUtils.isEmpty(row)) {
+            // 新增
+            profile = new UserProfile();
+            profile.setUserIdentity(userIdentity);
+            profile.setUserId(Long.valueOf(userIdentity.replace("user_", "")));
+            profile.setLastActiveTime(LocalDateTime.now());
+            persistProfile(profile);
+        } else {
+            profile = convertToUserProfile(row);
         }
 
-        // 将数据库行转换为 UserProfile 对象
+        // 补充缺失的字段值
+        applyDefaultValuesIfNeeded(profile);
+
+        // 写入 Redis 缓存
+        redisTemplate.opsForValue().set(RedisKeys.PROFILE_PREFIX + userIdentity, profile);
+        return profile;
+    }
+    
+    /**
+     * 将数据库行转换为用户画像对象
+     */
+    private UserProfile convertToUserProfile(UserProfileSnapshotRow row) {
         UserProfile profile = new UserProfile();
         profile.setUserIdentity(row.getUserIdentity());
         profile.setUserId(row.getUserId());
@@ -83,10 +113,58 @@ public class UserProfileService {
         profile.setRecentContentIds(readList(row.getRecentContentIds()));
         profile.setLastActiveTime(row.getLastActiveTime());
         profile.setUpdatedTime(row.getUpdatedTime());
-
-        // 写入 Redis 缓存
-        redisTemplate.opsForValue().set(RedisKeys.PROFILE_PREFIX + userIdentity, profile);
         return profile;
+    }
+
+    /**
+     * 应用默认值到空字段
+     * 如果用户画像中的关键字段为空，则使用默认用户画像的数据填充
+     */
+    private void applyDefaultValuesIfNeeded(UserProfile profile) {
+        UserProfile defaultProfile = getDefaultProfile();
+        if (defaultProfile == null) {
+            return; // 无法获取默认值
+        }
+
+        // 如果标签权重为空，使用默认值
+        if (profile.getTagWeights() == null || profile.getTagWeights().isEmpty()) {
+            profile.setTagWeights(new HashMap<>(defaultProfile.getTagWeights()));
+        }
+
+        // 如果话题权重为空，使用默认值
+        if (profile.getTopicWeights() == null || profile.getTopicWeights().isEmpty()) {
+            profile.setTopicWeights(new HashMap<>(defaultProfile.getTopicWeights()));
+        }
+
+        // 如果作者权重为空，使用默认值
+        if (profile.getAuthorWeights() == null || profile.getAuthorWeights().isEmpty()) {
+            profile.setAuthorWeights(new HashMap<>(defaultProfile.getAuthorWeights()));
+        }
+
+        // 如果朝代权重为空，使用默认值
+        if (profile.getDynastyWeights() == null || profile.getDynastyWeights().isEmpty()) {
+            profile.setDynastyWeights(new HashMap<>(defaultProfile.getDynastyWeights()));
+        }
+    }
+
+    /**
+     * 获取默认用户画像
+     * 从数据库中获取预设的默认用户画像数据（user_1），用于新用户或缺少画像信息的用户
+     *
+     * @return 默认用户画像对象
+     */
+    private UserProfile getDefaultProfile() {
+        if (defaultProfile == null) {
+            synchronized (this) { // 防止多线程并发初始化
+                if (defaultProfile == null) {
+                    UserProfileSnapshotRow defaultRow = snapshotMapper.selectByUserIdentity("user_1");
+                    if (defaultRow != null) {
+                        defaultProfile = convertToUserProfile(defaultRow);
+                    }
+                }
+            }
+        }
+        return defaultProfile;
     }
 
     /**
@@ -177,7 +255,6 @@ public class UserProfileService {
      * 限制返回数量，用于实时推荐场景
      *
      * @param userIdentity 用户身份标识
-     * @param limit 最大返回数量
      * @return 最近的内容 ID 列表
      */
     public UserProfile getProfile(String userIdentity) {
