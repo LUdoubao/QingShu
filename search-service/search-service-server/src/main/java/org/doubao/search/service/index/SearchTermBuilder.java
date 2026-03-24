@@ -22,10 +22,10 @@ public class SearchTermBuilder {
         addTerms(terms, doc, doc.getTitle(), "WORD", "title", 10);
         addTerms(terms, doc, doc.getContent(), "WORD", "content", 3);
         addTerms(terms, doc, doc.getAuthorName(), "AUTHOR", "author", 8);
-        addTerms(terms, doc, doc.getCategoryName(), "CATEGORY", "category", 7);
+        // addTerms(terms, doc, doc.getCategoryName(), "CATEGORY", "category", 7);
         addTerms(terms, doc, doc.getTagNamesText(), "TAG", "tag", 6);
         addPrefixTerms(terms, doc, doc.getAuthorName(), "PREFIX", "author", 5);
-        addPrefixTerms(terms, doc, doc.getCategoryName(), "PREFIX", "category", 4);
+        // addPrefixTerms(terms, doc, doc.getCategoryName(), "PREFIX", "category", 4);
         addPrefixTerms(terms, doc, doc.getTagNamesText(), "PREFIX", "tag", 4);
         addPrefixTerms(terms, doc, doc.getTitle(), "PREFIX", "title", 4);
         return terms;

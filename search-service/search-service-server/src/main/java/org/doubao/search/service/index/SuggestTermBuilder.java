@@ -18,7 +18,7 @@ public class SuggestTermBuilder {
     public List<SearchSuggestTermDO> build(SearchDocIndexDO doc) {
         List<SearchSuggestTermDO> terms = new ArrayList<SearchSuggestTermDO>();
         add(terms, doc.getContent(), "QUOTE", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
-        add(terms, doc.getCategoryName(), "CATEGORY", doc.getCategoryId(), "quote", doc.getHotScore(), doc.getQualityScore());
+        // add(terms, doc.getCategoryName(), "CATEGORY", doc.getCategoryId(), "quote", doc.getHotScore(), doc.getQualityScore());
         if (doc.getTagNamesText() != null) {
             for (String tag : doc.getTagNamesText().split(",")) {
                 add(terms, tag, "TAG", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
