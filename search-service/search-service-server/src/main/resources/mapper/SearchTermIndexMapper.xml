@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.SearchTermIndexMapper">
+
+    <delete id="deleteByBiz">
+        DELETE FROM search_term_index
+        WHERE biz_type = #{bizType}
+          AND biz_id = #{bizId}
+    </delete>
+
+    <insert id="batchInsert">
+        INSERT INTO search_term_index (
+            biz_type, biz_id, term, term_normalized, term_type, source_field, weight
+        ) VALUES
+        <foreach collection="terms" item="item" separator=",">
+            (
+                #{item.bizType}, #{item.bizId}, #{item.term}, #{item.termNormalized},
+                #{item.termType}, #{item.sourceField}, #{item.weight}
+            )
+        </foreach>
+    </insert>
+
+    <select id="selectByTerms" resultType="org.doubao.search.service.entity.SearchCandidateDO">
+        SELECT biz_id AS bizId,
+               SUM(weight) AS recallScore
+        FROM search_term_index
+        WHERE biz_type = #{bizType}
+          AND term_normalized IN
+        <foreach collection="terms" item="term" open="(" separator="," close=")">
+            #{term}
+        </foreach>
+        GROUP BY biz_id
+        ORDER BY recallScore DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByPrefix" resultType="org.doubao.search.service.entity.SearchCandidateDO">
+        SELECT biz_id AS bizId,
+               SUM(weight) AS recallScore
+        FROM search_term_index
+        WHERE biz_type = #{bizType}
+          AND term_type = 'PREFIX'
+          AND term_normalized = #{prefix}
+        GROUP BY biz_id
+        ORDER BY recallScore DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

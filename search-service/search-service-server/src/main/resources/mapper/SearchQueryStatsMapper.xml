@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.SearchQueryStatsMapper">
+
+    <insert id="upsertStats">
+        INSERT INTO search_query_stats (
+            query_text,
+            query_text_normalized,
+            search_count,
+            result_count_total,
+            click_count,
+            last_result_count,
+            last_search_time,
+            trend_score,
+            hot_score
+        ) VALUES (
+            #{queryText},
+            #{normalizedQuery},
+            1,
+            #{resultCount},
+            0,
+            #{resultCount},
+            NOW(),
+            0,
+            0
+        )
+        ON DUPLICATE KEY UPDATE
+            query_text = VALUES(query_text),
+            search_count = search_count + 1,
+            result_count_total = result_count_total + VALUES(result_count_total),
+            last_result_count = VALUES(last_result_count),
+            last_search_time = NOW()
+    </insert>
+</mapper>

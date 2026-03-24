@@ -155,6 +155,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		// 推送待审核消息到管理员消息中心
 		quoteEventPublisher.pushQuoteUpdateNotification(1L,
 				q.getId(), dto.getContent(), q.getCreatedId());
+		quoteEventPublisher.pushSearchSyncEvent("UPSERT", q.getId(), q.getCreatedId());
 		return Result.success();
 	}
 
@@ -170,6 +171,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		// 异步失效动态流数据
 		for (Long quoteId : quoteIds) {
 			noValidFeed(userId, quoteId);
+			quoteEventPublisher.pushSearchSyncEvent("DELETE", quoteId, userId);
 		}
 		return Result.success(ResultCode.SUCCESS.getMessage());
 	}
@@ -217,6 +219,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			}
 			bindTopic(quote.getId(), DoubaoUtils.isNotEmpty(afterQuoteVo.getTopic()) ? afterQuoteVo.getTopic().getId() : null,
 					quote.getCreatedId(), QuoteStatus.PUBLISHED.getCode());
+			quoteEventPublisher.pushSearchSyncEvent("UPSERT", quote.getId(), quote.getCreatedId());
 		} else {
 			//非管理员更新引文状态为待审核
 			Long quoteId = dto.getQuoteId();
@@ -242,6 +245,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			// 推送待审核消息到管理员消息中心
 			quoteEventPublisher.pushQuoteUpdateNotification(1L,
 					quoteId, dto.getAfterQuoteVo().getContent(), quote.getCreatedId());
+			quoteEventPublisher.pushSearchSyncEvent("UPSERT", quoteId, quote.getCreatedId());
 		}
 
 		return Result.success(ResultCode.SUCCESS.getMessage());
@@ -503,6 +507,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			this.updateById(quote);
 
 			topicClient.updateBindQuote(new  TopicBindDTO(quoteId, QuoteStatus.PUBLISHED.getCode()));
+			quoteEventPublisher.pushSearchSyncEvent("UPSERT", quoteId, quote.getCreatedId());
 
 			quoteEventPublisher.pushQuoteVerifyNotification(
 					quoteId,
@@ -785,6 +790,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			Long userId = UserContext.getUserId();
 			noValidFeed(userId, quoteId);
 		}
+		quoteEventPublisher.pushSearchSyncEvent("UPSERT", quoteId, UserContext.getUserId());
 	}
 
 	@Override
@@ -1037,6 +1043,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 			quoteMapper.updateQuoteStatus(quoteId, QuoteStatus.OFF_SHELF.getCode());
 			topicClient.updateBindQuote(new TopicBindDTO(quoteId, QuoteStatus.AUDITING.getCode()));
 			noValidFeed(userId,quoteId);
+			quoteEventPublisher.pushSearchSyncEvent("UPSERT", quoteId, userId);
 		} else {
 			throw new BusinessException(ErrorCode.BAD_REQUEST);
 		}
@@ -1079,6 +1086,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				}
 				quoteTagMapper.insertBatch(quoteTags);
 			}
+			quoteEventPublisher.pushSearchSyncEvent("UPSERT", id, quote.getCreatedId());
 			return id;
 		}
 		Quote q = new Quote();
@@ -1104,6 +1112,7 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 		}
 		bindTopic(q.getId(), DoubaoUtils.isNotEmpty(dto.getTopicIds()) ? dto.getTopicIds().get(0) : null,
 				q.getCreatedId(), QuoteStatus.AUDITING.getCode());
+		quoteEventPublisher.pushSearchSyncEvent("UPSERT", qId, q.getCreatedId());
 		return qId;
 	}
 

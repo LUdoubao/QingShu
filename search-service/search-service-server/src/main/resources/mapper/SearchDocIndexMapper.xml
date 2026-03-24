@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.SearchDocIndexMapper">
+
+    <insert id="upsert">
+        INSERT INTO search_doc_index (
+            biz_type, biz_id, title, content, author_name, source, category_id, category_name,
+            tag_names_text, search_text, search_text_normalized, status, is_original,
+            view_count, like_count, comment_count, favorite_count, hot_score, quality_score, is_deleted
+        ) VALUES (
+            #{bizType}, #{bizId}, #{title}, #{content}, #{authorName}, #{source}, #{categoryId}, #{categoryName},
+            #{tagNamesText}, #{searchText}, #{searchTextNormalized}, #{status}, #{isOriginal},
+            #{viewCount}, #{likeCount}, #{commentCount}, #{favoriteCount}, #{hotScore}, #{qualityScore}, #{isDeleted}
+        )
+        ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            content = VALUES(content),
+            author_name = VALUES(author_name),
+            source = VALUES(source),
+            category_id = VALUES(category_id),
+            category_name = VALUES(category_name),
+            tag_names_text = VALUES(tag_names_text),
+            search_text = VALUES(search_text),
+            search_text_normalized = VALUES(search_text_normalized),
+            status = VALUES(status),
+            is_original = VALUES(is_original),
+            view_count = VALUES(view_count),
+            like_count = VALUES(like_count),
+            comment_count = VALUES(comment_count),
+            favorite_count = VALUES(favorite_count),
+            hot_score = VALUES(hot_score),
+            quality_score = VALUES(quality_score),
+            is_deleted = VALUES(is_deleted),
+            updated_time = NOW()
+    </insert>
+
+    <select id="selectByBizIds" resultType="org.doubao.search.service.entity.SearchDocIndexDO">
+        SELECT *
+        FROM search_doc_index
+        WHERE biz_type = #{bizType}
+          AND status = 1
+          AND is_deleted = 0
+          AND biz_id IN
+        <foreach collection="bizIds" item="bizId" open="(" separator="," close=")">
+            #{bizId}
+        </foreach>
+    </select>
+
+    <select id="selectExactMatches" resultType="org.doubao.search.service.entity.SearchDocIndexDO">
+        SELECT *
+        FROM search_doc_index
+        WHERE biz_type = #{bizType}
+          AND status = 1
+          AND is_deleted = 0
+          AND (
+            search_text_normalized = #{normalizedQuery}
+            OR author_name = #{normalizedQuery}
+            OR category_name = #{normalizedQuery}
+            OR tag_names_text = #{normalizedQuery}
+          )
+        ORDER BY hot_score DESC, quality_score DESC, updated_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectLikeMatches" resultType="org.doubao.search.service.entity.SearchDocIndexDO">
+        SELECT *
+        FROM search_doc_index
+        WHERE biz_type = #{bizType}
+          AND status = 1
+          AND is_deleted = 0
+          AND search_text_normalized LIKE CONCAT('%', #{normalizedQuery}, '%')
+        ORDER BY hot_score DESC, quality_score DESC, updated_time DESC
+        LIMIT #{limit}
+    </select>
+</mapper>

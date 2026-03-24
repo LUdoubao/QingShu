@@ -1,57 +1,37 @@
 package org.doubao.search.service.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 import org.doubao.search.service.entity.SearchHistory;
+import org.doubao.search.service.history.SearchHistoryRepository;
 import org.doubao.search.service.service.SearchHistoryService;
-import org.doubao.search.service.mapper.SearchHistoryMapper;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
+import org.doubao.search.service.support.QueryPreprocessor;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
 import java.util.List;
 
 @Service
 public class SearchHistoryServiceImpl implements SearchHistoryService {
 
-    @Autowired
-    private SearchHistoryMapper searchHistoryMapper;
-    
-    // 最多保存的历史记录数量
     private static final int HISTORY_LIMIT = 20;
 
-    @Override
-    @Transactional
-    public void saveSearchHistory(Long userId, String keyword) {
-        if (userId == null || keyword == null || keyword.trim().isEmpty()) {
-            return;
-        }
-        
-        SearchHistory history = new SearchHistory();
-        history.setUserId(userId);
-        history.setKeyword(keyword.trim());
-        history.setCreatedTime(LocalDateTime.now());
+    @Resource
+    private SearchHistoryRepository searchHistoryRepository;
 
-        searchHistoryMapper.insert(history);
+    @Resource
+    private QueryPreprocessor queryPreprocessor;
+
+    @Override
+    public void saveSearchHistory(Long userId, String keyword) {
+        searchHistoryRepository.save(userId, keyword, queryPreprocessor.normalize(keyword));
     }
 
     @Override
     public List<SearchHistory> getUserSearchHistory(Long userId) {
-        if (userId == null) {
-            return new ArrayList<>();
-        }
-        return searchHistoryMapper.getUserSearchHistory(userId, HISTORY_LIMIT);
+        return searchHistoryRepository.findUserHistory(userId, HISTORY_LIMIT);
     }
 
     @Override
-    @Transactional
     public boolean clearUserSearchHistory(Long userId) {
-        if (userId == null) {
-            return false;
-        }
-        // 逻辑删除
-        LambdaQueryWrapper<SearchHistory> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(SearchHistory::getUserId, userId);
-        return searchHistoryMapper.delete(queryWrapper) > 0;
+        return searchHistoryRepository.clearUserHistory(userId);
     }
 }

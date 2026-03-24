@@ -134,4 +134,33 @@ public class QuoteEventPublisher {
 			}
 		});
 	}
+
+	public void pushSearchSyncEvent(String opType, Long quoteId, Long actorId) {
+		taskExecutor.asyncExecute(() -> {
+			BusinessEvent businessEvent = new BusinessEvent();
+			Long timestamp = System.currentTimeMillis();
+			String eventId = "QUOTE_SEARCH_SYNC_" + timestamp;
+			businessEvent.setEventId(eventId);
+			businessEvent.setTimestamp(timestamp);
+			businessEvent.setEventType(EventType.QUOTE_EVENT);
+			businessEvent.setActorId(actorId);
+			businessEvent.setTargetId(quoteId);
+			Map<String, Object> extInfo = new HashMap<>();
+			extInfo.put("action", "SEARCH_SYNC");
+			extInfo.put("bizType", "quote");
+			extInfo.put("opType", opType);
+			businessEvent.setExtInfo(extInfo);
+			rabbitTemplate.convertAndSend(
+					Constants.FANOUT_EVENT_EXCHANGE,
+					Constants.USER_QUOTE_ROUTING_KEY,
+					businessEvent
+			);
+			LOGGER.info("[search-sync] quote event published, opType: {}, quoteId: {}", opType, quoteId);
+			return null;
+		}).whenComplete((v, t) -> {
+			if (t != null) {
+				LOGGER.error("[search-sync] publish failed, quoteId: {}", quoteId, t);
+			}
+		});
+	}
 }

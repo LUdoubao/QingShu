@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.SearchSuggestTermMapper">
+
+    <select id="selectByPrefixAndType" resultType="org.doubao.search.service.entity.SearchSuggestTermDO">
+        SELECT id,
+               term_text,
+               term_normalized,
+               prefix_text,
+               term_type,
+               source_id,
+               source_biz_type,
+               hot_score,
+               quality_score,
+               search_count,
+               click_count,
+               result_count,
+               status
+        FROM search_suggest_term
+        WHERE prefix_text = #{prefixText}
+          AND term_type = #{termType}
+          AND status = 1
+        ORDER BY hot_score DESC, quality_score DESC, updated_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <delete id="deleteBySource">
+        DELETE FROM search_suggest_term
+        WHERE source_biz_type = #{sourceBizType}
+          AND source_id = #{sourceId}
+    </delete>
+
+    <insert id="batchInsert">
+        INSERT INTO search_suggest_term (
+            term_text, term_normalized, prefix_text, term_type, source_id, source_biz_type,
+            hot_score, quality_score, search_count, click_count, result_count, status
+        ) VALUES
+        <foreach collection="terms" item="item" separator=",">
+            (
+                #{item.termText}, #{item.termNormalized}, #{item.prefixText}, #{item.termType},
+                #{item.sourceId}, #{item.sourceBizType}, #{item.hotScore}, #{item.qualityScore},
+                #{item.searchCount}, #{item.clickCount}, #{item.resultCount}, #{item.status}
+            )
+        </foreach>
+    </insert>
+</mapper>

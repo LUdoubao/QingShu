@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.doubao.search.service.mapper.UserSearchHistoryMapper">
+
+    <insert id="upsertHistory">
+        INSERT INTO user_search_history (
+            user_id,
+            query_text,
+            query_text_normalized,
+            search_count,
+            last_search_time,
+            deleted
+        ) VALUES (
+            #{userId},
+            #{queryText},
+            #{normalizedQuery},
+            1,
+            NOW(),
+            0
+        )
+        ON DUPLICATE KEY UPDATE
+            query_text = VALUES(query_text),
+            search_count = search_count + 1,
+            last_search_time = NOW(),
+            deleted = 0
+    </insert>
+
+    <select id="selectUserHistory" resultType="org.doubao.search.service.entity.UserSearchHistoryDO">
+        SELECT id,
+               user_id,
+               query_text,
+               query_text_normalized,
+               search_count,
+               last_search_time,
+               deleted
+        FROM user_search_history
+        WHERE user_id = #{userId}
+          AND deleted = 0
+        ORDER BY last_search_time DESC, search_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <update id="clearUserHistory">
+        UPDATE user_search_history
+        SET deleted = 1,
+            updated_time = NOW()
+        WHERE user_id = #{userId}
+          AND deleted = 0
+    </update>
+</mapper>
