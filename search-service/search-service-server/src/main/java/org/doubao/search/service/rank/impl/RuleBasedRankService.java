@@ -2,7 +2,7 @@ package org.doubao.search.service.rank.impl;
 
 import org.doubao.search.service.domain.query.QueryContext;
 import org.doubao.search.service.domain.result.RecallDoc;
-import org.doubao.search.service.rank.RankService;
+import org.doubao.search.service.rank.SearchRankService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
-public class RuleBasedRankService implements RankService {
+public class RuleBasedRankService implements SearchRankService {
 
     @Override
     public List<RecallDoc> rank(QueryContext context, List<RecallDoc> docs) {

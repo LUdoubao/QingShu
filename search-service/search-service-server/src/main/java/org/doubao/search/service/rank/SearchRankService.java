@@ -5,7 +5,7 @@ import org.doubao.search.service.domain.result.RecallDoc;
 
 import java.util.List;
 
-public interface RankService {
+public interface SearchRankService {
 
     List<RecallDoc> rank(QueryContext context, List<RecallDoc> docs);
 }
