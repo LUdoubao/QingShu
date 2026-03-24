@@ -22,7 +22,8 @@ public class TermRecallStrategy implements RecallStrategy {
         if (context.getTerms().isEmpty()) {
             return new RecallResult(0, new ArrayList<RecallDoc>());
         }
-        List<SearchCandidateDO> candidates = searchTermIndexMapper.selectByTerms("quote", context.getTerms(), 100);
+        List<SearchCandidateDO> candidates = searchTermIndexMapper.selectByTerms("quote",
+                context.getTerms(), context.getRecallWindowSize());
         List<RecallDoc> docs = new ArrayList<RecallDoc>();
         for (SearchCandidateDO candidate : candidates) {
             docs.add(new RecallDoc(candidate.getBizId(), null, "TERM", candidate.getRecallScore() == null ? 0D : candidate.getRecallScore()));

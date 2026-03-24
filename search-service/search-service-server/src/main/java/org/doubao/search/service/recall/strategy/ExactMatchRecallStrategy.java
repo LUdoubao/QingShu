@@ -22,7 +22,8 @@ public class ExactMatchRecallStrategy implements RecallStrategy {
 
     @Override
     public RecallResult recall(QueryContext context) {
-        List<SearchDocIndexDO> matches = searchDocIndexMapper.selectExactMatches("quote", context.getNormalizedQuery(), 50);
+        List<SearchDocIndexDO> matches = searchDocIndexMapper.selectExactMatches("quote",
+                context.getNormalizedQuery(), context.getRecallWindowSize());
         List<RecallDoc> docs = new ArrayList<RecallDoc>();
         for (SearchDocIndexDO match : matches) {
             docs.add(new RecallDoc(match.getBizId(), searchDocConverter.toResult(match), "EXACT", 100D));

@@ -22,11 +22,20 @@ public class FallbackLikeRecallStrategy implements RecallStrategy {
 
     @Override
     public RecallResult recall(QueryContext context) {
-        List<SearchDocIndexDO> matches = searchDocIndexMapper.selectLikeMatches("quote", context.getNormalizedQuery(), 50);
+        if (!shouldUseLikeFallback(context)) {
+            return new RecallResult(0, new ArrayList<RecallDoc>());
+        }
+        List<SearchDocIndexDO> matches = searchDocIndexMapper.selectLikeMatches("quote",
+                context.getNormalizedQuery(), Math.min(context.getRecallWindowSize(), 50));
         List<RecallDoc> docs = new ArrayList<RecallDoc>();
         for (SearchDocIndexDO match : matches) {
             docs.add(new RecallDoc(match.getBizId(), searchDocConverter.toResult(match), "LIKE", 20D));
         }
         return new RecallResult(docs.size(), docs);
+    }
+
+    private boolean shouldUseLikeFallback(QueryContext context) {
+        String normalizedQuery = context.getNormalizedQuery();
+        return normalizedQuery != null && normalizedQuery.length() >= 2 && context.getPage() == 1;
     }
 }

@@ -44,6 +44,15 @@ public class QueryContext {
         return size;
     }
 
+    public int getOffset() {
+        return Math.max(0, (page - 1) * size);
+    }
+
+    public int getRecallWindowSize() {
+        int window = getOffset() + size + 20;
+        return Math.min(Math.max(window, 20), 200);
+    }
+
     public Long getUserId() {
         return userId;
     }

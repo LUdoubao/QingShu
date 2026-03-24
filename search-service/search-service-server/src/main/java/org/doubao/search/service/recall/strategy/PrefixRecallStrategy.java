@@ -19,7 +19,8 @@ public class PrefixRecallStrategy implements RecallStrategy {
 
     @Override
     public RecallResult recall(QueryContext context) {
-        List<SearchCandidateDO> candidates = searchTermIndexMapper.selectByPrefix("quote", context.getNormalizedQuery(), 100);
+        List<SearchCandidateDO> candidates = searchTermIndexMapper.selectByPrefix("quote",
+                context.getNormalizedQuery(), context.getRecallWindowSize());
         List<RecallDoc> docs = new ArrayList<RecallDoc>();
         for (SearchCandidateDO candidate : candidates) {
             docs.add(new RecallDoc(candidate.getBizId(), null, "PREFIX", candidate.getRecallScore() == null ? 0D : candidate.getRecallScore()));

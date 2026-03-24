@@ -16,7 +16,10 @@ public class SearchPageAssembler {
         Page<SearchResultDTO> page = new Page<>(context.getPage(), context.getSize());
         page.setTotal(total);
         List<SearchResultDTO> records = new ArrayList<>();
-        for (RecallDoc rankedDoc : rankedDocs) {
+        int fromIndex = Math.min(context.getOffset(), rankedDocs.size());
+        int toIndex = Math.min(fromIndex + context.getSize(), rankedDocs.size());
+        for (int i = fromIndex; i < toIndex; i++) {
+            RecallDoc rankedDoc = rankedDocs.get(i);
             records.add(rankedDoc.getDocument());
         }
         page.setRecords(records);

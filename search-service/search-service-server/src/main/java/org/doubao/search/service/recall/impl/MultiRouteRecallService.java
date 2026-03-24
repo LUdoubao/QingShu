@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +52,7 @@ public class MultiRouteRecallService implements RecallService {
             return remoteQuoteRecallStrategy.recall(context);
         }
         hydrateDocuments(merged);
+        pruneMissingDocuments(merged);
         return new RecallResult(merged.size(), new ArrayList<RecallDoc>(merged.values()));
     }
 
@@ -70,6 +72,16 @@ public class MultiRouteRecallService implements RecallService {
             RecallDoc recallDoc = merged.get(doc.getBizId());
             if (recallDoc != null && recallDoc.getDocument() == null) {
                 recallDoc.setDocument(searchDocConverter.toResult(doc));
+            }
+        }
+    }
+
+    private void pruneMissingDocuments(Map<Long, RecallDoc> merged) {
+        Iterator<Map.Entry<Long, RecallDoc>> iterator = merged.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Long, RecallDoc> entry = iterator.next();
+            if (entry.getValue().getDocument() == null) {
+                iterator.remove();
             }
         }
     }

@@ -69,15 +69,15 @@ public class DefaultSearchExecutionServiceIntegrationTest {
         candidate.setBizId(11L);
         candidate.setRecallScore(30D);
 
-        Mockito.when(searchDocIndexMapper.selectExactMatches("quote", "苏轼", 50))
+        Mockito.when(searchDocIndexMapper.selectExactMatches(Mockito.eq("quote"), Mockito.eq("苏轼"), Mockito.anyInt()))
                 .thenReturn(Collections.<SearchDocIndexDO>emptyList());
-        Mockito.when(searchTermIndexMapper.selectByPrefix("quote", "苏轼", 100))
+        Mockito.when(searchTermIndexMapper.selectByPrefix(Mockito.eq("quote"), Mockito.eq("苏轼"), Mockito.anyInt()))
                 .thenReturn(Collections.singletonList(candidate));
-        Mockito.when(searchTermIndexMapper.selectByTerms(Mockito.eq("quote"), Mockito.anyList(), Mockito.eq(100)))
+        Mockito.when(searchTermIndexMapper.selectByTerms(Mockito.eq("quote"), Mockito.anyList(), Mockito.anyInt()))
                 .thenReturn(Collections.singletonList(candidate));
         Mockito.when(searchDocIndexMapper.selectByBizIds("quote", Collections.singletonList(11L)))
                 .thenReturn(Collections.singletonList(localDoc));
-        Mockito.when(searchDocIndexMapper.selectLikeMatches("quote", "苏轼", 50))
+        Mockito.when(searchDocIndexMapper.selectLikeMatches(Mockito.eq("quote"), Mockito.eq("苏轼"), Mockito.anyInt()))
                 .thenReturn(Collections.<SearchDocIndexDO>emptyList());
 
         QueryContext context = new QueryContext("苏轼", "苏轼", "quote", 1, 10, 1L, Arrays.asList("苏轼"));

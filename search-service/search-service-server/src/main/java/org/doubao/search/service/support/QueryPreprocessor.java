@@ -37,16 +37,8 @@ public class QueryPreprocessor {
         }
         terms.add(normalizedQuery);
         for (String part : normalizedQuery.split(" ")) {
-            if (!part.isEmpty()) {
+            if (!part.isEmpty() && !terms.contains(part)) {
                 terms.add(part);
-            }
-        }
-        if (!normalizedQuery.contains(" ")) {
-            for (int i = 0; i < normalizedQuery.length(); i++) {
-                String current = String.valueOf(normalizedQuery.charAt(i));
-                if (!terms.contains(current)) {
-                    terms.add(current);
-                }
             }
         }
         return terms;
