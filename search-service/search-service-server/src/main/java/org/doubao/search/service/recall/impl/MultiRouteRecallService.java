@@ -42,18 +42,25 @@ public class MultiRouteRecallService implements RecallService {
     @Override
     public RecallResult recall(QueryContext context) {
         Map<Long, RecallDoc> merged = new LinkedHashMap<Long, RecallDoc>();
-        merge(merged, exactMatchRecallStrategy.recall(context).getDocs());
-        merge(merged, prefixRecallStrategy.recall(context).getDocs());
-        merge(merged, termRecallStrategy.recall(context).getDocs());
+        RecallResult exactResult = exactMatchRecallStrategy.recall(context);
+        RecallResult prefixResult = prefixRecallStrategy.recall(context);
+        RecallResult termResult = termRecallStrategy.recall(context);
+        merge(merged, exactResult.getDocs());
+        merge(merged, prefixResult.getDocs());
+        merge(merged, termResult.getDocs());
+        long total = merged.size();
         if (merged.size() < 20) {
-            merge(merged, fallbackLikeRecallStrategy.recall(context).getDocs());
+            RecallResult likeResult = fallbackLikeRecallStrategy.recall(context);
+            merge(merged, likeResult.getDocs());
+            total = Math.max(total, likeResult.getTotal());
         }
         if (merged.isEmpty()) {
             return remoteQuoteRecallStrategy.recall(context);
         }
         hydrateDocuments(merged);
         pruneMissingDocuments(merged);
-        return new RecallResult(merged.size(), new ArrayList<RecallDoc>(merged.values()));
+        total = Math.max(total, merged.size());
+        return new RecallResult(total, new ArrayList<RecallDoc>(merged.values()));
     }
 
     private void merge(Map<Long, RecallDoc> merged, List<RecallDoc> docs) {

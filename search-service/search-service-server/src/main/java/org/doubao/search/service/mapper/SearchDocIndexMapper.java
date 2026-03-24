@@ -23,4 +23,7 @@ public interface SearchDocIndexMapper extends BaseMapper<SearchDocIndexDO> {
     List<SearchDocIndexDO> selectLikeMatches(@Param("bizType") String bizType,
                                              @Param("normalizedQuery") String normalizedQuery,
                                              @Param("limit") int limit);
+
+    long countLikeMatches(@Param("bizType") String bizType,
+                          @Param("normalizedQuery") String normalizedQuery);
 }

@@ -109,4 +109,13 @@
         ORDER BY hot_score DESC, quality_score DESC, updated_time DESC
         LIMIT #{limit}
     </select>
+
+    <select id="countLikeMatches" resultType="long">
+        SELECT COUNT(1)
+        FROM search_doc_index
+        WHERE biz_type = #{bizType}
+          AND status = 1
+          AND is_deleted = 0
+          AND search_text_normalized LIKE CONCAT('%', #{normalizedQuery}, '%')
+    </select>
 </mapper>

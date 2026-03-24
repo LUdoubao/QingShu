@@ -30,8 +30,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 @ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = DefaultSearchExecutionServiceIntegrationTest.Config.class)
@@ -77,6 +79,8 @@ public class DefaultSearchExecutionServiceIntegrationTest {
                 .thenReturn(Collections.singletonList(candidate));
         Mockito.when(searchDocIndexMapper.selectByBizIds("quote", Collections.singletonList(11L)))
                 .thenReturn(Collections.singletonList(localDoc));
+        Mockito.when(searchDocIndexMapper.countLikeMatches(Mockito.eq("quote"), Mockito.eq("苏轼")))
+                .thenReturn(0L);
         Mockito.when(searchDocIndexMapper.selectLikeMatches(Mockito.eq("quote"), Mockito.eq("苏轼"), Mockito.anyInt()))
                 .thenReturn(Collections.<SearchDocIndexDO>emptyList());
 
@@ -88,6 +92,51 @@ public class DefaultSearchExecutionServiceIntegrationTest {
         Assertions.assertEquals(Long.valueOf(11L), page.getRecords().get(0).getId());
         Mockito.verify(quoteSearchGateway, Mockito.never()).search(Mockito.any(QueryContext.class));
         Mockito.verify(searchStatsService).recordSearch(context, 1L);
+    }
+
+    @Test
+    public void shouldUseLikeCountAsStableTotalForSecondPage() {
+        List<SearchDocIndexDO> likeMatches = new ArrayList<SearchDocIndexDO>();
+        List<Long> hydratedIds = new ArrayList<Long>();
+        for (long i = 1; i <= 14; i++) {
+            SearchDocIndexDO doc = new SearchDocIndexDO();
+            doc.setBizType("quote");
+            doc.setBizId(i);
+            doc.setContent("结果" + i);
+            doc.setAuthorName("作者");
+            doc.setCategoryName("诗词");
+            doc.setSource("来源");
+            doc.setIsOriginal(1);
+            doc.setStatus(1);
+            doc.setIsDeleted(0);
+            likeMatches.add(doc);
+            hydratedIds.add(i);
+        }
+
+        SearchCandidateDO candidate = new SearchCandidateDO();
+        candidate.setBizId(1L);
+        candidate.setRecallScore(10D);
+
+        Mockito.when(searchDocIndexMapper.selectExactMatches(Mockito.eq("quote"), Mockito.eq("测试"), Mockito.anyInt()))
+                .thenReturn(Collections.<SearchDocIndexDO>emptyList());
+        Mockito.when(searchTermIndexMapper.selectByPrefix(Mockito.eq("quote"), Mockito.eq("测试"), Mockito.anyInt()))
+                .thenReturn(Collections.singletonList(candidate));
+        Mockito.when(searchTermIndexMapper.selectByTerms(Mockito.eq("quote"), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt()))
+                .thenReturn(Collections.singletonList(candidate));
+        Mockito.when(searchDocIndexMapper.countLikeMatches(Mockito.eq("quote"), Mockito.eq("测试")))
+                .thenReturn(34L);
+        Mockito.when(searchDocIndexMapper.selectLikeMatches(Mockito.eq("quote"), Mockito.eq("测试"), Mockito.anyInt()))
+                .thenReturn(likeMatches);
+        Mockito.when(searchDocIndexMapper.selectByBizIds("quote", hydratedIds))
+                .thenReturn(likeMatches);
+
+        QueryContext context = new QueryContext("测试", "测试", "quote", 2, 10, 1L, Arrays.asList("测试"));
+        Page<SearchResultDTO> page = searchExecutionService.search(context);
+
+        Assertions.assertEquals(34L, page.getTotal());
+        Assertions.assertEquals(4, page.getRecords().size());
+        Assertions.assertEquals(Long.valueOf(11L), page.getRecords().get(0).getId());
+        Mockito.verify(quoteSearchGateway, Mockito.never()).search(Mockito.any(QueryContext.class));
     }
 
     @TestConfiguration
