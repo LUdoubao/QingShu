@@ -12,16 +12,24 @@ import java.util.List;
 @Component
 public class SuggestTermBuilder {
 
+    private static final int MAX_TAG_SUGGESTIONS = 2;
+    private static final int MAX_TERM_LENGTH = 12;
+
     @Resource
     private QueryPreprocessor queryPreprocessor;
 
     public List<SearchSuggestTermDO> build(SearchDocIndexDO doc) {
         List<SearchSuggestTermDO> terms = new ArrayList<SearchSuggestTermDO>();
-        add(terms, doc.getContent(), "QUOTE", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
-        // add(terms, doc.getCategoryName(), "CATEGORY", doc.getCategoryId(), "quote", doc.getHotScore(), doc.getQualityScore());
+        add(terms, doc.getTitle(), "QUOTE", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
+        add(terms, doc.getAuthorName(), "QUOTE", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
+        int tagCount = 0;
         if (doc.getTagNamesText() != null) {
             for (String tag : doc.getTagNamesText().split(",")) {
+                if (tagCount >= MAX_TAG_SUGGESTIONS) {
+                    break;
+                }
                 add(terms, tag, "TAG", doc.getBizId(), "quote", doc.getHotScore(), doc.getQualityScore());
+                tagCount++;
             }
         }
         return terms;
@@ -30,11 +38,11 @@ public class SuggestTermBuilder {
     private void add(List<SearchSuggestTermDO> target, String termText, String termType, Long sourceId,
                      String sourceBizType, Double hotScore, Double qualityScore) {
         String normalized = queryPreprocessor.normalize(termText);
-        if (normalized.isEmpty()) {
+        if (normalized.isEmpty() || normalized.length() > MAX_TERM_LENGTH) {
             return;
         }
         SearchSuggestTermDO item = new SearchSuggestTermDO();
-        item.setTermText(termText);
+        item.setTermText(termText.trim());
         item.setTermNormalized(normalized);
         item.setPrefixText(normalized.substring(0, Math.min(normalized.length(), 10)));
         item.setTermType(termType);

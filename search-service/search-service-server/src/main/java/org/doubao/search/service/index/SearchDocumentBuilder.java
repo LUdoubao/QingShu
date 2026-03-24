@@ -10,6 +10,9 @@ import javax.annotation.Resource;
 @Component
 public class SearchDocumentBuilder {
 
+    private static final int MAX_CONTENT_SEARCH_LENGTH = 48;
+    private static final int MAX_TAG_COUNT = 3;
+
     @Resource
     private QueryPreprocessor queryPreprocessor;
 
@@ -42,11 +45,11 @@ public class SearchDocumentBuilder {
     private String buildSearchText(QuoteSearchSyncData data) {
         StringBuilder builder = new StringBuilder();
         append(builder, data.getTitle());
-        append(builder, data.getContent());
         append(builder, data.getAuthorName());
         append(builder, data.getSource());
         append(builder, data.getCategoryName());
-        append(builder, data.getTagNamesText());
+        append(builder, shorten(data.getContent(), MAX_CONTENT_SEARCH_LENGTH));
+        append(builder, limitTags(data.getTagNamesText()));
         return builder.toString().trim();
     }
 
@@ -58,6 +61,41 @@ public class SearchDocumentBuilder {
             builder.append(' ');
         }
         builder.append(text.trim());
+    }
+
+    private String shorten(String text, int maxLength) {
+        if (text == null) {
+            return null;
+        }
+        String normalized = text.trim();
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength);
+    }
+
+    private String limitTags(String tagNamesText) {
+        if (tagNamesText == null || tagNamesText.trim().isEmpty()) {
+            return null;
+        }
+        String[] parts = tagNamesText.split(",");
+        StringBuilder builder = new StringBuilder();
+        int count = 0;
+        for (String part : parts) {
+            String tag = part == null ? "" : part.trim();
+            if (tag.isEmpty()) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(',');
+            }
+            builder.append(tag);
+            count++;
+            if (count >= MAX_TAG_COUNT) {
+                break;
+            }
+        }
+        return builder.toString();
     }
 
     private Double calculateHotScore(SearchDocIndexDO doc) {

@@ -14,46 +14,161 @@ import java.util.Set;
 @Component
 public class SearchTermBuilder {
 
-    private static final int MAX_CONTENT_FRAGMENT_LENGTH = 12;
-    private static final int MAX_TITLE_FRAGMENT_LENGTH = 16;
-    private static final int MAX_TOKENS_PER_FIELD = 24;
-    private static final int MIN_TOKEN_LENGTH = 2;
+    private static final int MAX_TOTAL_TERMS = 15;
+    private static final int MAX_AUTHOR_TERMS = 3;
+    private static final int MAX_TITLE_TERMS = 6;
+    private static final int MAX_CONTENT_TERMS = 6;
+    private static final int AUTHOR_MIN_LENGTH = 2;
+    private static final int TITLE_MIN_LENGTH = 2;
+    private static final int CONTENT_MIN_LENGTH = 3;
 
     @Resource
     private QueryPreprocessor queryPreprocessor;
 
     public List<SearchTermIndexDO> build(SearchDocIndexDO doc) {
-        List<SearchTermIndexDO> terms = new ArrayList<>();
-        addTerms(terms, doc, doc.getTitle(), "WORD", "title", 10);
-        addTerms(terms, doc, doc.getContent(), "WORD", "content", 3);
-        addTerms(terms, doc, doc.getAuthorName(), "AUTHOR", "author", 8);
-        // addTerms(terms, doc, doc.getCategoryName(), "CATEGORY", "category", 7);
-        addTerms(terms, doc, doc.getTagNamesText(), "TAG", "tag", 6);
-        addPrefixTerms(terms, doc, doc.getAuthorName(), "PREFIX", "author", 5);
-        // addPrefixTerms(terms, doc, doc.getCategoryName(), "PREFIX", "category", 4);
-        addPrefixTerms(terms, doc, doc.getTagNamesText(), "PREFIX", "tag", 4);
-        addPrefixTerms(terms, doc, doc.getTitle(), "PREFIX", "title", 4);
+        List<SearchTermIndexDO> terms = new ArrayList<SearchTermIndexDO>(MAX_TOTAL_TERMS);
+        addAuthorTerms(terms, doc);
+        addTitleTerms(terms, doc);
+        addContentTerms(terms, doc);
+        if (terms.size() > MAX_TOTAL_TERMS) {
+            return new ArrayList<SearchTermIndexDO>(terms.subList(0, MAX_TOTAL_TERMS));
+        }
         return terms;
     }
 
-    private void addTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc, String text, String termType,
-                          String sourceField, int weight) {
-        Set<String> normalizedTerms = tokenize(text, sourceField);
-        for (String value : normalizedTerms) {
+    private void addAuthorTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc) {
+        addTerms(target, doc, collectAuthorTerms(doc.getAuthorName()), "AUTHOR", "author", 8, MAX_AUTHOR_TERMS);
+        addTerms(target, doc, collectAuthorPrefixTerms(doc.getAuthorName()), "PREFIX", "author", 5,
+                MAX_TOTAL_TERMS - target.size());
+    }
+
+    private void addTitleTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc) {
+        int remaining = Math.min(MAX_TITLE_TERMS, MAX_TOTAL_TERMS - target.size());
+        addTerms(target, doc, collectNgramTerms(doc.getTitle(), TITLE_MIN_LENGTH, 3, MAX_TITLE_TERMS),
+                "WORD", "title", 10, remaining);
+        remaining = Math.min(MAX_TITLE_TERMS, MAX_TOTAL_TERMS - target.size());
+        addTerms(target, doc, collectPrefixTerms(doc.getTitle(), TITLE_MIN_LENGTH, 2),
+                "PREFIX", "title", 4, remaining);
+    }
+
+    private void addContentTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc) {
+        int remaining = Math.min(MAX_CONTENT_TERMS, MAX_TOTAL_TERMS - target.size());
+        addTerms(target, doc, collectNgramTerms(doc.getContent(), CONTENT_MIN_LENGTH, 3, MAX_CONTENT_TERMS),
+                "WORD", "content", 3, remaining);
+    }
+
+    private void addTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc, List<String> values,
+                          String termType, String sourceField, int weight, int limit) {
+        if (limit <= 0) {
+            return;
+        }
+        for (String value : values) {
+            if (value == null || value.isEmpty()) {
+                continue;
+            }
+            if (contains(target, sourceField, termType, value)) {
+                continue;
+            }
             target.add(buildTerm(doc, value, termType, sourceField, weight));
+            if (target.size() >= MAX_TOTAL_TERMS || countBySource(target, sourceField) >= limit) {
+                return;
+            }
         }
     }
 
-    private void addPrefixTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc, String text, String termType,
-                                String sourceField, int weight) {
+    private int countBySource(List<SearchTermIndexDO> target, String sourceField) {
+        int count = 0;
+        for (SearchTermIndexDO term : target) {
+            if (sourceField.equals(term.getSourceField())) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean contains(List<SearchTermIndexDO> target, String sourceField, String termType, String value) {
+        for (SearchTermIndexDO item : target) {
+            if (sourceField.equals(item.getSourceField())
+                    && termType.equals(item.getTermType())
+                    && value.equals(item.getTermNormalized())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<String> collectAuthorTerms(String authorName) {
+        List<String> terms = new ArrayList<String>();
+        String normalized = queryPreprocessor.normalize(authorName);
+        if (normalized.length() >= AUTHOR_MIN_LENGTH) {
+            terms.add(normalized);
+        }
+        return terms;
+    }
+
+    private List<String> collectAuthorPrefixTerms(String authorName) {
+        return collectPrefixTerms(authorName, AUTHOR_MIN_LENGTH, 2);
+    }
+
+    private List<String> collectPrefixTerms(String text, int minLength, int limit) {
+        List<String> terms = new ArrayList<String>();
+        String normalized = queryPreprocessor.normalize(text);
+        if (normalized.length() < minLength) {
+            return terms;
+        }
+        int max = Math.min(normalized.length(), minLength + limit - 1);
+        for (int size = minLength; size <= max; size++) {
+            terms.add(normalized.substring(0, size));
+        }
+        return terms;
+    }
+
+    private List<String> collectNgramTerms(String text, int minLength, int ngramLength, int limit) {
+        Set<String> terms = new LinkedHashSet<String>();
         String normalized = queryPreprocessor.normalize(text);
         if (normalized.isEmpty()) {
+            return new ArrayList<String>();
+        }
+        for (String fragment : normalized.split("[^\\p{IsAlphabetic}\\p{IsDigit}\\p{IsIdeographic}]+")) {
+            String token = fragment == null ? "" : fragment.trim();
+            if (token.length() < minLength) {
+                continue;
+            }
+            addWholeToken(terms, token, minLength, limit);
+            addSlidingTerms(terms, token, Math.max(minLength, ngramLength), limit);
+            if (terms.size() >= limit) {
+                break;
+            }
+        }
+        return new ArrayList<String>(terms);
+    }
+
+    private void addWholeToken(Set<String> terms, String token, int minLength, int limit) {
+        if (token.length() >= minLength) {
+            terms.add(token);
+        }
+        trimToLimit(terms, limit);
+    }
+
+    private void addSlidingTerms(Set<String> terms, String token, int size, int limit) {
+        if (token.length() < size) {
             return;
         }
-        int max = Math.min(normalized.length(), 10);
-        for (int i = 1; i <= max; i++) {
-            target.add(buildTerm(doc, normalized.substring(0, i), termType, sourceField, weight));
+        for (int i = 0; i <= token.length() - size; i++) {
+            terms.add(token.substring(i, i + size));
+            if (terms.size() >= limit) {
+                return;
+            }
         }
+    }
+
+    private void trimToLimit(Set<String> terms, int limit) {
+        if (terms.size() <= limit) {
+            return;
+        }
+        List<String> snapshot = new ArrayList<String>(terms);
+        terms.clear();
+        terms.addAll(snapshot.subList(0, limit));
     }
 
     private SearchTermIndexDO buildTerm(SearchDocIndexDO doc, String term, String termType, String sourceField, int weight) {
@@ -66,62 +181,5 @@ public class SearchTermBuilder {
         item.setSourceField(sourceField);
         item.setWeight(weight);
         return item;
-    }
-
-    private Set<String> tokenize(String text, String sourceField) {
-        Set<String> tokens = new LinkedHashSet<String>();
-        String normalized = queryPreprocessor.normalize(text);
-        if (normalized.isEmpty()) {
-            return tokens;
-        }
-        for (String fragment : normalized.split("[^\\p{IsAlphabetic}\\p{IsDigit}\\p{IsIdeographic}]+")) {
-            collectFragmentTokens(tokens, fragment, sourceField);
-            if (tokens.size() >= MAX_TOKENS_PER_FIELD) {
-                break;
-            }
-        }
-        return tokens;
-    }
-
-    private void collectFragmentTokens(Set<String> tokens, String fragment, String sourceField) {
-        if (fragment == null) {
-            return;
-        }
-        String normalizedFragment = fragment.trim();
-        if (normalizedFragment.length() < MIN_TOKEN_LENGTH) {
-            return;
-        }
-        if (shouldKeepWholeFragment(normalizedFragment, sourceField)) {
-            tokens.add(normalizedFragment);
-        }
-        if (shouldGenerateBigrams(sourceField)) {
-            addBigrams(tokens, normalizedFragment);
-        }
-    }
-
-    private boolean shouldKeepWholeFragment(String fragment, String sourceField) {
-        if ("content".equals(sourceField)) {
-            return fragment.length() <= MAX_CONTENT_FRAGMENT_LENGTH;
-        }
-        if ("title".equals(sourceField)) {
-            return fragment.length() <= MAX_TITLE_FRAGMENT_LENGTH;
-        }
-        return true;
-    }
-
-    private boolean shouldGenerateBigrams(String sourceField) {
-        return "content".equals(sourceField) || "title".equals(sourceField);
-    }
-
-    private void addBigrams(Set<String> tokens, String fragment) {
-        if (fragment.length() <= MIN_TOKEN_LENGTH) {
-            return;
-        }
-        for (int i = 0; i < fragment.length() - 1; i++) {
-            tokens.add(fragment.substring(i, i + 2));
-            if (tokens.size() >= MAX_TOKENS_PER_FIELD) {
-                return;
-            }
-        }
     }
 }
