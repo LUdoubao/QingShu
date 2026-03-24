@@ -34,6 +34,43 @@
             updated_time = NOW()
     </insert>
 
+    <insert id="batchUpsert">
+        INSERT INTO search_doc_index (
+            biz_type, biz_id, title, content, author_name, source, category_id, category_name,
+            tag_names_text, search_text, search_text_normalized, status, is_original,
+            view_count, like_count, comment_count, favorite_count, hot_score, quality_score, is_deleted
+        ) VALUES
+        <foreach collection="docs" item="item" separator=",">
+            (
+                #{item.bizType}, #{item.bizId}, #{item.title}, #{item.content}, #{item.authorName}, #{item.source},
+                #{item.categoryId}, #{item.categoryName}, #{item.tagNamesText}, #{item.searchText},
+                #{item.searchTextNormalized}, #{item.status}, #{item.isOriginal}, #{item.viewCount},
+                #{item.likeCount}, #{item.commentCount}, #{item.favoriteCount}, #{item.hotScore},
+                #{item.qualityScore}, #{item.isDeleted}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            title = VALUES(title),
+            content = VALUES(content),
+            author_name = VALUES(author_name),
+            source = VALUES(source),
+            category_id = VALUES(category_id),
+            category_name = VALUES(category_name),
+            tag_names_text = VALUES(tag_names_text),
+            search_text = VALUES(search_text),
+            search_text_normalized = VALUES(search_text_normalized),
+            status = VALUES(status),
+            is_original = VALUES(is_original),
+            view_count = VALUES(view_count),
+            like_count = VALUES(like_count),
+            comment_count = VALUES(comment_count),
+            favorite_count = VALUES(favorite_count),
+            hot_score = VALUES(hot_score),
+            quality_score = VALUES(quality_score),
+            is_deleted = VALUES(is_deleted),
+            updated_time = NOW()
+    </insert>
+
     <select id="selectByBizIds" resultType="org.doubao.search.service.entity.SearchDocIndexDO">
         SELECT *
         FROM search_doc_index

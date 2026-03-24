@@ -16,7 +16,8 @@ public class SearchSyncProcessJob {
     @Resource
     private SearchIndexSyncManager searchIndexSyncManager;
 
-    @Scheduled(fixedDelayString = "${search.sync.process-delay-ms:5000}", initialDelayString = "${search.sync.initial-delay-ms:10000}")
+    @Scheduled(fixedDelayString = "${search.sync.process-delay-ms:5000}",
+            initialDelayString = "${search.sync.initial-delay-ms:10000}")
     public void processPendingTasks() {
         try {
             searchIndexSyncManager.processPendingTasks();

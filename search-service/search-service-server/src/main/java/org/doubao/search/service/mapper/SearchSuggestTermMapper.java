@@ -16,5 +16,7 @@ public interface SearchSuggestTermMapper extends BaseMapper<SearchSuggestTermDO>
 
     int deleteBySource(@Param("sourceBizType") String sourceBizType, @Param("sourceId") Long sourceId);
 
+    int deleteBySourceIds(@Param("sourceBizType") String sourceBizType, @Param("sourceIds") List<Long> sourceIds);
+
     int batchInsert(@Param("terms") java.util.List<SearchSuggestTermDO> terms);
 }

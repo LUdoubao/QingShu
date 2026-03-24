@@ -12,6 +12,8 @@ public interface SearchDocIndexMapper extends BaseMapper<SearchDocIndexDO> {
 
     int upsert(SearchDocIndexDO doc);
 
+    int batchUpsert(@Param("docs") List<SearchDocIndexDO> docs);
+
     List<SearchDocIndexDO> selectByBizIds(@Param("bizType") String bizType, @Param("bizIds") List<Long> bizIds);
 
     List<SearchDocIndexDO> selectExactMatches(@Param("bizType") String bizType,

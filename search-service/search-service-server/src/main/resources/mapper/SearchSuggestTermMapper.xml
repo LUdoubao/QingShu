@@ -30,6 +30,15 @@
           AND source_id = #{sourceId}
     </delete>
 
+    <delete id="deleteBySourceIds">
+        DELETE FROM search_suggest_term
+        WHERE source_biz_type = #{sourceBizType}
+          AND source_id IN
+        <foreach collection="sourceIds" item="sourceId" open="(" separator="," close=")">
+            #{sourceId}
+        </foreach>
+    </delete>
+
     <insert id="batchInsert">
         INSERT INTO search_suggest_term (
             term_text, term_normalized, prefix_text, term_type, source_id, source_biz_type,
@@ -42,5 +51,13 @@
                 #{item.searchCount}, #{item.clickCount}, #{item.resultCount}, #{item.status}
             )
         </foreach>
+        ON DUPLICATE KEY UPDATE
+            term_text = VALUES(term_text),
+            prefix_text = VALUES(prefix_text),
+            source_biz_type = VALUES(source_biz_type),
+            hot_score = VALUES(hot_score),
+            quality_score = VALUES(quality_score),
+            status = VALUES(status),
+            updated_time = NOW()
     </insert>
 </mapper>

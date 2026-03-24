@@ -31,11 +31,11 @@ public class SearchDocumentBuilder {
         doc.setCommentCount(0L);
         doc.setFavoriteCount(0L);
         doc.setHotScore(calculateHotScore(doc));
-        doc.setQualityScore(Double.valueOf(doc.getIsOriginal() == null ? 0 : doc.getIsOriginal() * 10));
+        doc.setQualityScore((double) (doc.getIsOriginal() == null ? 0 : doc.getIsOriginal() * 10));
         String searchText = buildSearchText(data);
         doc.setSearchText(searchText);
         doc.setSearchTextNormalized(queryPreprocessor.normalize(searchText));
-        doc.setIsDeleted(data.getStatus() != null && data.getStatus() == 1 ? 0 : 0);
+        doc.setIsDeleted(data.getStatus() != null && data.getStatus() == 1 ? 0 : 1);
         return doc;
     }
 

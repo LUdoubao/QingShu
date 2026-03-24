@@ -13,6 +13,8 @@ public interface SearchTermIndexMapper extends BaseMapper<SearchTermIndexDO> {
 
     int deleteByBiz(@Param("bizType") String bizType, @Param("bizId") Long bizId);
 
+    int deleteByBizIds(@Param("bizType") String bizType, @Param("bizIds") List<Long> bizIds);
+
     int batchInsert(@Param("terms") List<SearchTermIndexDO> terms);
 
     List<SearchCandidateDO> selectByTerms(@Param("bizType") String bizType,

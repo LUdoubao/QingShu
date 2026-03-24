@@ -8,6 +8,15 @@
           AND biz_id = #{bizId}
     </delete>
 
+    <delete id="deleteByBizIds">
+        DELETE FROM search_term_index
+        WHERE biz_type = #{bizType}
+          AND biz_id IN
+        <foreach collection="bizIds" item="bizId" open="(" separator="," close=")">
+            #{bizId}
+        </foreach>
+    </delete>
+
     <insert id="batchInsert">
         INSERT INTO search_term_index (
             biz_type, biz_id, term, term_normalized, term_type, source_field, weight
@@ -18,6 +27,9 @@
                 #{item.termType}, #{item.sourceField}, #{item.weight}
             )
         </foreach>
+        ON DUPLICATE KEY UPDATE
+            term = VALUES(term),
+            weight = VALUES(weight)
     </insert>
 
     <select id="selectByTerms" resultType="org.doubao.search.service.entity.SearchCandidateDO">
