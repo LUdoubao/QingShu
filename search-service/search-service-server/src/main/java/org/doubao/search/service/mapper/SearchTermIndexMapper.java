@@ -19,6 +19,7 @@ public interface SearchTermIndexMapper extends BaseMapper<SearchTermIndexDO> {
 
     List<SearchCandidateDO> selectByTerms(@Param("bizType") String bizType,
                                           @Param("terms") List<String> terms,
+                                          @Param("perTermLimit") int perTermLimit,
                                           @Param("limit") int limit);
 
     List<SearchCandidateDO> selectByPrefix(@Param("bizType") String bizType,

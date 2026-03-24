@@ -73,7 +73,7 @@ public class DefaultSearchExecutionServiceIntegrationTest {
                 .thenReturn(Collections.<SearchDocIndexDO>emptyList());
         Mockito.when(searchTermIndexMapper.selectByPrefix(Mockito.eq("quote"), Mockito.eq("苏轼"), Mockito.anyInt()))
                 .thenReturn(Collections.singletonList(candidate));
-        Mockito.when(searchTermIndexMapper.selectByTerms(Mockito.eq("quote"), Mockito.anyList(), Mockito.anyInt()))
+        Mockito.when(searchTermIndexMapper.selectByTerms(Mockito.eq("quote"), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt()))
                 .thenReturn(Collections.singletonList(candidate));
         Mockito.when(searchDocIndexMapper.selectByBizIds("quote", Collections.singletonList(11L)))
                 .thenReturn(Collections.singletonList(localDoc));

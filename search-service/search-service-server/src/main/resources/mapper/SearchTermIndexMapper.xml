@@ -35,12 +35,20 @@
     <select id="selectByTerms" resultType="org.doubao.search.service.entity.SearchCandidateDO">
         SELECT biz_id AS bizId,
                SUM(weight) AS recallScore
-        FROM search_term_index
-        WHERE biz_type = #{bizType}
-          AND term_normalized IN
-        <foreach collection="terms" item="term" open="(" separator="," close=")">
-            #{term}
+        FROM (
+        <foreach collection="terms" item="term" separator=" UNION ALL ">
+            (
+            SELECT biz_id,
+                   weight
+            FROM search_term_index FORCE INDEX (idx_term_lookup)
+            WHERE biz_type = #{bizType}
+              AND term_normalized = #{term}
+              AND term_type IN ('WORD', 'AUTHOR', 'TAG')
+            ORDER BY weight DESC, biz_id DESC
+            LIMIT #{perTermLimit}
+            )
         </foreach>
+        ) term_hits
         GROUP BY biz_id
         ORDER BY recallScore DESC
         LIMIT #{limit}
@@ -49,7 +57,7 @@
     <select id="selectByPrefix" resultType="org.doubao.search.service.entity.SearchCandidateDO">
         SELECT biz_id AS bizId,
                SUM(weight) AS recallScore
-        FROM search_term_index
+        FROM search_term_index FORCE INDEX (idx_term_lookup)
         WHERE biz_type = #{bizType}
           AND term_type = 'PREFIX'
           AND term_normalized = #{prefix}

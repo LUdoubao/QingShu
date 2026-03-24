@@ -41,7 +41,9 @@ CREATE TABLE IF NOT EXISTS `search_term_index` (
   `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_biz_term_type_field` (`biz_type`, `biz_id`, `term_normalized`, `term_type`, `source_field`),
-  KEY `idx_term_type_biz` (`term_normalized`, `term_type`, `biz_type`)
+  KEY `idx_term_type_biz` (`term_normalized`, `term_type`, `biz_type`),
+  KEY `idx_term_lookup` (`term_normalized`, `biz_type`, `term_type`, `weight`, `biz_id`),
+  KEY `idx_biz_type_biz_id` (`biz_type`, `biz_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `search_suggest_term` (

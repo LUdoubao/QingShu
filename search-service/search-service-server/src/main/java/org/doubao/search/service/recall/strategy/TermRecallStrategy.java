@@ -14,6 +14,9 @@ import java.util.List;
 @Component
 public class TermRecallStrategy implements RecallStrategy {
 
+    private static final int PER_TERM_RECALL_MULTIPLIER = 3;
+    private static final int MAX_PER_TERM_LIMIT = 120;
+
     @Resource
     private SearchTermIndexMapper searchTermIndexMapper;
 
@@ -22,8 +25,9 @@ public class TermRecallStrategy implements RecallStrategy {
         if (context.getTerms().isEmpty()) {
             return new RecallResult(0, new ArrayList<RecallDoc>());
         }
+        int perTermLimit = Math.min(context.getRecallWindowSize() * PER_TERM_RECALL_MULTIPLIER, MAX_PER_TERM_LIMIT);
         List<SearchCandidateDO> candidates = searchTermIndexMapper.selectByTerms("quote",
-                context.getTerms(), context.getRecallWindowSize());
+                context.getTerms(), perTermLimit, context.getRecallWindowSize());
         List<RecallDoc> docs = new ArrayList<RecallDoc>();
         for (SearchCandidateDO candidate : candidates) {
             docs.add(new RecallDoc(candidate.getBizId(), null, "TERM", candidate.getRecallScore() == null ? 0D : candidate.getRecallScore()));

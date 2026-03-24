@@ -14,6 +14,11 @@ import java.util.Set;
 @Component
 public class SearchTermBuilder {
 
+    private static final int MAX_CONTENT_FRAGMENT_LENGTH = 12;
+    private static final int MAX_TITLE_FRAGMENT_LENGTH = 16;
+    private static final int MAX_TOKENS_PER_FIELD = 24;
+    private static final int MIN_TOKEN_LENGTH = 2;
+
     @Resource
     private QueryPreprocessor queryPreprocessor;
 
@@ -33,7 +38,7 @@ public class SearchTermBuilder {
 
     private void addTerms(List<SearchTermIndexDO> target, SearchDocIndexDO doc, String text, String termType,
                           String sourceField, int weight) {
-        Set<String> normalizedTerms = tokenize(text);
+        Set<String> normalizedTerms = tokenize(text, sourceField);
         for (String value : normalizedTerms) {
             target.add(buildTerm(doc, value, termType, sourceField, weight));
         }
@@ -63,23 +68,60 @@ public class SearchTermBuilder {
         return item;
     }
 
-    private Set<String> tokenize(String text) {
+    private Set<String> tokenize(String text, String sourceField) {
         Set<String> tokens = new LinkedHashSet<String>();
         String normalized = queryPreprocessor.normalize(text);
         if (normalized.isEmpty()) {
             return tokens;
         }
-        tokens.add(normalized);
-        for (String part : normalized.split(" ")) {
-            if (!part.isEmpty()) {
-                tokens.add(part);
-            }
-        }
-        if (!normalized.contains(" ")) {
-            for (int i = 0; i < normalized.length(); i++) {
-                tokens.add(String.valueOf(normalized.charAt(i)));
+        for (String fragment : normalized.split("[^\\p{IsAlphabetic}\\p{IsDigit}\\p{IsIdeographic}]+")) {
+            collectFragmentTokens(tokens, fragment, sourceField);
+            if (tokens.size() >= MAX_TOKENS_PER_FIELD) {
+                break;
             }
         }
         return tokens;
+    }
+
+    private void collectFragmentTokens(Set<String> tokens, String fragment, String sourceField) {
+        if (fragment == null) {
+            return;
+        }
+        String normalizedFragment = fragment.trim();
+        if (normalizedFragment.length() < MIN_TOKEN_LENGTH) {
+            return;
+        }
+        if (shouldKeepWholeFragment(normalizedFragment, sourceField)) {
+            tokens.add(normalizedFragment);
+        }
+        if (shouldGenerateBigrams(sourceField)) {
+            addBigrams(tokens, normalizedFragment);
+        }
+    }
+
+    private boolean shouldKeepWholeFragment(String fragment, String sourceField) {
+        if ("content".equals(sourceField)) {
+            return fragment.length() <= MAX_CONTENT_FRAGMENT_LENGTH;
+        }
+        if ("title".equals(sourceField)) {
+            return fragment.length() <= MAX_TITLE_FRAGMENT_LENGTH;
+        }
+        return true;
+    }
+
+    private boolean shouldGenerateBigrams(String sourceField) {
+        return "content".equals(sourceField) || "title".equals(sourceField);
+    }
+
+    private void addBigrams(Set<String> tokens, String fragment) {
+        if (fragment.length() <= MIN_TOKEN_LENGTH) {
+            return;
+        }
+        for (int i = 0; i < fragment.length() - 1; i++) {
+            tokens.add(fragment.substring(i, i + 2));
+            if (tokens.size() >= MAX_TOKENS_PER_FIELD) {
+                return;
+            }
+        }
     }
 }
