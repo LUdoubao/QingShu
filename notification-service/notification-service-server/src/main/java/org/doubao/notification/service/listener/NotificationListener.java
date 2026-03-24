@@ -102,6 +102,9 @@ public class NotificationListener {
 
 
 	public void handleNotificationEvent(Object notificationEvent) {
+		if (notificationEvent == null) {
+			return;
+		}
 		LOG.info("Received notification event: {}", notificationEvent);
 		JSONObject jsonObject = JSON.parseObject(JSON.toJSONString(notificationEvent));
 		String type = jsonObject.getString("type");
