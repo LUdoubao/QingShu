@@ -1,4 +1,4 @@
-package org.doubao.user.service.report.controller;
+package org.doubao.user.service.controller.report;
 
 
 import org.doubao.mall.common.entity.Result;
