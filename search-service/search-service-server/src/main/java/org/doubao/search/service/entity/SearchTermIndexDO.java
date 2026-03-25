@@ -17,6 +17,8 @@ public class SearchTermIndexDO {
     private String term;
     @TableField("term_normalized")
     private String termNormalized;
+    @TableField("term_hash")
+    private String termHash;
     @TableField("term_type")
     private String termType;
     @TableField("source_field")
@@ -34,6 +36,8 @@ public class SearchTermIndexDO {
     public void setTerm(String term) { this.term = term; }
     public String getTermNormalized() { return termNormalized; }
     public void setTermNormalized(String termNormalized) { this.termNormalized = termNormalized; }
+    public String getTermHash() { return termHash; }
+    public void setTermHash(String termHash) { this.termHash = termHash; }
     public String getTermType() { return termType; }
     public void setTermType(String termType) { this.termType = termType; }
     public String getSourceField() { return sourceField; }

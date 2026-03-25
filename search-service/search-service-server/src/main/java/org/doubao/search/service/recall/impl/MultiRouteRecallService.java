@@ -54,7 +54,7 @@ public class MultiRouteRecallService implements RecallService {
             merge(merged, likeResult.getDocs());
             total = Math.max(total, likeResult.getTotal());
         }
-        if (merged.isEmpty()) {
+        if (merged.isEmpty() || merged.size() <= context.getOffset()) {
             return remoteQuoteRecallStrategy.recall(context);
         }
         hydrateDocuments(merged);

@@ -19,11 +19,11 @@
 
     <insert id="batchInsert">
         INSERT INTO search_term_index (
-            biz_type, biz_id, term, term_normalized, term_type, source_field, weight
+            biz_type, biz_id, term, term_normalized, term_hash, term_type, source_field, weight
         ) VALUES
         <foreach collection="terms" item="item" separator=",">
             (
-                #{item.bizType}, #{item.bizId}, #{item.term}, #{item.termNormalized},
+                #{item.bizType}, #{item.bizId}, #{item.term}, #{item.termNormalized}, #{item.termHash},
                 #{item.termType}, #{item.sourceField}, #{item.weight}
             )
         </foreach>
@@ -40,10 +40,10 @@
             (
             SELECT biz_id,
                    weight
-            FROM search_term_index FORCE INDEX (idx_term_lookup)
+            FROM search_term_index FORCE INDEX (idx_term_hash_lookup)
             WHERE biz_type = #{bizType}
-              AND term_normalized = #{term}
-              AND term_type IN ('WORD', 'AUTHOR', 'TAG')
+              AND term_hash = MD5(#{term})
+              AND term_type IN ('WORD', 'AUTHOR')
             ORDER BY weight DESC, biz_id DESC
             LIMIT #{perTermLimit}
             )
@@ -57,10 +57,10 @@
     <select id="selectByPrefix" resultType="org.doubao.search.service.entity.SearchCandidateDO">
         SELECT biz_id AS bizId,
                SUM(weight) AS recallScore
-        FROM search_term_index FORCE INDEX (idx_term_lookup)
+        FROM search_term_index FORCE INDEX (idx_term_hash_lookup)
         WHERE biz_type = #{bizType}
           AND term_type = 'PREFIX'
-          AND term_normalized = #{prefix}
+          AND term_hash = MD5(#{prefix})
         GROUP BY biz_id
         ORDER BY recallScore DESC
         LIMIT #{limit}

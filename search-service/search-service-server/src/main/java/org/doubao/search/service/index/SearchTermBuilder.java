@@ -3,6 +3,7 @@ package org.doubao.search.service.index;
 import org.doubao.search.service.entity.SearchDocIndexDO;
 import org.doubao.search.service.entity.SearchTermIndexDO;
 import org.doubao.search.service.support.QueryPreprocessor;
+import org.doubao.search.service.support.SearchHashUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -177,6 +178,7 @@ public class SearchTermBuilder {
         item.setBizId(doc.getBizId());
         item.setTerm(term);
         item.setTermNormalized(term);
+        item.setTermHash(SearchHashUtils.md5Hex(term));
         item.setTermType(termType);
         item.setSourceField(sourceField);
         item.setWeight(weight);
