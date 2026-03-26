@@ -1,4 +1,4 @@
-﻿package org.doubao.interview.agent.server.service.impl.q010;
+package org.doubao.interview.agent.server.service.impl.q010;
 
 import org.doubao.interview.agent.api.dto.q010.CacheAvalancheQueryRequest;
 import org.doubao.interview.agent.api.dto.q010.CacheAvalancheQueryResponse;
