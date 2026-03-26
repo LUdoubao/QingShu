@@ -19,14 +19,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 问题010：缓存雪崩治理示例实现。
- *
+ * <p>
  * 本实现围绕“缓存雪崩”五个核心策略构建完整链路：
  * 1. TTL 加随机值：写入缓存时增加随机抖动，避免大量 key 同时过期。
  * 2. 多级缓存：先查本地缓存，再查 Redis（此处用内存模拟）。
  * 3. 预热与异步续期：启动时加载关键数据，请求命中时在临期阈值内异步续期。
  * 4. 限流 + 降级 + 熔断：当缓存层或下游异常时保护数据库。
  * 5. Redis 高可用：模拟多节点集群，不依赖单点缓存节点。
- *
+ * <p>
  * 说明：当前是最小可运行教学实现，便于面试题代码落地与链路验证。
  */
 @Service
@@ -52,19 +52,19 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
     private final Random random = new Random();
 
     /** 模拟数据库。 */
-    private final Map<String, String> database = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> database = new ConcurrentHashMap<>();
     /** 多级缓存中的本地层。 */
-    private final Map<String, CacheEntry> localCache = new ConcurrentHashMap<String, CacheEntry>();
+    private final Map<String, CacheEntry> localCache = new ConcurrentHashMap<>();
     /** 多级缓存中的Redis层（内存模拟）。 */
-    private final Map<String, CacheEntry> redisCache = new ConcurrentHashMap<String, CacheEntry>();
+    private final Map<String, CacheEntry> redisCache = new ConcurrentHashMap<>();
     /** 降级兜底数据。 */
-    private final Map<String, String> degradeFallback = new ConcurrentHashMap<String, String>();
+    private final Map<String, String> degradeFallback = new ConcurrentHashMap<>();
     /** 每个 key 的异步续期并发控制。 */
-    private final Map<String, AtomicBoolean> renewFlags = new ConcurrentHashMap<String, AtomicBoolean>();
+    private final Map<String, AtomicBoolean> renewFlags = new ConcurrentHashMap<>();
     /** 每个 key 的互斥重建锁。 */
-    private final Map<String, Object> rebuildLocks = new ConcurrentHashMap<String, Object>();
+    private final Map<String, Object> rebuildLocks = new ConcurrentHashMap<>();
     /** 客户端限流计数窗口。 */
-    private final Map<String, CounterWindow> counters = new ConcurrentHashMap<String, CounterWindow>();
+    private final Map<String, CounterWindow> counters = new ConcurrentHashMap<>();
 
     /** 熔断器状态。 */
     private final CircuitBreaker circuitBreaker = new CircuitBreaker();
@@ -267,7 +267,7 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
 
     /**
      * 缓存实体。
-     *
+     * <p>
      * 字段语义：
      * 1. data：缓存值。
      * 2. expireAt：过期时间戳（毫秒）。
@@ -296,7 +296,7 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
 
     /**
      * 熔断器实体。
-     *
+     * <p>
      * 策略说明：
      * 1. 连续失败达到阈值后打开熔断。
      * 2. 熔断窗口内不再尝试访问下游，直接走降级。
@@ -325,7 +325,7 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
             if (openUntil > now) {
                 return true;
             }
-            if (openUntil != 0L && openUntil <= now) {
+            if (openUntil != 0L) {
                 openUntil = 0L;
                 consecutiveFailure = 0;
             }
@@ -335,14 +335,14 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
 
     /**
      * Redis集群高可用模拟实体。
-     *
+     * <p>
      * 设计目标：
      * 1. 用多个节点模拟“哨兵/集群”的可用性思路。
      * 2. 当至。少一个节点可用时认为缓存层仍可提供服务
      * 3. 请求可通过 simulateRedisDown 强制模拟整层不可用场景。
      */
     private static class RedisClusterMock {
-        private final Map<String, Boolean> nodeStatus = new ConcurrentHashMap<String, Boolean>();
+        private final Map<String, Boolean> nodeStatus = new ConcurrentHashMap<>();
 
         private RedisClusterMock() {
             nodeStatus.put("redis-node-a", true);
@@ -363,3 +363,4 @@ public class CacheAvalancheGovernanceServiceImpl implements CacheAvalancheGovern
         }
     }
 }
+
