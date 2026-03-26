@@ -30,6 +30,7 @@
 		<module>topic-service</module>
         <module>doubao-starter</module>
         <module>recommend-service</module>
+        <module>interview-agent</module>
     </modules>
 
 	<properties>
@@ -90,6 +91,7 @@
 					<configuration>
 						<source>${java.version}</source>
 						<target>${java.version}</target>
+						<encoding>${project.build.sourceEncoding}</encoding>
 					</configuration>
 				</plugin>
 				<!-- Spring Boot Maven Plugin -->
