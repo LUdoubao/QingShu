@@ -1,4 +1,4 @@
-﻿package org.doubao.interview.agent.server.service.impl.q011;
+package org.doubao.interview.agent.server.service.impl.q011;
 
 import org.doubao.interview.agent.api.dto.q011.CacheDbConsistencyQueryRequest;
 import org.doubao.interview.agent.api.dto.q011.CacheDbConsistencyResponse;
