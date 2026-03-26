@@ -6,6 +6,7 @@ import org.doubao.search.service.domain.query.QueryContext;
 import org.doubao.search.service.domain.result.RecallDoc;
 import org.doubao.search.service.domain.result.RecallResult;
 import org.doubao.search.service.dto.SearchResultDTO;
+import org.doubao.search.service.gateway.QuoteSearchGateway;
 import org.doubao.search.service.recall.RecallService;
 import org.doubao.search.service.rank.SearchRankService;
 import org.doubao.search.service.search.SearchExecutionService;
@@ -28,6 +29,9 @@ public class DefaultSearchExecutionService implements SearchExecutionService {
     private SearchPageAssembler searchPageAssembler;
 
     @Resource
+    private QuoteSearchGateway quoteSearchGateway;
+
+    @Resource
     private SearchStatsService searchStatsService;
 
     @Override
@@ -35,7 +39,14 @@ public class DefaultSearchExecutionService implements SearchExecutionService {
         RecallResult recallResult = recallService.recall(context);
         List<RecallDoc> rankedDocs = searchRankService.rank(context, recallResult.getDocs());
         Page<SearchResultDTO> result = searchPageAssembler.assemble(context, recallResult.getTotal(), rankedDocs);
+        if (shouldFallbackToRemote(context, result)) {
+            result = quoteSearchGateway.search(context);
+        }
         searchStatsService.recordSearch(context, result.getTotal());
         return result;
+    }
+
+    private boolean shouldFallbackToRemote(QueryContext context, Page<SearchResultDTO> result) {
+        return result.getRecords().isEmpty() && result.getTotal() > context.getOffset();
     }
 }

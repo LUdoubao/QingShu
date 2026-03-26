@@ -766,14 +766,19 @@ public class QuoteServiceImpl extends ServiceImpl<QuoteMapper, Quote> implements
 				break;
 		}
 		// 转换为Map<String, Object>
-		if (quoteVoPage != null && !quoteVoPage.getRecords().isEmpty()) {
-			Map<String, Object> map = new HashMap<>();
-			map.put("total", quoteVoPage.getTotal());
-			map.put("records", quoteVoPage.getRecords());
+		Map<String, Object> map = new HashMap<>();
+		if (quoteVoPage == null) {
+			map.put("total", 0L);
+			map.put("records", Collections.emptyList());
+			LOGGER.info("Search page is null for keyword: {}, type: {}", keyword, type);
 			return Result.success(map);
 		}
-		LOGGER.info("No quotes found for keyword: {}", keyword);
-		return Result.success();
+		map.put("total", quoteVoPage.getTotal());
+		map.put("records", quoteVoPage.getRecords() == null ? Collections.emptyList() : quoteVoPage.getRecords());
+		if (((List<?>) map.get("records")).isEmpty()) {
+			LOGGER.info("No quotes found for keyword: {}, page: {}, size: {}, type: {}", keyword, page, size, type);
+		}
+		return Result.success(map);
 	}
 
 	@Override
