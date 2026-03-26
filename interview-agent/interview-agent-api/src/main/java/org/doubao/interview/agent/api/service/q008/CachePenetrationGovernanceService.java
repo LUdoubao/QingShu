@@ -1,7 +1,7 @@
-package org.doubao.interview.agent.api.service;
+package org.doubao.interview.agent.api.service.q008;
 
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckRequest;
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckResponse;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckRequest;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckResponse;
 
 /**
  * 问题008：缓存穿透治理服务。

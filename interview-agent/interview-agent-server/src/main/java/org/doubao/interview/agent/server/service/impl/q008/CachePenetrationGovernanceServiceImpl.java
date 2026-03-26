@@ -1,8 +1,8 @@
-package org.doubao.interview.agent.server.service.impl;
+package org.doubao.interview.agent.server.service.impl.q008;
 
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckRequest;
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckResponse;
-import org.doubao.interview.agent.api.service.CachePenetrationGovernanceService;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckRequest;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckResponse;
+import org.doubao.interview.agent.api.service.q008.CachePenetrationGovernanceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;

@@ -1,4 +1,4 @@
-package org.doubao.interview.agent.api.dto;
+package org.doubao.interview.agent.api.dto.q009;
 
 import java.io.Serializable;
 

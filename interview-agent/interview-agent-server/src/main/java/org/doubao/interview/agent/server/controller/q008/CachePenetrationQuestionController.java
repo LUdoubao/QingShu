@@ -1,8 +1,8 @@
-package org.doubao.interview.agent.server.controller;
+package org.doubao.interview.agent.server.controller.q008;
 
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckRequest;
-import org.doubao.interview.agent.api.dto.CachePenetrationCheckResponse;
-import org.doubao.interview.agent.api.service.CachePenetrationGovernanceService;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckRequest;
+import org.doubao.interview.agent.api.dto.q008.CachePenetrationCheckResponse;
+import org.doubao.interview.agent.api.service.q008.CachePenetrationGovernanceService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;

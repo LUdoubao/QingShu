@@ -1,7 +1,7 @@
-package org.doubao.interview.agent.api.service;
+package org.doubao.interview.agent.api.service.q009;
 
-import org.doubao.interview.agent.api.dto.CacheBreakdownQueryRequest;
-import org.doubao.interview.agent.api.dto.CacheBreakdownQueryResponse;
+import org.doubao.interview.agent.api.dto.q009.CacheBreakdownQueryRequest;
+import org.doubao.interview.agent.api.dto.q009.CacheBreakdownQueryResponse;
 
 /**
  * 问题009：缓存击穿治理服务接口。
