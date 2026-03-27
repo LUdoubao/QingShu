@@ -1,4 +1,4 @@
-﻿# Java 后端面试问答归档
+﻿﻿﻿# Java 后端面试问答归档
 
 > 说明：
 > 1. 这个文件用于统一沉淀同一智能体下的所有面试问答。
@@ -1266,6 +1266,7 @@ AQS（AbstractQueuedSynchronizer）是并发同步器基础框架，维护一个
 - `ReentrantLock`、`Semaphore`、`CountDownLatch` 都基于它。
 
 #### 关键词
+
 AQS, state, 同步队列
 
 #### 追问记录
@@ -5324,6 +5325,7 @@ quicklist, Redis List, 内存优化
 2026-03-26
 
 #### 问题
+
 什么是缓存击穿？如何治理？
 
 #### 回答
@@ -5494,6 +5496,7 @@ AOF rewrite 会把历史命令压缩为“恢复当前数据所需的最小命�
 - 有助于加快重启恢复并降低磁盘占用。
 
 #### 关键词
+
 AOF rewrite, 文件膨胀, 恢复优化
 
 #### 追问记录
@@ -5508,6 +5511,7 @@ AOF rewrite, 文件膨胀, 恢复优化
 
 #### 回答
 `always` 最安全但最慢，`everysec` 平衡最佳最常用，`no` 性能高但丢失风险大。
+
 - `always`：每次写都 fsync，延迟高。
 - `everysec`：每秒刷盘，最多丢约 1 秒数据。
 - `no`：由 OS 决定刷盘时机，风险最大。
@@ -5678,6 +5682,7 @@ RedLock, 分布式一致性, 锁安全
 暂无。
 
 ### 问题 027：Lua 脚本在 Redis 的价值是什么？
+
 #### 时间
 2026-03-26
 
@@ -5698,6 +5703,7 @@ Lua, 原子性, EVALSHA, 并发竞态
 暂无。
 
 ### 问题 028：Redis 事务（MULTI/EXEC）有什么特点与限制？
+
 #### 时间
 2026-03-26
 
@@ -6271,6 +6277,7 @@ direct、topic、fanout 的典型使用场景？
 producer confirm, ack, nack, 异步回调
 
 #### 追问记录
+
 暂无。
 
 ### 问题 007：publisher return 机制解决什么问题？
