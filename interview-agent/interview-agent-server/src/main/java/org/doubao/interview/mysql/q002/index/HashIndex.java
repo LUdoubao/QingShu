@@ -1,4 +1,4 @@
-package org.doubao.interview.question002.index;
+package org.doubao.interview.mysql.q002.index;
 
 import java.util.*;
 

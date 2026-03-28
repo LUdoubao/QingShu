@@ -1,4 +1,4 @@
-package org.doubao.interview.question002.index;
+package org.doubao.interview.mysql.q002.index;
 
 /**
  * B+Tree 简化实现（用于 InnoDB 索引原理演示）

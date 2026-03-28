@@ -1,8 +1,8 @@
-package org.doubao.interview.question002.demo;
+package org.doubao.interview.mysql.q002.demo;
 
-import org.doubao.interview.question002.index.BPlusTree;
-import org.doubao.interview.question002.index.RedBlackTree;
-import org.doubao.interview.question002.index.HashIndex;
+import org.doubao.interview.mysql.q002.index.BPlusTree;
+import org.doubao.interview.mysql.q002.index.RedBlackTree;
+import org.doubao.interview.mysql.q002.index.HashIndex;
 
 /**
  * InnoDB 索引结构对比演示

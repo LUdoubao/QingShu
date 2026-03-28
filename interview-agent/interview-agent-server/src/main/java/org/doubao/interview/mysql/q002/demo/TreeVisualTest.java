@@ -1,7 +1,7 @@
-package org.doubao.interview.question002.demo;
+package org.doubao.interview.mysql.q002.demo;
 
-import org.doubao.interview.question002.index.BPlusTree;
-import org.doubao.interview.question002.index.RedBlackTree;
+import org.doubao.interview.mysql.q002.index.BPlusTree;
+import org.doubao.interview.mysql.q002.index.RedBlackTree;
 
 /**
  * 树形结构可视化测试（单独运行）
