@@ -56,6 +56,12 @@ curl -s "$BASE_URL/comparison"
 echo ""
 echo ""
 
+echo "[7] 获取@Autowired 底层源码级解析..."
+echo ""
+curl -s "$BASE_URL/internal/principle"
+echo ""
+echo ""
+
 echo "========================================"
 echo "验证完成"
 echo "========================================"
