@@ -37,11 +37,6 @@ public class UserRegisteredEvent extends ApplicationEvent {
     private final String email;
 
     /**
-     * 注册时间
-     */
-    private final Long timestamp;
-
-    /**
      * 构造函数
      * 
      * @param source 事件源（通常是发布事件的对象）
@@ -54,6 +49,5 @@ public class UserRegisteredEvent extends ApplicationEvent {
         this.userId = userId;
         this.userName = userName;
         this.email = email;
-        this.timestamp = System.currentTimeMillis();
     }
 }
