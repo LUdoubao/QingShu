@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.TaskDecorator;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -138,12 +139,18 @@ public class AsyncConfig implements AsyncConfigurer {
         executor.setAwaitTerminationSeconds(60);
         
         // 错误处理：任务抛出异常时的处理器
-        executor.setErrorHandler(t -> {
-            log.error("[AsyncConfig] 异步任务执行异常", t);
-            // 这里可以添加额外的错误处理逻辑
-            // 如：发送告警、记录数据库等
+        executor.setTaskDecorator(new TaskDecorator() {
+            @Override
+            public Runnable decorate(Runnable runnable) {
+                return () -> {
+                    try {
+                        runnable.run();
+                    } catch (Exception e) {
+                        log.error("[AsyncConfig] 异步任务执行异常：{}", e.getMessage());
+                    }
+                };
+            }
         });
-        
         // 拒绝策略：当线程池满时的处理方式
         // CallerRunsPolicy: 由调用者线程执行，这是一种反压机制
         executor.setRejectedExecutionHandler((r, e) -> {
@@ -159,10 +166,9 @@ public class AsyncConfig implements AsyncConfigurer {
         
         executor.initialize();
         
-        log.info("[AsyncConfig] 异步任务线程池初始化完成，core={}, max={}, queue={}", 
+        log.info("[AsyncConfig] 异步任务线程池初始化完成，core={}, max={}",
                 executor.getCorePoolSize(), 
-                executor.getMaxPoolSize(), 
-                executor.getQueueCapacity());
+                executor.getMaxPoolSize());
         
         return executor;
     }

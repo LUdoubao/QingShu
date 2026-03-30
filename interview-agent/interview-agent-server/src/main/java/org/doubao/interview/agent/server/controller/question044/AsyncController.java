@@ -176,7 +176,7 @@ public class AsyncController {
         sb.append("- Spring AOP 是代理模式\n");
         sb.append("- 只有经过代理对象的调用，@Async 才生效\n");
         sb.append("- this.xxx() 绕过代理，直接调用目标对象\n");
-        sb.append("- 这就是"自调用失效"的本质\n\n");
+        sb.append("- 这就是自调用失效的本质\n\n");
         
         sb.append("【四、解决方案】\n\n");
         

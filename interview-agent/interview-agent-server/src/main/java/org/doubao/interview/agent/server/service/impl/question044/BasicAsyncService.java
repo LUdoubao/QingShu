@@ -136,8 +136,13 @@ public class BasicAsyncService {
             Thread.currentThread().interrupt();
             log.error("[BasicAsync-Future] 任务 {} 被中断", taskId, e);
             
-            return CompletableFuture.failedFuture(
-                new RuntimeException("任务被中断", e));
+            return CompletableFuture.completedFuture(AsyncTaskResult.builder()
+                    .taskId(taskId)
+                    .taskName("executeWithFuture")
+                    .status("INTERRUPTED")
+                    .threadName(threadName)
+                    .explanation("异步任务被中断")
+                    .build());
                 
         } catch (Exception e) {
             log.error("[BasicAsync-Future] 任务 {} 执行异常", taskId, e);
@@ -200,11 +205,23 @@ public class BasicAsyncService {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("[BasicAsync-Timeout] 任务 {} 被中断", taskId, e);
-            return CompletableFuture.failedFuture(
-                new RuntimeException("任务被中断", e));
+            return CompletableFuture.completedFuture(AsyncTaskResult.builder()
+                    .taskId(taskId)
+                    .taskName("executeWithTimeout")
+                    .status("INTERRUPTED")
+                    .threadName(Thread.currentThread().getName())
+                    .explanation("异步任务被中断")
+                    .build());
         } catch (Exception e) {
             log.error("[BasicAsync-Timeout] 任务 {} 执行异常", taskId, e);
-            return CompletableFuture.failedFuture(e);
+            return CompletableFuture.completedFuture(AsyncTaskResult.builder()
+                    .taskId(taskId)
+                    .taskName("executeWithTimeout")
+                    .status("FAILED")
+                    .errorMessage(e.getMessage())
+                    .threadName(Thread.currentThread().getName())
+                    .explanation("异步任务执行失败")
+                    .build());
         }
     }
 }
