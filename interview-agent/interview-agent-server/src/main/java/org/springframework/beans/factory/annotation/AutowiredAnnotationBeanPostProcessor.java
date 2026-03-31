@@ -335,7 +335,7 @@ public class AutowiredAnnotationBeanPostProcessor implements SmartInstantiationA
 		} catch (BeanCreationException ex) {
 			throw ex;
 		} catch (Throwable ex) {
-			throw new BeanCreationException(beanName, "Autowired 依赖注入失败", ex);
+			// throw new BeanCreationException(beanName, "Autowired 依赖注入失败", ex);
 		}
 		return pvs;
 	}

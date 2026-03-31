@@ -64,7 +64,7 @@ public class BasicScheduledTaskDemo {
      * - 如果任务可能长时间运行，要配置异步执行（否则会影响其他任务）
      * - 要考虑任务执行时间超过间隔时间的情况
      */
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 5000000)
     public void executeFixedRate() {
         long startTime = System.currentTimeMillis();
         fixedRateCount.incrementAndGet();
@@ -103,7 +103,7 @@ public class BasicScheduledTaskDemo {
      * - 文件处理：给系统资源恢复的时间
      * - 第三方 API 调用：遵守速率限制
      */
-    @Scheduled(fixedDelay = 5000)
+    @Scheduled(fixedDelay = 5000000)
     public void executeFixedDelay() {
         long startTime = System.currentTimeMillis();
         fixedDelayCount.incrementAndGet();
@@ -155,7 +155,7 @@ public class BasicScheduledTaskDemo {
      * - 数据清理：每周执行一次
      * - 业务高峰期避让：只在特定时间段执行
      */
-    @Scheduled(cron = "0/10 * * * * *")
+    @Scheduled(cron = "0/60 * * * * *")
     public void executeCron() {
         cronCount.incrementAndGet();
         

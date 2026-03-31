@@ -70,7 +70,7 @@ public class AdvancedScheduledTaskDemo {
      * }
      */
     @Async
-    @Scheduled(fixedRate = 3000)
+    @Scheduled(fixedRate = 3000000)
     public void executeAsyncTask() {
         long startTime = System.currentTimeMillis();
         asyncTaskCount.incrementAndGet();
@@ -107,7 +107,7 @@ public class AdvancedScheduledTaskDemo {
      * - 超时时要记录日志并告警
      * - 考虑是否需要重试机制
      */
-    @Scheduled(fixedRate = 10000)
+    @Scheduled(fixedRate = 10000000)
     public void executeWithTimeout() {
         long startTime = System.currentTimeMillis();
         timeoutTaskCount.incrementAndGet();
@@ -161,7 +161,7 @@ public class AdvancedScheduledTaskDemo {
      * - 只在单实例场景下有效
      * - 多实例部署时需要分布式锁（见下一个方法）
      */
-    @Scheduled(fixedRate = 5000)
+    @Scheduled(fixedRate = 5000000)
     public void executeWithConcurrencyControl() {
         log.info("[ConcurrencyControl] 尝试获取执行权限...");
         
@@ -209,7 +209,7 @@ public class AdvancedScheduledTaskDemo {
      * - 考虑锁的续期机制（WatchDog）
      * - 考虑主从切换时的锁安全性
      */
-    @Scheduled(cron = "0/15 * * * * *")
+    @Scheduled(cron = "0/60 * * * * *")
     public void executeWithDistributedLock() throws UnknownHostException {
         String lockKey = "scheduled-task:question043:distributed-lock";
         String lockValue = getInstanceId(); // 当前实例的唯一标识
