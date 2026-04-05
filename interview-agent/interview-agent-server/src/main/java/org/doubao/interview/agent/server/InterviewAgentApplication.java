@@ -1,5 +1,6 @@
 package org.doubao.interview.agent.server;
 
+import org.doubao.interview.agent.server.collection.CollectionMapComparisonDemo;
 import org.doubao.interview.agent.server.collection.CollectionSetComparisonDemo;
 import org.doubao.interview.agent.server.collection.HashSetHashMapRelationshipDemo;
 import org.springframework.boot.SpringApplication;
@@ -18,5 +19,9 @@ public class InterviewAgentApplication {
         // Run the Set comparison demo after application startup
         System.out.println("\n--- Running HashSet, LinkedHashSet, TreeSet Comparison Demo ---");
         CollectionSetComparisonDemo.main(args);
+        
+        // Run the Map comparison demo after application startup
+        System.out.println("\n--- Running HashMap, LinkedHashMap, TreeMap Comparison Demo ---");
+        CollectionMapComparisonDemo.main(args);
     }
 }
