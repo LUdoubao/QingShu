@@ -36,5 +36,8 @@ spring:
           - data-id: shared-mongodb-${spring.profiles.active}.yml
             group: DEFAULT_GROUP
             refresh: true
+          - data-id: shared-rabbitmq-${spring.profiles.active}.yml
+            group: DEFAULT_GROUP
+            refresh: true
   profiles:
     active: dev #指定环境
