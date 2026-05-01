@@ -22,17 +22,12 @@
         <profile>
             <id>monolith</id>
             <activation>
-                <activeByDefault>true</activeByDefault> <!-- 默认激活 -->
+                <activeByDefault>true</activeByDefault> <!-- 默认激�?-->
             </activation>
             <dependencies>
                 <dependency>
                     <groupId>com.doubao</groupId>
                     <artifactId>auth-service-api</artifactId>
-                    <version>0.0.1-SNAPSHOT</version>
-                </dependency>
-                <dependency>
-                    <groupId>com.doubao</groupId>
-                    <artifactId>ai-service-api</artifactId>
                     <version>0.0.1-SNAPSHOT</version>
                 </dependency>
                 <dependency>
@@ -46,7 +41,7 @@
             </properties>
         </profile>
 
-        <!-- 微服务模式 -->
+        <!-- 微服务模�?-->
         <profile>
             <id>microservice</id>
             <properties>
